@@ -21,6 +21,9 @@
     {
         token_blank,
         token_identifier,
+        token_integer,
+        token_double,
+        token_string,
         token_operator,
         token_variable,
         token_semicolon,
