@@ -26,10 +26,10 @@ OBJFILES=$(patsubst src/%.c, build/%.o, $(shell ls src/*.c))
 all: ifj2017
 
 ifj2017: $(OBJFILES)
-	$(CC) $(CFLAGS) build/*.o -o ifj2017
+	$(CC) $(CFLAGS) build/* -o ifj2017
 
 build/%.o: src/%.c
-	$(CC) $(CFLAGS) -c $< -o $(subst src/, build/, $<.o)
+	$(CC) $(CFLAGS) -c $< -o $(subst .c,.o, $(subst src/, build/, $<))
 
 clean:
 	rm -rf build/* ifj2017
