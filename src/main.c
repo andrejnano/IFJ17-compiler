@@ -49,12 +49,14 @@ int main(int argc, char* argv[])
     b_tree_insert(&b, "d", 1, val);
     wal.i = 42;
     b_tree_insert(&b, "b", 1, wal);
+    wal.i = 43;
+    b_tree_insert(&b, "b", 1, wal);
     wal.i = 46;
     b_tree_insert(&b, "c", 1, wal);
     wal.i = 49;
     b_tree_insert(&b, "r", 1, wal);
 
-    node_val_t *out = b_tree_search(&b, "r");
+    node_val_t *out = b_tree_search(&b, "b");
     printf("nasiel som %d\n", out->value.i);
     b_tree_free(b.top);
 

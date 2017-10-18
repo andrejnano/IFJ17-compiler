@@ -31,6 +31,8 @@ int b_tree_insert(b_tree *tree, char *key, int varType, val_union val) {
    while (tmp) {
       int cmp = strcmp(tmp->key, key);
       if (!cmp) {
+          tmp->val.type = varType;
+          tmp->val.value = val;
          return 0;
       } else if (cmp > 0) {
          if (!tmp->l_ptr) {
