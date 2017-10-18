@@ -30,13 +30,18 @@
         // ... bude ich asi urcite viac, neviem ale ake vsetky chceme,
     } token_type;
 
+    typedef union
+    {
+        char *c;
+        double d;
+        int i;
+    } attribute_value;
 
     // datovy typ pre objekt 'token'
     typedef struct _TOKEN
     {
         token_type type;
-        unsigned int size;
-        char* value;
+        attribute_value att;
     } Token_t;
 
     /*
