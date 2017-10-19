@@ -35,7 +35,7 @@
     {
         err_lex, // 1 - chybna struktura aktualniho lexemu
         err_syn, // 2 - chybna syntaxe
-        err_sem_def, // 3 - nedefinova funkce/promena nebo pokus o redefinici
+        err_sem_def, // 3 - nedefinovana funkce/promena nebo pokus o redefinici
         err_sem_com, // 4 - nekompatibilni typy nebo spatne parametry funkce
         err_sem_oth, // 6 - ostatni semanticke chyby
         err_int, // 99 - interni chyba prekladace (neovlivnena vstupnim programem)
@@ -58,6 +58,8 @@
     {
         token_type type;
         attribute_value att;
+        int line;
+        int col;
     } Token_t;
 
     /*
