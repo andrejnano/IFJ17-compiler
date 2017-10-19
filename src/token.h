@@ -37,7 +37,11 @@
         int i;
     } attribute_value;
 
-    // datovy typ pre objekt 'token'
+    // datovy typ pro objekt 'token'
+    // pokud mame ukazatel pT ukazujici na token,
+    // k typu pristoupime jako pT->type
+    // a k atributu jako pT->att.c  (pripadne i nebo d)
+    // pozor! c je ukazatel! pro string ok pro pristup ke znaku *(pT->att.c)
     typedef struct _TOKEN
     {
         token_type type;
