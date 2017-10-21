@@ -16,7 +16,7 @@
 #ifndef TOKEN_H
 #define TOKEN_H
 
-    // vnutorny konkretny typ tokenu
+    // Token type, identifies token
     typedef enum
     {
         token_blank,
@@ -31,24 +31,15 @@
         // ... bude ich asi urcite viac, neviem ale ake vsetky chceme,
     } token_type;
 
-    typedef enum
-    {
-        err_lex, // 1 - chybna struktura aktualniho lexemu
-        err_syn, // 2 - chybna syntaxe
-        err_sem_def, // 3 - nedefinovana funkce/promena nebo pokus o redefinici
-        err_sem_com, // 4 - nekompatibilni typy nebo spatne parametry funkce
-        err_sem_oth, // 6 - ostatni semanticke chyby
-        err_int, // 99 - interni chyba prekladace (neovlivnena vstupnim programem)
-    } error_type;
-
+    // Token values
     typedef union
     {
         char *c;
         double d;
         int i;
-        error_type e; // ??
-    } attribute_value;
+    } token_value;
 
+    // Token error values
     typedef enum
     {
         token_success, // Correct token
@@ -66,16 +57,21 @@
     typedef struct _TOKEN
     {
         token_type type;
-        attribute_value att;
+        token_value value;
         token_error err;
         unsigned int line;
         unsigned int col;
     } Token_t;
 
     /*
-        Token_t mytoken;
-        mytoken.type = token_identifier;
-        mytoken.value = "count";
-        mytoken.size = strlen(mytoken.value); ? ? ?
+        Token_t *mytoken;
+        mytoken = get_token(file);
+
+        mytoken->type = token_identifier;
+        mytoken->value.i = 1234;
+        mytoken->err = token_success
+        mytoken->line = 3; // <1, inf)
+        mytoken->col = 1; // <1, inf)
     */
+
 #endif
