@@ -81,6 +81,7 @@
         token_true,
         */
         
+        token_eol,
         token_eof,
         
     } token_type;
