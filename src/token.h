@@ -3,7 +3,6 @@
     | PROJEKT IFJ17  |
     + -------------- +
     Implementace prekladace imperativního jazyka IFJ17.
-
     Autori:
         xmarko15 Peter Marko
         xmechl00 Stanislav Mechl
@@ -19,16 +18,74 @@
     // Token type, identifies token
     typedef enum
     {
+
+    	// Data types
         token_blank,
-        token_error,
         token_identifier,
-        token_integer,
-        token_double,
-        token_string,
-        token_operator,
-        token_variable,
+        token_val_integer,
+        token_val_double,
+        token_val_string,
+
+        // Operators
+        token_op_add,
+        token_op_sub,
+        token_op_mul,
+        token_op_div,
+        token_op_mod,
+        token_op_lt,
+        token_op_gt,
+        token_op_le,
+        token_op_ge,
+        token_op_eq,
+        token_op_ne,
+
+        // Special
         token_semicolon,
-        // ... bude ich asi urcite viac, neviem ale ake vsetky chceme,
+        token_comma,
+        token_lbrace,
+        token_rbrace,
+
+        // Keywords
+        token_and,
+        token_as,
+        token_asc,
+        token_boolean,
+        token_chr,
+        token_continue,
+        token_declare,
+        token_dim,
+        token_do,
+        token_double,
+        token_else,
+        token_elseif,
+        token_end,
+        token_exit,
+        token_false,
+        token_for,
+        token_function,
+        token_if,
+        token_input,
+        token_integer,
+        token_length,
+        token_loop,
+        token_next,
+        token_not,
+        token_or,
+        token_print,
+        token_return,
+        token_scope,
+        token_shared,
+        token_static,
+        token_string,
+        token_substr,
+        token_then,
+        token_true,
+        token_while,
+
+        // Read state
+        token_eol,
+        token_eof,
+
     } token_type;
 
     // Token values
@@ -39,16 +96,6 @@
         int i;
     } token_value;
 
-    // Token error values
-    typedef enum
-    {
-        token_success, // Correct token
-        token_err_string_term, // String not terminated correctly
-        token_err_string_esc, // Wrong escape sequence or character value
-        token_err_conversion, // Unsuccessful conversion (int, double)
-        token_err_eof_unexpected, // Unexpected end of file
-    } token_error;
-
     // datovy typ pro objekt 'token'
     // pokud mame ukazatel pT ukazujici na token,
     // k typu pristoupime jako pT->type
@@ -57,21 +104,16 @@
     typedef struct _TOKEN
     {
         token_type type;
-        token_value value;
-        token_error err;
-        unsigned int line;
-        unsigned int col;
+        token_value value; // Only if token type is valid with value
+        unsigned int line; // On which line is the token located
     } Token_t;
 
     /*
         Token_t *mytoken;
         mytoken = get_token(file);
-
         mytoken->type = token_identifier;
         mytoken->value.i = 1234;
-        mytoken->err = token_success
         mytoken->line = 3; // <1, inf)
-        mytoken->col = 1; // <1, inf)
     */
 
 #endif
