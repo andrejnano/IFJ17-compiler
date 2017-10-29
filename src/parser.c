@@ -20,49 +20,10 @@
     #include <errorcodes.h>
     #include <symtable.h>
     #include <token.h>
+    #include <parser.h>
 
     // current token from input
     Token_t* active_token;
-
-    // token testing and moving
-    bool match_test(token_type expected_token_type);
-    bool match_move(token_type expected_token_type);
-
-    // The starting point
-    int parse();
-
-
-/******************************************************************************
-    DECLARATIONS of FUNCTIONS FOR EVERY NON-TERMINAL
-    - check if token on input is the expected one
-    - or calls another non-terminal function
-    - @TODO somehow set error flag if syntax is not valid, however dont stop
-            the program from running, display errors at the end.
-    - @TODO if the nonterminal has a local scope, then create new symbol table
-            instance and semantically check from this table.
-            (otherwise use global table)
- *****************************************************************************/
-
-    int NT_program();
-    int NT_head();
-    int NT_scope();
-    int NT_body();
-    int NT_func_dec();
-    int NT_func_def();
-    int NT_func();
-    int NT_parameter_list();
-    int NT_nextparam();
-    int NT_var_dec();
-    int NT_var_def();
-    int NT_statement();
-    int NT_condition();
-    int NT_loop();
-    int NT_assign();
-    int NT_return();
-    int NT_callfunc();
-    int NT_term_list();
-    int NT_next_term();
-    int NT_term();
 
 
 /******************************************************************************
@@ -126,9 +87,16 @@
     }
 
 
- /*****************************************************************************
-    NON-TERMINALS
-  ****************************************************************************/
+/******************************************************************************
+    FUNCTIONS FOR EVERY NON-TERMINAL
+    - check if token on input is the expected one
+    - or calls another non-terminal function
+    - @TODO somehow set error flag if syntax is not valid, however dont stop
+            the program from running, display errors at the end.
+    - @TODO if the nonterminal has a local scope, then create new symbol table
+            instance and semantically check from this table.
+            (otherwise use global table)
+ *****************************************************************************/
 
     int NT_program()
     {
