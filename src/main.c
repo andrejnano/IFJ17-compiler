@@ -44,33 +44,43 @@ int main(int argc, char* argv[])
 	// Token
 	Token_t *token;
 
+	// Initialize
+	if (!scanner_init()) return E_INTERNAL;
+
 	// Read all tokens
-	while (1) {
-
-		// Get next token
-		token = getNextToken(source_code);
-
-		// parse();
+	while (token = get_next_token(f)) {
 
 		// Print token info
-		printf("Token ID %d, value: %s (len: %u) @ line %u\n",
-				token->type, token->value, token->size, token->line);
+		printf("Token type %d @ line %d", token->type, token->line);
 
-		// Check end
-		if (token->type == token_end_of_file ||
-			token->type == token_end_of_file_unexpected) {
-			break; // Exit while loop
+		// Print token value
+		switch (token->type) {
+			case token_identifier:
+			case token_val_string:
+				printf(" value |%s|", token->value.c);
+				free(token->value.c);
+				break;
+			case token_val_integer:
+				printf(" value %d", token->value.i);
+				break;
+			case token_val_double:
+				printf(" value %f", token->value.d);
+				break;
 		}
 
-		// Free allocated memory
-		free(token->value);
+		// Finish the line
+		printf("\n");
+
+		// Check end of file
+		if (token->type == token_eof) {
+            free(token);
+            break;
+		}
+
+		// Free token
 		free(token);
 
 	}
-
-	// Free end of file token
-	free(token->value);
-	free(token);
 
 	// Close file 
 	fclose(source_code);
