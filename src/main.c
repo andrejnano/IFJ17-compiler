@@ -38,7 +38,59 @@ int main(int argc, char* argv[])
         option 1: call parse function, which inside calls scanner pointed to a global file variable.
         option 2: call scanner with pointer to token vector as argument, call parser with updated token vector
 */
-    // scan(source_code);
+
+    /*/ Scanner test start
+    printf("Scanner test\n\n");
+
+    // Token
+    Token_t *token;
+
+    // Initialize
+    if (!scanner_init()) return E_INTERNAL;
+
+    // Read all tokens
+    while (token = get_next_token(source_code))
+    {
+
+        // Print token info
+        printf("Token type %d @ line %d", token->type, token->line);
+
+        // Print token value
+        switch (token->type)
+        {
+            case token_identifier:
+            case token_val_string:
+                printf(" value |%s|", token->value.c);
+                free(token->value.c);
+                break;
+            case token_val_integer:
+                printf(" value %d", token->value.i);
+                break;
+            case token_val_double:
+                printf(" value %f", token->value.d);
+                break;
+        }
+
+        // Finish the line
+        printf("\n");
+
+        // Check end of file
+        if (token->type == token_eof)
+        {
+            free(token);
+            break;
+        }
+
+        // Free token
+        free(token);
+
+    }
+
+    // Close file 
+    fclose(source_code);
+    
+    // Scanner test end */
+    
     // parse();
 
     // tests of symtable
