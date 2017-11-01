@@ -96,11 +96,11 @@
         int i;
     } token_value;
 
-    // datovy typ pro objekt 'token'
-    // pokud mame ukazatel pT ukazujici na token,
-    // k typu pristoupime jako pT->type
-    // a k atributu jako pT->att.c  (pripadne i, d nebo e)
-    // pozor! c je ukazatel! pro string ok pro pristup ke znaku *(pT->att.c)
+    // Data structure for token
+    // To access its atributes use token_pointer->type
+    // tokens with value such as integer, double and string have also their values
+    // to access the value use token_pointer->value.i | (i)nteger, (d)ouble, (c)string
+    // string (value.c) is an array of char values ending with \0 char
     typedef struct _TOKEN
     {
         token_type type;
