@@ -126,6 +126,7 @@ bool strOptimize(string_t *s)
         // Check
         if (new_str == NULL)
         {
+            fprintf(stderr, "Memory error. Could not optimize string length.");
             return false;
         }
 
