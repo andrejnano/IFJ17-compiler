@@ -67,7 +67,7 @@ bool strEnlarge(string_t *s)
     assert(s->str != NULL);
 
     // Reallocate more memory
-    char *new_str = (char *) realloc(s, sizeof(char) * s->max + DYNSTRING_RES_LEN + 1);
+    char *new_str = (char *) realloc(s->str, sizeof(char) * (s->max + DYNSTRING_RES_LEN + 1));
 
     // Check
     if (new_str == NULL)
@@ -121,7 +121,7 @@ bool strOptimize(string_t *s)
     {
 
         // Reallocate memory
-        char *new_str = (char *) realloc(s, sizeof(char) * s->len + 1);
+        char *new_str = (char *) realloc(s->str, sizeof(char) * (s->len + 1));
 
         // Check
         if (new_str == NULL)
@@ -570,6 +570,12 @@ Token_t *get_next_token(FILE *f)
 
                 // Return identifier token
                 token->type = token_identifier;
+                // Fix inentifier length
+                if (!strOptimize(&value))
+                {
+                    free(token);
+                    return NULL;
+                }
                 // Pass string away
                 token->value.c = value.str;
 
@@ -726,6 +732,12 @@ Token_t *get_next_token(FILE *f)
 
                 // Returns string token
                 token->type = token_val_string;
+                // Fix string length
+                if (!strOptimize(&value))
+                {
+                    free(token);
+                    return NULL;
+                }
                 // Pass string away
                 token->value.c = value.str;
 
