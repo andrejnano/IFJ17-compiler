@@ -43,8 +43,9 @@
     /**
      *  Error printout to stderr with details.
      */
-    void error(int error_code, const char* error_message)
+    void raise_error(int error_code, const char *error_message)
     {
+
         switch (error_code)
         {
             case E_LEX:         fprintf(stderr, "ERROR[%d][Lexical error] : %s\n", E_LEX, error_message); break;
@@ -56,7 +57,11 @@
             default: fprintf(stderr, "This error code --> ERROR[%d] is not defined by this program. \n It's message is : %s\n", error_code, error_message); break;
         }
 
-        compiler_error = error_code;
+        // if the code is 0 (not changed yet)
+        if (! compiler_error)
+            compiler_error = error_code;
+        
+        // if error is already set, do not change it !!!! 
     }
 
 

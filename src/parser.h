@@ -14,25 +14,18 @@
 #ifndef PARSER_H
 #define PARSER_H
 
+#include <stdbool.h>
+
 /******************************************************************************
-    TOKEN MATCH TEST
-    - just checks if active_token is the expected token in the syntax
+    TOKEN MATCH 
+    - checks if active_token is the expected token in the syntax
         > returns TRUE if the token is valid
         > returns FALSE if the tokens is not valid
-    - doesn't move to the next token, just informs
-    - set of predefined conditions based of LL(1) grammar
+    - moves to the next token
+    - for checking a set of predefined conditions based of LL(1) grammar
  *****************************************************************************/
 
-    bool match_test(token_type expected_token_type);
-
-
-/******************************************************************************
-    TOKEN MATCH & MOVE
-    - same as TOKEN MATCH TEST but moves the active token to the next token
-    from input with get_token()
- *****************************************************************************/
-
-    bool match_move(token_type expected_token_type);
+    bool match(token_type expected_token_type);
 
 
 /******************************************************************************
@@ -45,7 +38,6 @@
 
     int parse();
 
-
 /******************************************************************************
     DECLARATIONS of FUNCTIONS FOR EVERY NON-TERMINAL
     - check if token on input is the expected one
@@ -57,26 +49,26 @@
             (otherwise use global table)
  *****************************************************************************/
 
-    int NT_program();
-    int NT_head();
-    int NT_scope();
-    int NT_body();
-    int NT_func_dec();
-    int NT_func_def();
-    int NT_func();
-    int NT_parameter_list();
-    int NT_nextparam();
-    int NT_var_dec();
-    int NT_var_def();
-    int NT_statement();
-    int NT_condition();
-    int NT_loop();
-    int NT_assign();
-    int NT_return();
-    int NT_callfunc();
-    int NT_term_list();
-    int NT_next_term();
-    int NT_term();
-
+    void NT_Program();
+    void NT_Head();
+    void NT_Scope();
+    void NT_CompoundStmt();
+    void NT_FunctionDec();
+    void NT_FunctionDef();
+    void NT_ParameterList();
+    void NT_NextParam();
+    void NT_VarDec();
+    void NT_VarDef();
+    void NT_AssignStmt();
+    void NT_IfStmt();
+    void NT_WhileStmt();
+    void NT_InputStmt();
+    void NT_PrintStmt();
+    void NT_ReturnStmt();
+    void NT_TermList();
+    void NT_ExprList();
+    void NT_NextExpr();
+    void NT_CallExpr();
+    void NT_Expr();
 
 #endif
