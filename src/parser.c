@@ -133,15 +133,20 @@
 
     void NT_CompoundStmt()
     {
+        // create new symtable
+        // assign symtable pointer to this local table, or make a linked list of tables, 
+        // change the pointer of the first to this local
+        
         switch(active_token->type)
         {
-            case token_dim:         NT_VarDef(); break; // decide if declaration or definition inside definition
+            case token_dim:         NT_VarDef(); break; // decide if dec or def inside def
             case token_identifier:  NT_AssignStmt(); break;
             case token_return:      NT_ReturnStmt(); break;
-            case token_input:       NT_InputStmt(); break;
-            case token_print:       NT_IfStmt(); break;
+            case token_input:       NT_InputStmt();  break;
+            case token_print:       NT_PrintStmt(); break;
+            case token_if:          NT_IfStmt(); break;
             case token_do:          NT_WhileStmt(); break;
-            default: return;    // epsilon rule 
+            default: return;        // epsilon rule 
         }
 
         if (match(token_eol) == false)
@@ -509,7 +514,7 @@
 
     void NT_CallExpr()
     {
-        
+
         if (active_token->type == token_identifier)
         {
             // do something
