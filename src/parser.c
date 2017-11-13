@@ -52,7 +52,6 @@
     - calls the first non-terminal and checks for the required EOL token
     - generates first set of instructions
     - creates global symbol table
-    - ...
  *****************************************************************************/
 
     int parse()
@@ -87,7 +86,7 @@
         NT_Head();
         NT_Scope();
 
-        if (match(token_eof) == false)
+        if (match(token_eof) == false)  // end of file
             raise_error(E_SYNTAX, "EOF expected after End Scope, not found.");
     }
 
@@ -116,15 +115,28 @@
 
     void NT_Scope()
     {
-        if (match(token_scope) == false)
-            raise_error(E_SYNTAX, "Expected 'Scope' keyword not found.");
-            
-        NT_CompoundStmt();
 
-        if (match(token_end) == false)
+        if (match(token_scope) == false) // keyword 'Scope'
+            raise_error(E_SYNTAX, "Expected 'Scope' keyword not found.");
+
+        // -----------------
+        // NEW LOCAL SCOPE
+        // -----------------
+        
+            // create new symtable
+            // assign symtable pointer to this local table, or make a linked list
+            // of tables, change the pointer of the first to this local
+
+            NT_CompoundStmt();
+
+        // ------------------
+        // END OF LOCAL SCOPE
+        // ------------------
+
+        if (match(token_end) == false) // keyword 'End'
             raise_error(E_SYNTAX, "Expected 'End' keyword not found.");
 
-        if (match(token_scope) == false)
+        if (match(token_scope) == false) // keyword 'Scope'
             rraise_error(E_SYNTAX, "Expected 'Scope' keyword not found.");
     }
 
@@ -133,23 +145,20 @@
 
     void NT_CompoundStmt()
     {
-        // create new symtable
-        // assign symtable pointer to this local table, or make a linked list of tables, 
-        // change the pointer of the first to this local
-        
+
         switch(active_token->type)
         {
-            case token_dim:         NT_VarDef(); break; // decide if dec or def inside def
-            case token_identifier:  NT_AssignStmt(); break;
-            case token_return:      NT_ReturnStmt(); break;
-            case token_input:       NT_InputStmt();  break;
-            case token_print:       NT_PrintStmt(); break;
-            case token_if:          NT_IfStmt(); break;
-            case token_do:          NT_WhileStmt(); break;
+            case token_dim:         NT_VarDef(); break;     // keyword 'Dim'
+            case token_identifier:  NT_AssignStmt(); break; // identifier
+            case token_return:      NT_ReturnStmt(); break; // keyword 'Return'
+            case token_input:       NT_InputStmt();  break; // keyword 'Input'
+            case token_print:       NT_PrintStmt(); break;  // keyword 'Print'
+            case token_if:          NT_IfStmt(); break;     // keyword 'If'
+            case token_do:          NT_WhileStmt(); break;  // keyword 'Do'
             default: return;        // epsilon rule 
         }
 
-        if (match(token_eol) == false)
+        if (match(token_eol) == false) // end of line
             raise_error(E_SYNTAX, "EOL expected at this point.");
 
         NT_CompoundStmt();
@@ -161,18 +170,21 @@
 
     void NT_FunctionDec()
     {
-        // probably dont even need to compare.. just match()
-        if (match(token_declare) == false)
-            raise_error(E_SYNTAX, "'Declare' keyword went missing.. ");
+
+        match(token_declare);
 
         if (match(token_function) == false)
             raise_error(E_SYNTAX, "'Function' keyword expected at this point.");
 
+
         if (active_token->type == token_identifier)
         {
-            Insert(GST, active_token); // ??? something like this Insert(SymTable *table, Token_t *token);
-            match(token_identifier);
+            // Insert(GST, active_token); // ??? something like this Insert(SymTable *table, Token_t *token);
         }
+        
+        if (match(token_identifier) == false)
+            raise_error(E_SYNTAX, "Identifier expected.");
+
 
         if (match(token_lbrace) == false)
             raise_error(E_SYNTAX, "'(' was expected.");
@@ -185,25 +197,34 @@
         if (match(token_as) == false)
             raise_error(E_SYNTAX, "'As' keyword was expected.");
 
+
         if (active_token->type == token_datatype)
         {
-            // insert new function id with returny type of datatype
+            // something with symtable probably.. 
         }
+
+        if (match(token_datatype) == false)
+            raise_error(E_SYNTAX, "Data type expected at this point.");
     }
 
 
 /*****************************************************************************/
     // @TODO skombinovat s tym co robil Peto
+    
     void NT_FunctionDef()
     {
-        if (match(token_function) == false)
-            raise_error(E_SYNTAX, "'Function' keyword expected at this point.");
 
-        
+       match(token_function);
+       
+
         if (active_token->type == token_identifier)
         {
-            InsertNew
+            // lookup the identifier in symtable... 
         }
+
+        if (match(token_identifier) == false)
+            raise_error(E_SYNTAX, "Identifier expected.");
+
 
         if (match(token_lbrace) == false)
             raise_error(E_SYNTAX, "'(' was expected.");
@@ -216,19 +237,28 @@
         if (match(token_as) == false)
             raise_error(E_SYNTAX, "'As' keyword was expected.");
 
+        // @TODO do semantics check if datatype matches the one in symtable
         if (match(token_datatype) == false)
-            raise_error(E_SYNTAX, "')' was expected.");
+            raise_error(E_SYNTAX, "Data type was expected.");
 
         if (match(token_eol) == false)
             raise_error(E_SYNTAX, "EOL expected at this point.");
 
-        NT_CompoundStmt();
+        // -----------------
+        // NEW LOCAL SCOPE
+        // -----------------
+
+            NT_CompoundStmt();
+
+        // ------------------
+        // END OF LOCAL SCOPE
+        // ------------------
 
         if (match(token_end) == false)
-            raise_error(E_SYNTAX, "EOL expected at this point.");
+            raise_error(E_SYNTAX, "Keyword 'End' expected.");
 
         if (match(token_function) == false )
-            raise_error(E_SYNTAX, "EOL expected at this point.");
+            raise_error(E_SYNTAX, "Keyword 'Function' expected.");
     }
 
 
@@ -238,10 +268,12 @@
     void NT_ParamList()
     {
         if (active_token->type == token_identifier)
+        {
             NT_Param();
-        if (active_token->type == token_comma)
-            NT_NextParam();
 
+            if (active_token->type == token_comma)
+                NT_NextParam();
+        }
         // epsilon rule
     }
 
@@ -252,9 +284,7 @@
     {   
         if (active_token->type == token_comma)
         {   
-            // just match(), no need to compare and raise error
-            if (match(token_comma) == false)
-                raise_error(E_SYNTAX, "Comma ',' expected in the parameter list.");
+            match(token_comma);
 
             NT_Param();
             NT_NextParam();
@@ -264,13 +294,12 @@
 
 /*****************************************************************************/
 
-    void  NT_Param()
+    void NT_Param()
     {   
         // @TODO >>>>>>>> 
         // generate instruction to push identifier to stack or something.. 
         if (match(token_identifier) == false)
             raise_error(E_SYNTAX, "Identifier expected and not found.");
-
 
         if (match(token_as) == false)
             raise_error(E_SYNTAX, "Keyword 'As' expected and not found.");
@@ -315,8 +344,12 @@
                 raise_error(E_SYNTAX, "Assignment operator '=' expected.");
             
             NT_Expr();
+
+            // generate instruction for definition
+            return;
         }
         // if no equals, just declare.. 
+        // finish generating instructions just for declaration
     }
 
 /*****************************************************************************/
@@ -325,6 +358,7 @@
     {
         // @TODO >>>>>>>>
         // Generate instruction, declare inside symtable.. etc.
+
         if (match(token_identifier) == false)
             raise_error(E_SYNTAX, "Identifier expected and not found.");
 
@@ -350,7 +384,15 @@
         if (match(token_eol) == false)
             raise_error(E_SYNTAX, "EOL expected at this point.");
 
+        // -----------------
+        // NEW LOCAL SCOPE
+        // -----------------
+
         NT_CompoundStmt();
+
+        // ------------------
+        // END OF LOCAL SCOPE
+        // ------------------
 
         if (match(token_else) == false)
             raise_error(E_SYNTAX, "Keyword 'Else' expected.");
@@ -358,7 +400,15 @@
         if (match(token_eol) == false)
             raise_error(E_SYNTAX, "EOL expected at this point.");
 
+        // -----------------
+        // NEW LOCAL SCOPE
+        // -----------------
+
         NT_CompoundStmt();
+
+        // ------------------
+        // END OF LOCAL SCOPE
+        // ------------------
 
         if (match(token_end) == false)
             raise_error(E_SYNTAX, "Keyword 'End' expected.");
@@ -383,7 +433,15 @@
         if (match(token_eol) == false)
             raise_error(E_SYNTAX, "EOL expected.");
 
+        // -----------------
+        // NEW LOCAL SCOPE
+        // -----------------
+
         NT_CompoundStmt();
+
+        // ------------------
+        // END OF LOCAL SCOPE
+        // ------------------
 
         if (match(token_loop) == false)
             raise_error(E_SYNTAX, "Keyword 'Loop' expected");
@@ -398,9 +456,9 @@
         if (match(token_return) == false)
             raise_error(E_SYNTAX, "Keyword 'Return' expected.");
 
-        //@TODO generate return instruction
-
         NT_Expr();
+
+        // generate instructions
     }
 
 
@@ -420,7 +478,6 @@
 
         if (match(token_identifier) == false)
             raise_error(E_SYNTAX, "Identifier is expected right after 'Input' keyword.");
-
     }
 
 /*****************************************************************************/
@@ -431,6 +488,8 @@
             raise_error(E_SYNTAX, "Keyword 'Print' expected.");
         
         NT_ExprList();
+
+        // for each expression generate a print call inst. with it
     }
 
 
@@ -443,19 +502,9 @@
         if (match(token_semicolon) == false)
             raise_error(E_SYNTAX, "Semicolon ';' is missing. ");
         
-        NT_NextExpr();
-    }
-
-
-/*****************************************************************************/
-    //@TODO this probably doesn't need to be here.. just improve ExprList()
-    void NT_NextExpr()
-    {
-        // if (is_expression(active_token)) // find out if the active token is a part of an expression...or otherwise said, token is not a keyword or a literal.. ? 
-        {
+        if (is_expression(active_token)) // somehow do this test... 
             NT_ExprList();
-        }
-        //epsilon otherwise
+        // epsilon rule otherwise
     }
 
 
