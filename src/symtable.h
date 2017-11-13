@@ -2,30 +2,38 @@
 #define SYM_TABLE
 
 #include <stdio.h>
+#include <stdbool.h>
+#include "token.h"
 
+#define TYPE_DIFF 100
 enum val_type {
-   TYPE_INT,
-   TYPE_CHAR,
-   TYPE_DOUBLE,
+   TYPE_INT = token_integer,
+   TYPE_STRING = token_string,
+   TYPE_BOOLEAN = token_boolean,
+   TYPE_DOUBLE = token_double,
+   TYPE_FUNCTION_INT = TYPE_INT + TYPE_DIFF,
+   TYPE_FUNCTION_BOOL = TYPE_STRING + TYPE_DIFF,
+   TYPE_FUNCTION_DOUBLE = TYPE_BOOLEAN + TYPE_DIFF,
+   TYPE_FUNCTION_STRING = TYPE_DOUBLE + TYPE_DIFF
 };
 
-typedef union
-{
-   char c;
-   double d;
-   int i;
-} val_union;
+typedef struct sArglist {
+   int type;
+   char *name;
+   struct sArglist *next;
+} tArglist;
 
 typedef struct
 {
-   int type;  // type of value in union
-   val_union value;
+   int type;
+   tArglist *args;
+   bool dec;
 } node_val_t;
   
 typedef struct node_s
 {
    char *key;
-   node_val_t val;
+   node_val_t *val;
    struct node_s *l_ptr;
    struct node_s *r_ptr;
 } node_t;
@@ -33,11 +41,12 @@ typedef struct node_s
 typedef struct
 {
    struct node_s *top;
-} b_tree;
+} tSymbolTable;
 
-void b_tree_init(b_tree *tree);
-int b_tree_insert(b_tree *tree, char *key, int varType, val_union val);
-node_val_t *b_tree_search(b_tree *tree, char *key);
-void b_tree_free(node_t *tree);
+void ST_init(tSymbolTable *tree);
+int ST_insert(tSymbolTable *tree, char *key, node_val_t *varType);
+node_val_t *ST_search(tSymbolTable *tree, char *key);
+void ST_free(node_t *tree);
+void print_tree(node_t *t, int i);
 
 #endif

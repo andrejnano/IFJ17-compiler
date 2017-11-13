@@ -382,7 +382,7 @@ Token_t *get_next_token(FILE *f)
     token->line = 0;
 
     // Cycle variables
-    int strEcsValue; // Escape character value
+    int strEcsValue = 0; // Escape character value
     int c = '\0'; // Character being read from the source
     bool end = false; // Identifies end of file
 

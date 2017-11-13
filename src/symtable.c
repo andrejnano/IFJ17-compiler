@@ -4,7 +4,7 @@
 #include "symtable.h"
 
 #define DEF_NODE_STACK_SIZE 20
-void b_tree_init(b_tree *tree) {
+void ST_init(tSymbolTable *tree) {
    tree->top = NULL;
 }
 
@@ -14,8 +14,8 @@ void b_tree_init(b_tree *tree) {
  * \param varType Type of variable in val.
  * \param val Variable with different possible types.
  */
-int b_tree_insert(b_tree *tree, char *key, int varType, val_union val) {
-   if (tree && tree->top)
+int ST_insert(tSymbolTable *tree, char *key, node_val_t *value) {
+      if (tree && tree->top)
    if (!tree)
       return 1;
    if (tree->top == NULL) {
@@ -23,14 +23,14 @@ int b_tree_insert(b_tree *tree, char *key, int varType, val_union val) {
       memset(tree->top, 0, sizeof(node_t));
       tree->top->key = (char *) malloc(sizeof(char) * strlen(key) + 1);
       strcpy(tree->top->key, key);
-      tree->top->val.type = varType;
-      tree->top->val.value = val;
+      tree->top->val = value;
       return 0;
    }
    node_t *tmp = tree->top;
    while (tmp) {
       int cmp = strcmp(tmp->key, key);
       if (!cmp) {
+		 memcpy(tmp->val, value, sizeof(node_val_t));
          return 0;
       } else if (cmp > 0) {
          if (!tmp->l_ptr) {
@@ -52,8 +52,7 @@ int b_tree_insert(b_tree *tree, char *key, int varType, val_union val) {
    }
    tmp->key = (char *) malloc(sizeof(char) * strlen(key) + 1);
    strcpy(tmp->key, key);
-   tmp->val.type = varType;
-   tmp->val.value = val;
+   tmp->val = value;
    return 0;
 }
 
@@ -62,12 +61,12 @@ int b_tree_insert(b_tree *tree, char *key, int varType, val_union val) {
  * \param tree Whole tree pointer.
  * \param key Key for comparing.
  */
-node_val_t *b_tree_search(b_tree *tree, char *key) {
+node_val_t *ST_search(tSymbolTable *tree, char *key) {
    node_t *tmp = tree->top;
    while (tmp) {
       int cmp = strcmp(tmp->key, key);
       if (!cmp) {
-         return &(tmp->val);
+         return tmp->val;
       } else if (cmp > 0) {
          tmp = tmp->l_ptr;
       } else {
@@ -138,7 +137,7 @@ void print_tree(node_t *t, int i) {
       print_tree(t->r_ptr, i+1);
    }
 }
-void b_tree_free(node_t *start) {
+void ST_free(node_t *start) {
    print_tree(start, 0);
    stack_t s;
    s.len = DEF_NODE_STACK_SIZE;
