@@ -35,35 +35,44 @@
     bool match(token_type expected_token_type)
     {
 
+        // safeguard flag for reading tokens after EOF
+        // if EOF token occurs, this forbids further token reading
         static eof_token_found = false;
 
-        if (eof_token_found == false)
+        
+        if (eof_token_found)
         {
-            if (active_token->type == expected_token_type)
+            // dont try to get to the next token
+            raise_error(E_SYNTAX, "Unexpected END OF FILE ! ! !");
+            return false;
+        }
+        else 
+        {
+            // if no EOF token found yet, proceed normally
+
+            // is the active_token the expected one ?
+            if (active_token->type == expected_token_type) 
             {
+                free(active_token);
                 active_token = get_token();
-                
-                if (active_token->type == token_eof) 
+
+                if (active_token->type == token_eof) // eof check
                     eof_token_found = true;
+
                 
                 return true;
             }
             else
             {
+                free(active_token);
                 active_token = get_token();
 
-                if (active_token->type == token_eof)
+                if (active_token->type == token_eof) // eof check
                     eof_token_found = true;
 
                 return false;
             }
         }
-        else 
-        {
-            // dont try to get to the next token
-            raise_error(E_SYNTAX, "Unexpected END OF FILE ! ! !");
-            return false; 
-        }          
     }
 
 
@@ -80,7 +89,17 @@
         // @TODO create new symbol table
         // @TODO create new instructions vector/list/structure
 
-        active_token = get_token();
+
+        // @TODO probably do it with malloc on heap... 
+        SymbolTable_t GST; // GLOBAL SYMBOL TABLE
+        ST_Init(&GST);
+
+        InstructionList_t InstList; // Instruction list for output code
+        IL_Init(&InstList);
+
+
+        active_token = get_token(); // @TODO check if not EOF... 
+
 
         NT_Program();   // root nonterminal
 
@@ -199,7 +218,8 @@
 
         if (active_token->type == token_identifier)
         {
-            // Insert(GST, active_token); // ??? something like this Insert(SymTable *table, Token_t *token);
+            // Insert(GST, active_token); 
+            // ??? something like this Insert(SymTable *table, Token_t *token);
         }
         
         if (match(token_identifier) == false)

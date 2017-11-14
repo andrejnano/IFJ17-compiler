@@ -24,6 +24,7 @@
     #include "parser.h"
 
     extern FILE* source_code;
+    extern FILE* output_code;
 
 
 
@@ -48,8 +49,10 @@
         if (! (source_code = fopen(argv[1], "r")))
             return E_INTERNAL;
 
+        if (!(output_code = fopen(argv[2], "r")))
+            return E_INTERNAL;
 
-        parse();
+        parse(); // uses globals source_code & output_code
 
 
         //cleanup();
