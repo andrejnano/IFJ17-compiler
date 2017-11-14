@@ -34,16 +34,36 @@
 
     bool match(token_type expected_token_type)
     {
-        if (active_token->type == expected_token_type)
+
+        static eof_token_found = false;
+
+        if (eof_token_found == false)
         {
-            active_token = get_token();
-            return true;
+            if (active_token->type == expected_token_type)
+            {
+                active_token = get_token();
+                
+                if (active_token->type == token_eof) 
+                    eof_token_found = true;
+                
+                return true;
+            }
+            else
+            {
+                active_token = get_token();
+
+                if (active_token->type == token_eof)
+                    eof_token_found = true;
+
+                return false;
+            }
         }
-        else
+        else 
         {
-            active_token = get_token();
-            return false;
-        }
+            // dont try to get to the next token
+            raise_error(E_SYNTAX, "Unexpected END OF FILE ! ! !");
+            return false; 
+        }          
     }
 
 
