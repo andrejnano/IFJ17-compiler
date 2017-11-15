@@ -33,7 +33,12 @@
  * @param[out] Pointer to Token_t
  *
  */
-Token_t *get_next_token(FILE *f);
+//Token_t *get_next_token(FILE *f);
+void get_next_token(FILE *f, Token_t *t);
+
+// Create empty token
+// Return pointer to initialized empty token
+Token_t *create_empty_token(void);
 
 // Initialize and free scanner
 /**
