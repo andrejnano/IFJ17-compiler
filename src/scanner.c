@@ -330,6 +330,58 @@ token_type check_keyword(char *s)
 
 }
 
+/**
+ * @brief Allocates token and initializes it
+ *
+ * Malloc token memory, initailize values and return token pointer.
+ *
+ * @param[out] Token_t* pointer to the new token
+ *
+ */
+Token_t *create_empty_token(void)
+{
+    
+    // Malloc token memory
+    Token_t *token = (Token_t *) malloc(sizeof(Token_t));
+
+    // Check token
+    if (!token) return NULL;
+
+    // Initialize token
+    token->type = token_blank;
+    token->value.c = NULL;
+    token->value.d = 0.0;
+    token->value.i = 0;
+    token->line = 0;
+    
+    // Return token pointer
+    return token;
+
+}
+
+/**
+ * @brief Make sure default values are set
+ *
+ * Sets default token values
+ *
+ * @param[in,out] Token_t *token, token pointer
+ *
+ */
+void empty_token(Token_t *token)
+{
+    
+    // Check pointer
+    assert(token);
+
+    // Initialize token
+    token->type = token_blank;
+    token->value.c = NULL;
+    token->value.d = 0.0;
+    token->value.i = 0;
+    token->line = 0;
+
+}
+
 // FSM states
 typedef enum
 {
@@ -344,16 +396,14 @@ fsm_state;
  * @brief Gets the next token form the source code
  *
  * Reads the file with getc(), ignores comments and creates tokens.
- * Returns pointer to Token_t structure.
- * Reserves memory for token and char array with malloc().
- * Use free() on "token->value.c" if token_val_string
- * and "token" to not cause memory leaks.
- * Might return NULL if error occurred.
- * When terminating the main program other than after receiving NULL pointer
- * or the token_eof signalizing EOF the scanner_free() function must be used.
+ * Modifies Token_t structure passed as parameter.
+ * Reserves memory for char array with malloc().
+ * Use free() on "token->value.c" if token_val_string 
+ * and token_identifier to not cause memory leaks.
+ * When terminating the main program the scanner_free() must be used.
  *
  * @param[in] File opened for reading
- * @param[out] Pointer to Token_t
+ * @param[in,out] Pointer to Token_t
  *
  */
 Token_t *get_next_token(FILE *f)
@@ -381,7 +431,8 @@ Token_t *get_next_token(FILE *f)
     token->value.i = 0;
     token->line = 0;
 
-    // Cycle variables
+    // Cycle 
+    s
     int strEcsValue; // Escape character value
     int c = '\0'; // Character being read from the source
     bool end = false; // Identifies end of file
