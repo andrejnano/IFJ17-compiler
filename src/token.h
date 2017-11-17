@@ -14,7 +14,7 @@
 
 #ifndef TOKEN_H
 #define TOKEN_H
-
+#include <inttypes.h>
     // Token type, identifies token
     typedef enum
     {

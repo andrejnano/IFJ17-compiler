@@ -4,18 +4,28 @@
 #include "symtable.h"
 
 #define DEF_NODE_STACK_SIZE 20
-void ST_init(tSymbolTable *tree) {
-   tree->top = NULL;
+void STL_init(tSymbolTable **tree) {
+	*tree = (tSymbolTable*)malloc(sizeof(tSymbolTable));
+	(*tree)->top = NULL;
+	(*tree)->next = NULL;
 }
-
+/* \brief Function Adds new sybol table to the top of symboltable list
+ * \param tree symbol table pointer.
+ */
+void STL_push(tSymbolTable **tree) {
+	tSymbolTable *newST = (tSymbolTable *)malloc(sizeof
+	(tSymbolTable));
+	newST->next = *tree;
+	newST->top = NULL;
+	*tree = newST;
+}
 /* \brief Function for inserting values into binary tree.
- * \param tree Whole tree pointer.
+ * \param tree symbol table pointer.
  * \param key Identifier of inserted node.
  * \param varType Type of variable in val.
  * \param val Variable with different possible types.
  */
-int ST_insert(tSymbolTable *tree, char *key, node_val_t *value) {
-      if (tree && tree->top)
+int STL_insert_top(tSymbolTable *tree, char *key, node_val_t *value) {
    if (!tree)
       return 1;
    if (tree->top == NULL) {
@@ -23,7 +33,8 @@ int ST_insert(tSymbolTable *tree, char *key, node_val_t *value) {
       memset(tree->top, 0, sizeof(node_t));
       tree->top->key = (char *) malloc(sizeof(char) * strlen(key) + 1);
       strcpy(tree->top->key, key);
-      tree->top->val = value;
+	  tree->top->val = (node_val_t *)malloc(sizeof(node_val_t));
+	  memcpy(tree->top->val, value, sizeof(node_val_t));
       return 0;
    }
    node_t *tmp = tree->top;
@@ -52,7 +63,8 @@ int ST_insert(tSymbolTable *tree, char *key, node_val_t *value) {
    }
    tmp->key = (char *) malloc(sizeof(char) * strlen(key) + 1);
    strcpy(tmp->key, key);
-   tmp->val = value;
+   tmp->val = (node_val_t *)malloc(sizeof(node_val_t));
+   memcpy(tmp->val, value, sizeof(node_val_t));
    return 0;
 }
 
@@ -61,8 +73,13 @@ int ST_insert(tSymbolTable *tree, char *key, node_val_t *value) {
  * \param tree Whole tree pointer.
  * \param key Key for comparing.
  */
-node_val_t *ST_search(tSymbolTable *tree, char *key) {
+node_val_t *STL_search(tSymbolTable *tree, char *key) {
+	if (!tree) {
+		return NULL;
+	}
    node_t *tmp = tree->top;
+   if (!key)
+		return NULL;
    while (tmp) {
       int cmp = strcmp(tmp->key, key);
       if (!cmp) {
@@ -81,34 +98,6 @@ typedef struct {
    int idx;
    unsigned len;   
 } stack_t;
-
-/*
- * \brief Function searches for furthest node accesible with just l_ptr.
- * \param start Starting node.
- * \param s Stack for storing nodes, which it went through.
- * \return Pointer to most left node.
- */
-node_t *most_left(node_t *start, stack_t *s) {
-   if (!start) {
-      return NULL;
-   }
-   node_t *tmp = start;
-   while (1) {
-      if (s->idx <= s->len) {
-         s->len *= 2;
-         s->arr = (node_t **)realloc(s->arr, s->len);
-      }
-      if (tmp->r_ptr || tmp->l_ptr) {
-         s->arr[s->idx] = tmp;
-         s->idx++;
-      }
-      if (!tmp->l_ptr) {
-         break;
-      }
-      tmp = tmp->l_ptr;
-   }
-   return tmp;
-}
 
 //TODO node conections print
 void print_tree(node_t *t, int i) {
@@ -137,32 +126,69 @@ void print_tree(node_t *t, int i) {
       print_tree(t->r_ptr, i+1);
    }
 }
-void ST_free(node_t *start) {
-   print_tree(start, 0);
-   stack_t s;
-   s.len = DEF_NODE_STACK_SIZE;
-   s.arr = (node_t **)malloc(sizeof(node_t *) * s.len);
-   s.idx = 0;
-   node_t *cur = start; // current node
-   while (1) {
-      cur = most_left(cur, &s);
-      if (!cur->r_ptr) {   // most left and !r_ptr => leaf
-         free(cur->key);
-         free(cur);
-         s.idx--;
-         if (s.idx < 0) {
-            free(s.arr);
-            return;
-         }
-         if (s.arr[s.idx]->l_ptr == cur) {   // if cur was accesd by l_ptr set l_ptr to NULL beacuse cur is freed
-            cur = s.arr[s.idx];
-            cur->l_ptr = NULL;
-         } else { // same wih r_ptr
-            cur = s.arr[s.idx];
-            cur->r_ptr = NULL;
-         }
-      } else { // if r_ptr exist
-         cur = cur->r_ptr;
-      }
+
+void DisposeArgList(tArglist *args) {
+	while (args) {
+		tArglist *tmp = args;
+		args = args->next;
+		free(tmp->name);
+		free(tmp);
+	}
+	free(args);
+}
+bool isSameArglists(tArglist *arg1, tArglist *arg2) {
+	while (arg1 && arg2) {
+		if (strcmp(arg1->name, arg2->name) != 0) {
+			return 0;
+		}
+		if (arg1->type != arg2->type) {
+			return 0;
+		}
+		arg1 = arg1->next;
+		arg2 = arg2->next;
+	}
+	return 1;
+}
+void DisposeTree(node_t **top) {	
+	if (!(*top)) {
+		return;
+	}
+	if (!(*top)->l_ptr && !(*top)->r_ptr) {
+		free((*top)->key);
+		tArglist *args = (*top)->val->args;
+		DisposeArgList(args);
+		free((*top)->val);
+		free((*top));
+		(*top) = NULL;
+	} else {
+		if ((*top)->l_ptr)
+			DisposeTree(&((*top)->l_ptr));
+		if ((*top)->r_ptr)
+			DisposeTree(&(((*top))->r_ptr));	
+		free((*top)->key);
+		tArglist *args = (*top)->val->args;
+		DisposeArgList(args);
+		free((*top)->val);
+		free((*top));
+	}
+
+}
+	
+int STL_pop(tSymbolTable **tree) {
+	if (!tree || !*tree) {
+		return 1;
+	}
+	DisposeTree(&((*tree)->top));
+	tSymbolTable *tmp;
+	tmp = (*tree)->next;
+	free(*tree);
+	*tree = tmp;
+	return 0;
+}
+
+void STL_clean_up(tSymbolTable **tree) {
+	int out;
+	while (out != 1) {
+		out = STL_pop(tree);
    }
 }
