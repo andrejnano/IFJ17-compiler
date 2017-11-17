@@ -1,7 +1,7 @@
 /**
  * @file Scanner.h
  * @author Jan Švanda
- * @date 2017-10-29
+ * @date 2017-11-17
  * Implementation of source code scanner and lexical analysis.
  */
 
@@ -16,48 +16,47 @@
 #include <assert.h>
 
 #include "token.h"
+#include "errorcodes.h"
 
 /**
  * @brief Gets the next token form the source code
  *
  * Reads the file with getc(), ignores comments and creates tokens.
- * Returns pointer to Token_t structure.
- * Reserves memory for token and char array with malloc().
+ * Modifies Token_t structure passed as parameter.
+ * Reserves memory for char array with malloc().
  * Use free() on "token->value.c" if token_val_string
- * and "token" to not cause memory leaks.
- * Might return NULL if error occurred.
- * When terminating the main program other than after receiving NULL pointer
- * or the token_eof signalizing EOF the scanner_free() function must be used.
+ * or token_identifier to not cause memory leaks.
+ * When terminating the main program the scanner_free() must be used.
+ * Returns boolean success.
  *
  * @param[in] File opened for reading
- * @param[out] Pointer to Token_t
+ * @param[in,out] Pointer to Token_t
  *
  */
-//Token_t *get_next_token(FILE *f);
-void get_next_token(FILE *f, Token_t *t);
+bool get_next_token(FILE *f, Token_t *token);
 
-// Create empty token
-// Return pointer to initialized empty token
+/**
+ * @brief Allocates token memory and initializes it
+ *
+ * Allocate token memory, initialize values and return token pointer.
+ *
+ * @param[out] Token_t* pointer to the new token or NULL
+ */
 Token_t *create_empty_token(void);
 
-// Initialize and free scanner
 /**
  * @brief Initialize scanner
  *
- * Must be used before using the get_next_token function.
+ * Initializes scanners global static memory.
  *
  * @param[out] Boolean success
- *
  */
 bool scanner_init(void);
 
 /**
- * @brief Free scanner
+ * @brief Free scanner memory
  *
- * Frees allocated private memory.
- * Use in case of terminating the main program.
- * No need to use this if get_next_token() returned NULL or EOF token.
- *
+ * Deallocates dynamic memory for scanner.
  */
 void scanner_free(void);
 
