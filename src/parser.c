@@ -28,74 +28,94 @@
 
 /******************************************************************************
     TOKEN MATCH 
-    @TODO dilema.. move aj ked je to nespravne ? alebo len vratit false a 
-                    zostat na tom istom tokene
  *****************************************************************************/
+
+	/*
+	 * \brief	Checks if the current token is the expected one.
+	 * 			If it is. It either frees the token and its memory
+	 * 			or just moves on. In case of EOF, the function gets
+	 * 			blocked for futher token getting. Just prints the error message.
+	 * \param	expected_token_type The expected token by syntax
+	 * \return	bool value, wether the token was found or not
+	 * 			
+	 * 			@TODO refactor a bit
+	 */
 
     bool match(token_type expected_token_type)
     {
 
-        // safeguard flag for reading tokens after EOF
-        // if EOF token occurs, this forbids further token reading
-        static eof_token_found = false;
+        // guard flag that, if switched on, forbids further reading from scanner
+		// and therefore prevents wrong memory access.
+		// switches on when at least one of these events happen:
+		//	1) the scanner returns false, signaling erro
+		//  2) the token is EOF, which is unexpected until the end of program
+		// --------------------------------------------------------------------
+        static block_scanner = false;
 
-        
-        if (eof_token_found)
-        {
-            // dont try to get to the next token
+
+		if (block_scanner)
+		{
             raise_error(E_SYNTAX, "Unexpected END OF FILE ! ! !");
             return false;
         }
-        else 
-        {
-            // if no EOF token found yet, proceed normally
+		else
+		{
+			// if the token exists and its type is the expected type
+			if (active_token && active_token->type == expected_token_type)
+			{
+				// if the token is string, free the char array
+				if (active_token->type == token_val_string)
+					free(active_token->value.c);
 
-            // is the active_token the expected one ?
-            if (active_token->type == expected_token_type) 
-            {
+				// free the memory allocated by token
                 free(active_token);
-                active_token = get_token();
 
-                if (active_token->type == token_eof) // eof check
-                    eof_token_found = true;
+				// if error occurs in scanner,
+				if (get_next_token(active_token) == false || active_token->type == token_eof)
+				{
+					block_scanner = true;
+					printf("\n[DEBUG]: from match() > error in scanner or EOF token.\n"); // remove later
+				}
 
-                
-                return true;
-            }
+				return true;
+			}
             else
             {
-                free(active_token);
-                active_token = get_token();
+				// free the memory allocated by token
+				free(active_token);
 
-                if (active_token->type == token_eof) // eof check
-                    eof_token_found = true;
+				// if error occurs in scanner,
+				if (get_next_token(active_token) == false || active_token->type == token_eof)
+				{
+					block_scanner = true;
+					printf("\n[DEBUG]: from match() > error in scanner or EOF token.\n"); // remove later
+				}
 
-                return false;
+				return false;
             }
         }
     }
 
 
 /******************************************************************************
-    MAIN STARTING POINT
-    - calls the first non-terminal and checks for the required EOL token
-    - generates first set of instructions
-    - creates global symbol table
  *****************************************************************************/
 
-    int parse()
+	/*
+	* @brief Main parsing function
+	* @param source_code Source file in IFJ17 language
+	* @param output_code Destination file in IFJcode17 language
+	*/
+
+	int parse(FILE *source_code, FILE* output_code)
     {
 
-        // @TODO create new symbol table
-        // @TODO create new instructions vector/list/structure
+		//@TODO Instruction List init
+		//InstructionList_t InstList; // Instruction list for output code
+		//IL_Init(&InstList);
 
-
-        // @TODO probably do it with malloc on heap... 
-        SymbolTable_t GST; // GLOBAL SYMBOL TABLE
+		// @TODO probably do it with malloc on heap... 
+        SymbolTable_t GST;
         ST_Init(&GST);
-
-        InstructionList_t InstList; // Instruction list for output code
-        IL_Init(&InstList);
 
 
         active_token = get_token(); // @TODO check if not EOF... 
@@ -103,8 +123,12 @@
 
         NT_Program();   // root nonterminal
 
+        return compiler_error;
+
         // @TODO clean up
         // @TODO finish the syntax control
+
+		scanner_free(); // @TODO 
     }
 
 
@@ -220,6 +244,13 @@
         {
             // Insert(GST, active_token); 
             // ??? something like this Insert(SymTable *table, Token_t *token);
+
+            // test function name for collision with builtins & other functions.. 
+
+            // create new symbol inside symtable
+            Symbol* new_symbol = ST_Insert(GST, active_token->value.c); // ?? toto neviem ako robit..
+
+
         }
         
         if (match(token_identifier) == false)
