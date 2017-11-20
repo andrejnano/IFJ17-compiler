@@ -1,7 +1,9 @@
 #include "parser.h"
-Token_t *cur_token;
-FILE *input, *output;
+
+Token_t *active_token = NULL;
+FILE *input = NULL, *output = NULL;
 int counterVar = 1;
+tSymbolTable *functions, *vars;
 
 /*
  * \brief Initialisation of operand stack, used in expression evaluation
@@ -49,53 +51,6 @@ void generateName(char **var)
 	sprintf(*var,"$%s%u", before, count);
 	fprintf(output, "defvar lf@%s\n", *var);
 	count++;
-}
-
-
- /*
-  * \brief Reads token from input and dispose current token
-  */
-void get_token_free()
-{
-	if (cur_token)
-	{
-		free(cur_token);
-	}
-	cur_token = get_next_token(input);
-}
-
- /*
-  * \brief Checks if token type is int, double, bool, string
-  */
-bool istype(int type)
-{
-	if (type != token_integer && type != token_double &&
-	type != token_boolean && type != token_string) 
-		return false;
-	return true;
-}
-
- /*
-  * \brief Print value of token literal to output file with prefix:
-  * float@ int@ ...
-  */
-void printTokenVal(void)
-{
-	switch (cur_token->type)
-	{
-		case token_val_double:
-			fprintf(output, "float@%lf\n", cur_token->value.d);
-			break;
-		case token_val_integer:
-			fprintf(output, "int@%d\n", cur_token->value.i);
-			break;
-		case token_val_string:
-			fprintf(output, "string@%s\n", cur_token->value.c);
-			break;
-		default:
-			fprintf(stderr, "Error at line %d cannot print this type\n", cur_token->line);
-		 return;
-	}
 }
 
  /*
@@ -146,64 +101,82 @@ char *convert(int inType, int outType, token_value val, char *frame)
  /*
   * \brief Non terminal For reading func header and adding
   *  to symbol table list
-  * \param functions Symboltable for storing metadata about function
   * \param dec True if function was already declared
   * \param funcname Here will be stored name of function
   */
-void ntFunc(tSymbolTable *functions, bool dec, char **funcName)
+void ntFunc(bool dec, char **funcName)
 {
 	
-	if (cur_token->type != token_function)
-	{
-		raise_error(SYNTAX_ERROR, "Expected function\n");
-		return;
-	}
-	get_token_free();
-	node_val_t *val = STL_search(functions, cur_token->value.c);
-	if (!cur_token->value.c)
+	match(active_token->type, token_function);
+	node_val_t *val = STL_search(functions, active_token->value.c);
+	if (active_token->type != token_identifier)
 	{
 		raise_error(SYNTAX_ERROR, "Expectd identifier\n");
 		return;
-	}	
-	*funcName = cur_token->value.c;
+	}
+	*funcName = active_token->value.c;
 	node_val_t funcVal;
 	funcVal.dec = dec;
+	funcVal.args = NULL;
 	get_token_free();
-	if (cur_token->type != token_lbrace)
-	{
-		raise_error(SYNTAX_ERROR, "Expectd left bracket\n");
-		return;
-	}
-	get_token_free();
+	match(active_token->type, token_lbrace);
 	tArglist **arglist = &(funcVal.args);
-	while (cur_token->type == token_identifier)
+	// storing arguments to arglist
+	while (1)
 	{
+		tArglist *node = funcVal.args;  // for testing if node with this name is already inserted
+		while (node)
+		{	
+			// if name already there
+			if (strcmp(node->name, active_token->value.c) == 0)
+			{
+				raise_error(SEM_ERROR, "Two arguments with same name\n");
+				return;
+			}
+			node = node->next;
+		}
+		// new argument in list
 		*arglist = (tArglist *)malloc(sizeof (tArglist));
-		(*arglist)->name = cur_token->value.c;
+		(*arglist)->name = active_token->value.c;
 		(*arglist)->next = NULL;
 		get_token_free();
-		if (cur_token->type != token_as)
-		{
-			raise_error( SYNTAX_ERROR, "Expectd 'as'\n");
-			return;
-		}
-		get_token_free();
-		
-		if (!istype(cur_token->type))
+		match(active_token->type, token_as);
+
+		if (!istype(active_token->type))
 		{
 			raise_error( SYNTAX_ERROR, "Expectd type\n");
 			return;
 		}
-		(*arglist)->type = cur_token->type;
+		(*arglist)->type = active_token->type;
 		arglist = &((*arglist)->next);
 		get_token_free();
-		if (cur_token->type != token_comma)
+		if (active_token->type == token_comma)
+		{
+			get_token_free();
+			continue;
+		}
+		else if (active_token->type != token_rbrace)
+		{
+			raise_error(SYNTAX_ERROR, "Expected token_rbrace");
+			return;
+		}
+		else if (active_token->type == token_rbrace)
+		{
 			break;
-		get_token_free();
+		}
 	}
+	get_token_free();
+	match(active_token->type, token_as);
+	if (!istype(active_token->type))
+	{
+		raise_error(SYNTAX_ERROR, "Expected type\n");
+		return;
+	}
+	funcVal.type = active_token->type; // storing type of function
 	if ((val = STL_search(functions, *funcName)))
 	{
-		if (isSameArglists(val->args, funcVal.args))
+		if (isSameArglists(val->args, funcVal.args) && 
+			val->type == funcVal.type && funcVal.dec)
 		{
 			DisposeArgList(val->args);
 		}
@@ -213,29 +186,11 @@ void ntFunc(tSymbolTable *functions, bool dec, char **funcName)
 			return;
 		}
 	}
-	get_token_free();
-	if (cur_token->type != token_as)
-	{
-		raise_error(SYNTAX_ERROR, "Expectd 'as'\n");
-		return;
-	}
-	get_token_free();
-	if (!istype(cur_token->type))
-	{
-		raise_error(SYNTAX_ERROR, "Expectd type\n");
-		return;
-	}
-	funcVal.type = cur_token->type;
 	STL_insert_top(functions, *funcName, &funcVal);
 	get_token_free();
-	if (cur_token->type != token_eol && cur_token->type != token_eof)
-	{
-		raise_error(SYNTAX_ERROR, "Expectd EOL\n");
-		return;
-	}
+	match(active_token->type, token_eol);
 	if (!dec)
-	fprintf(output, "label %s\n", *funcName);
-	get_token_free();
+		fprintf(output, "label %s\n", *funcName);
 }
 
 /*
@@ -370,38 +325,33 @@ int TvalToKeyword(int val)
  * \param functions Symbol table list containig metadata about functions
  * \param funcname Name of function to be called
  */
-void ntCallExpr(tSymbolTable *vars, node_val_t *funcMeta, char *funcName)
+void ntCallExpr(node_val_t *funcMeta, char *funcName, tSymbolTable *localVars)
 {
 	get_token_free();
-	if (cur_token->type != token_lbrace)
-	{
-		raise_error(SYNTAX_ERROR, "Expectd left baracket\n");
-		return;
-	}
-	get_token_free();
+	match(active_token->type, token_lbrace);
 	fprintf(output, "createframe\n");
 	tArglist *arg = funcMeta->args;
-	while (cur_token->type != token_rbrace)
+	while (active_token->type != token_rbrace)
 	{
 
 		fprintf(output, "defvar tf@%s\n", arg->name);
-		if (cur_token->type == token_identifier)
+		if (active_token->type == token_identifier)
 		{
-			char *id = cur_token->value.c;
+			char *id = active_token->value.c;
 			node_val_t *tmpMeta;
-			if ((tmpMeta = STL_search(vars, id)))
+			if ((tmpMeta = STL_search(localVars, id)))
 			{
-				if (tmpMeta->type == funcMeta->type)
-				{
-					fprintf(output, "move tf@%s lf@%s\n", arg->name, id);
-				}
-				else if (tmpMeta->dec)
+				if (tmpMeta->dec)
 				{
 					raise_error(SEM_ERROR, "Use of uninitialised variable\n");
 				}
+				else if (tmpMeta->type == funcMeta->type)
+				{
+					fprintf(output, "move tf@%s lf@%s\n", arg->name, id);
+				}
 				else
 				{
-					char *name = convert(tmpMeta->type, arg->type, cur_token->value, "lf");
+					char *name = convert(tmpMeta->type, arg->type, active_token->value, "lf");
 					fprintf(output, "move tf@%s lf@%s\n", arg->name, name);
 					free(name);
 				}
@@ -413,14 +363,14 @@ void ntCallExpr(tSymbolTable *vars, node_val_t *funcMeta, char *funcName)
 				return;
 			}
 		}
-		else if (TvalToKeyword(cur_token->type) == arg->type)
+		else if (TvalToKeyword(active_token->type) == arg->type)
 		{
 			fprintf(output, "move tf@%s ", arg->name);
 			printTokenVal();
 		}
 		else
 		{
-			char *name = convert(TvalToKeyword(cur_token->type), arg->type, cur_token->value, NULL);
+			char *name = convert(TvalToKeyword(active_token->type), arg->type, active_token->value, NULL);
 			fprintf(output, "move tf@%s lf@%s\n", arg->name, name);
 			free(name);
 		}
@@ -436,7 +386,7 @@ void ntCallExpr(tSymbolTable *vars, node_val_t *funcMeta, char *funcName)
  * \param functions Symboltable list of functions
  * \param type Expected expression type
  */
-void ntExpr(tSymbolTable *vars, tSymbolTable *functions, int type)
+void ntExpr(int type, tSymbolTable *localVars)
 {
 	tStack *s;
 	sInit(&s);
@@ -447,14 +397,14 @@ void ntExpr(tSymbolTable *vars, tSymbolTable *functions, int type)
 	char *name = NULL;
 	int numOp = 0;
 	node_val_t *var;
-	while (cur_token->type != token_eol)
+	while (active_token->type != token_eol)
 	{
-		name = cur_token->value.c;
-		switch (cur_token->type)
+		name = active_token->value.c;
+		switch (active_token->type)
 		{
 		case token_op_add:
 		case token_op_sub:
-			insert.type = cur_token->type;
+			insert.type = active_token->type;
 			insert.priority = 3;
 			if (s)
 			while (s && s->priority <= insert.priority)
@@ -463,7 +413,7 @@ void ntExpr(tSymbolTable *vars, tSymbolTable *functions, int type)
 			break;
 		case token_op_div:
 		case token_op_mul:
-			insert.type = cur_token->type;
+			insert.type = active_token->type;
 			insert.priority = 1;
 			if (s)
 			while (s && s->priority <= insert.priority)
@@ -472,7 +422,7 @@ void ntExpr(tSymbolTable *vars, tSymbolTable *functions, int type)
 
 			break;
 		case token_op_mod:
-			insert.type = cur_token->type;
+			insert.type = active_token->type;
 			insert.priority = 2;
 			if (s && s->priority <= insert.priority)
 				execOp(&s, &numOp);
@@ -489,14 +439,14 @@ void ntExpr(tSymbolTable *vars, tSymbolTable *functions, int type)
 				raise_error(TYPE_ERROR, "Error at line %d : Expected boolean\n");
 				return;
 			}
-			insert.type = cur_token->type;
+			insert.type = active_token->type;
 			insert.priority = 4;
 			if (s && s->priority <= insert.priority)
 			execOp(&s, &numOp);
 			sPush(&s, &insert);
 			break;
 		case token_lbrace:
-			insert.type = cur_token->type;
+			insert.type = active_token->type;
 			insert.priority = 6;
 			sPush(&s, &insert);
 			break;
@@ -515,7 +465,7 @@ void ntExpr(tSymbolTable *vars, tSymbolTable *functions, int type)
 			break;
 		case token_identifier:
 			numOp++;
-			if ((var = STL_search(vars, cur_token->value.c)))
+			if ((var = STL_search(localVars, active_token->value.c)))
 			{
 				if (var->type == token_string)
 				{
@@ -528,19 +478,19 @@ void ntExpr(tSymbolTable *vars, tSymbolTable *functions, int type)
 				}
 				else if (var->type != type)
 				{
-					name = convert(type, var->type, cur_token->value, "lf");
+					name = convert(type, var->type, active_token->value, "lf");
 					fprintf(output, "pushs lf@%s\n", name);
 					free(name);
 				}
 				else
-					fprintf(output, "pushs lf@%s\n", cur_token->value.c);
+					fprintf(output, "pushs lf@%s\n", active_token->value.c);
 			}
-			else if ((var = STL_search(functions, cur_token->value.c)))
+			else if ((var = STL_search(functions, active_token->value.c)))
 			{
-				ntCallExpr(vars, var, cur_token->value.c);
+				ntCallExpr(var, active_token->value.c, localVars);
 				if (type != var->type)
 				{
-					token_value tmpVal = cur_token->value;
+					token_value tmpVal = active_token->value;
 					tmpVal.c = "return";
 					name = convert(var->type, type, tmpVal, "tf");
 					fprintf(output, "pushs lf@%s\n", name);
@@ -557,9 +507,9 @@ void ntExpr(tSymbolTable *vars, tSymbolTable *functions, int type)
 		case token_val_integer:
 		case token_val_double:
 			numOp++;
-			if (TvalToKeyword(cur_token->type) != type)
+			if (TvalToKeyword(active_token->type) != type)
 			{
-				name = convert(TvalToKeyword(cur_token->type), type, cur_token->value, NULL);
+				name = convert(TvalToKeyword(active_token->type), type, active_token->value, NULL);
 				fprintf(output, "pushs lf@%s\n", name);
 				free(name);
 			}
@@ -576,7 +526,7 @@ void ntExpr(tSymbolTable *vars, tSymbolTable *functions, int type)
 		get_token_free();
 	}
 	while (s->priority < STACK_STOPPER)
-{
+	{
 		execOp(&s, &numOp);
 	}
 	free(sPop(&s));
@@ -584,112 +534,88 @@ void ntExpr(tSymbolTable *vars, tSymbolTable *functions, int type)
 
 /*
  * \brief Non terminal for evaluating body of function
- * \param vars Symboltable list of variables
- * \param functions Symboltable list of functions
- * \param funcname Name of function which body is being evaluated
+ * \param localVars Symboltable list of variables for curr scope
  */
-void ntCompoundStmt(tSymbolTable *functions, tSymbolTable *vars, char *funcName)
+void ntCompoundStmt(tSymbolTable *localVars)
 {
-	fprintf(output, "createframe\n");
-	tArglist *argList = STL_search(functions, funcName)->args;
-	char *id;
-	node_val_t *tmpMeta;
-	node_val_t newVal;
+	char *id; // value of token identifier
+	node_val_t newVal; // for inserting of new variable into symtable
+	node_val_t *tmpMeta; // variable metadata for detecting of redefinition..
 
-	while (argList)
+	switch (active_token->type)
 	{
-		node_val_t val;
-		val.args = NULL;
-		val.type = argList->type;
-		STL_insert_top(vars, argList->name, &val);
-		argList = argList->next;
-	}
-
-	while (cur_token->type != token_end)
-	{
-		switch (cur_token->type)
+	case token_dim:
+		get_token_free();
+		if (STL_search(localVars, active_token->value.c))
 		{
-		case token_dim:
-			get_token_free();
-			if (STL_search(vars, cur_token->value.c))
-			{
-				raise_error(SEM_ERROR, "Redefinition of var %s\n");
-				return;
-			}
-			if (cur_token->type != token_identifier)
-			{
-				raise_error(SYNTAX_ERROR, "Expected identifier\n");
-				return;
-			}
-			char *varName = cur_token->value.c;
-			get_token_free();
-			if (cur_token->type != token_as)
-			{
-				raise_error(SYNTAX_ERROR, "Expected 'as'\n");
-				return;
-			}
-			get_token_free();
-			if (!istype(cur_token->type))
-			{
-				raise_error(SYNTAX_ERROR, "Expected type\n");
-				return;
-			}
-			newVal.args = NULL;
-			newVal.type = cur_token->type;
-			newVal.dec = true;
-			fprintf(output, "defvar lf@%s\n", varName);
-			STL_insert_top(vars, varName, &newVal);
-
-			if (cur_token->type == token_op_eq)
-			{
-				get_token_free();
-				// ntExp(input, output); // todo
-			}
-
-		break;
-		case token_identifier:
-
-			// callfunc assign
-			id = cur_token->value.c;
-			if ((tmpMeta = STL_search(functions, id))) { //call stmt
-				// todo porovnat vsetky typy premennych
-			}
-			else if ((tmpMeta = STL_search(vars, id)))
-			{
-				get_token_free();
-				if (cur_token->type == token_op_eq) //assigment
-				{
-					get_token_free();
-					ntExpr(vars, functions, tmpMeta->type);
-					fprintf(output, "pops lf@%s\n", id);
-					tmpMeta->dec = false;
-				}
-			}
-			else
-			{
-				raise_error(SEM_ERROR, "Error at line %d : use of undeclared identifier %s\n"); 
-				return;
-			}
-			break;
-		case token_if:
-		printf("if\n");
-			break;
-		case token_while:
-		printf("while\n");
-			break;
-		case token_for:
-		printf("for\n");
-			break;
-		case token_eof:
-			raise_error( SYNTAX_ERROR, "Error at line %d : unexpected EOF\n");
+			raise_error(SEM_ERROR, "Redefinition of var %s\n");
 			return;
-			break;
-		default:
-			break;
+		}
+		if (active_token->type != token_identifier)
+		{
+			raise_error(SYNTAX_ERROR, "Expected identifier\n");
+			return;
+		}
+		char *varName = active_token->value.c;
+		get_token_free();
+		if (active_token->type != token_as)
+		{
+			raise_error(SYNTAX_ERROR, "Expected 'as'\n");
+			return;
 		}
 		get_token_free();
+		if (!istype(active_token->type))
+		{
+			raise_error(SYNTAX_ERROR, "Expected type\n");
+			return;
+		}
+		newVal.args = NULL;
+		newVal.type = active_token->type;
+		newVal.dec = true;
+		fprintf(output, "defvar lf@%s\n", varName);
+		STL_insert_top(localVars, varName, &newVal);
+		get_token_free();
+	break;
+	case token_identifier:
+		// callfunc assign
+		id = active_token->value.c;
+		if ((tmpMeta = STL_search(localVars, id)))
+		{
+			get_token_free();
+			if (active_token->type == token_op_eq) //assigment
+			{
+				get_token_free();
+				ntExpr(tmpMeta->type, localVars);
+				fprintf(output, "pops lf@%s\n", id);
+				tmpMeta->dec = false;
+			}
+		}
+		else
+		{
+			raise_error(SEM_ERROR, "Error at line %d : use of undeclared identifier %s\n"); 
+			return;
+		}
+		break;
+	case token_if:	// TODO
+	printf("if\n");
+		break;
+	case token_while:
+	printf("while\n");
+		break;
+	case token_for:
+	printf("for\n");
+		break;
+	case token_eof:
+		raise_error( SYNTAX_ERROR, "Error at line %d : unexpected EOF\n");
+		return;
+		break;
+	default:
+		break;
 	}
-	get_token_free();
+	if (active_token->type == token_eol) {
+		get_token_free();
+		ntCompoundStmt(localVars);
+	}
 }
 
 /*
@@ -697,20 +623,26 @@ void ntCompoundStmt(tSymbolTable *functions, tSymbolTable *vars, char *funcName)
  * \param vars Symboltable list of variables
  * \param functions Symboltable list of functions
  */
-void ntHead(tSymbolTable **functions, tSymbolTable *vars)
+void ntHead()
 {
 	char *funcName = NULL;
-	switch (cur_token->type)
+	switch (active_token->type)
 	{
 	case  token_declare:
 		get_token_free();
-		ntFunc(*functions, 1, &funcName);
-		ntHead(functions, vars);
+		ntFunc(1, &funcName);
+		ntHead();
 		break;
 	case token_function:
-		ntFunc(*functions, 0, &funcName);
-		ntCompoundStmt(*functions, vars, funcName);
-		ntHead(functions, vars);
+		ntFunc(0, &funcName);
+		// creating symboltable from function argList
+		tSymbolTable *localVars = argsToSymtable(funcName, functions);
+		ntCompoundStmt(localVars);
+		STL_clean_up(&localVars);
+		match(active_token->type, token_end);
+		match(active_token->type, token_function);
+		match(active_token->type, token_eol);
+		ntHead();
 		break;
 	default:
 		return;
@@ -726,18 +658,14 @@ int parse(FILE *in, FILE *out)
 {
 	input = in;
 	output = out;
-	if ((cur_token  = get_next_token(input)) == NULL)
+	if ((active_token  = get_next_token(input)) == NULL)
 		return LEX_ERROR; // nastala chyba jiz pri nacteni prvniho lexemu
 	fprintf(output, ".IFJcode17\njump $main\n");
-	tSymbolTable *functions;
-	tSymbolTable *vars;
 	STL_init(&functions);
 	STL_init(&vars);
-	STL_push(&functions);
 
-	ntHead(&functions, vars);
+	ntHead();
 	// ntScope(input, output, &functions);
-	get_token_free();
 	
 	STL_clean_up(&functions);
 	STL_clean_up(&vars);

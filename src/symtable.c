@@ -127,6 +127,10 @@ void print_tree(node_t *t, int i) {
    }
 }
 
+/*
+ * \brief Free memory of arglist node by node
+ * \param args List of arguments
+ */
 void DisposeArgList(tArglist *args) {
 	while (args) {
 		tArglist *tmp = args;
@@ -136,6 +140,11 @@ void DisposeArgList(tArglist *args) {
 	}
 	free(args);
 }
+
+/*
+ * \brief compares two arglists node by node
+ * \return 1 if arglists are same 0 otherwise
+ */
 bool isSameArglists(tArglist *arg1, tArglist *arg2) {
 	while (arg1 && arg2) {
 		if (strcmp(arg1->name, arg2->name) != 0) {
@@ -146,9 +155,45 @@ bool isSameArglists(tArglist *arg1, tArglist *arg2) {
 		}
 		arg1 = arg1->next;
 		arg2 = arg2->next;
-	}
-	return 1;
+      }
+      if (!arg1 && !arg2)
+            return 1;
+      return 0;
 }
+
+/*
+ * \brief Generates symboltable from arguments of function
+ * \param funcName Name of the functio
+ * \param functions Table of functions
+ * \return Symboltable containing arguments of function
+ */
+tSymbolTable *argsToSymtable(char *funcName, tSymbolTable *functions)
+{
+	tSymbolTable *localVars;
+	STL_init(&localVars);
+	tArglist *argList;
+	node_val_t *tmpMeta;
+	tmpMeta = STL_search(functions, funcName);
+	argList = NULL;
+	if (!tmpMeta)
+		return NULL;
+	argList = tmpMeta->args;
+
+	while (argList)
+	{
+		node_val_t val;
+		val.args = NULL;
+		val.type = argList->type;
+		STL_insert_top(localVars, argList->name, &val);
+		argList = argList->next;
+	}
+	return localVars;
+}
+
+/*
+ * \brief Recursive function for cleaning up tree
+ * \param top Top of the tree to be cleaned
+ */
 void DisposeTree(node_t **top) {	
 	if (!(*top)) {
 		return;
@@ -173,7 +218,13 @@ void DisposeTree(node_t **top) {
 	}
 
 }
-	
+
+/*
+ * \brief Disposes symboltable from the top of symtable list
+ * and pops the list
+ * \param tree First simboltable in the list pointer
+ * \return 0 on success 1 otherwise
+ */
 int STL_pop(tSymbolTable **tree) {
 	if (!tree || !*tree) {
 		return 1;
@@ -186,6 +237,10 @@ int STL_pop(tSymbolTable **tree) {
 	return 0;
 }
 
+/*
+ * \brief Disposes whole list of symboltables
+ * \param tree First simboltable in the list pointer
+ */
 void STL_clean_up(tSymbolTable **tree) {
 	int out;
 	while (out != 1) {

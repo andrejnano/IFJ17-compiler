@@ -15,6 +15,8 @@
 #ifndef TOKEN_H
 #define TOKEN_H
 #include <inttypes.h>
+#include <stdio.h>
+#include <stdbool.h>
     // Token type, identifies token
     typedef enum
     {
@@ -116,5 +118,13 @@
         mytoken->line = 3; // <1, inf)
     */
 
+extern Token_t *active_token;
+extern FILE *input, *output;
+
+  void get_token_free();
+  bool istype(int type);
+  void printTokenType(FILE *output_file, int type);
+  bool match(int token_type, int expected_token_type);
+  void printTokenVal(void);
 #endif
     

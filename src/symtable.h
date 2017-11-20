@@ -52,5 +52,6 @@ int STL_pop(tSymbolTable **tree);
 void STL_clean_up(tSymbolTable **tree);
 void DisposeArgList(tArglist *args);
 bool isSameArglists(tArglist *arg1, tArglist *arg2);
+tSymbolTable *argsToSymtable(char *funcName, tSymbolTable *functions);
 
 #endif
