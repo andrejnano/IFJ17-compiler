@@ -162,6 +162,34 @@ bool isSameArglists(tArglist *arg1, tArglist *arg2) {
 }
 
 /*
+ * \brief Append new node to argument list
+ * \param arglist Top of the list
+ * \param node node to be inserted
+ * \return 0 at succes, 1 otherwise
+ */
+int argListAppend(tArglist **arglist, tArglist *node) {
+	tArglist *prev = NULL;
+	tArglist *tmp = *arglist;
+	if (!tmp)
+	{
+		*arglist = node;
+		return 0;
+	}
+	while (tmp) {
+		if (tmp->name && strcmp(tmp->name, node->name) == 0)
+		{
+			raise_error(SEM_ERROR, "Same named arguments in function declaration\n");
+			return 1;
+		}
+		prev = tmp;
+		tmp = tmp->next;
+	}
+	if (prev)
+		prev->next = node;
+	return 0;
+}
+
+/*
  * \brief Generates symboltable from arguments of function
  * \param funcName Name of the functio
  * \param functions Table of functions
@@ -182,7 +210,8 @@ tSymbolTable *argsToSymtable(char *funcName, tSymbolTable *functions)
 	while (argList)
 	{
 		node_val_t val;
-		val.args = NULL;
+            val.args = NULL;
+            val.dec = false;
 		val.type = argList->type;
 		STL_insert_top(localVars, argList->name, &val);
 		argList = argList->next;

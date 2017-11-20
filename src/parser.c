@@ -98,6 +98,30 @@ char *convert(int inType, int outType, token_value val, char *frame)
 	return tmpVar;
 }
 
+/*
+ * \brief Initialization of variable to default starting value
+ * \param varName Name of variable to be initialized
+ */
+void zeroVarInit(char *varName) {
+	switch (active_token->type)
+	{
+		case token_integer:
+			fprintf(output, "move lf@%s int@0\n", varName);
+			break;
+		case token_double:
+			fprintf(output, "move lf@%s float@0.0\n", varName);
+			break;
+		case token_string:
+			fprintf(output, "move lf@%s string@\n", varName);
+			break;
+		case token_boolean:
+			fprintf(output, "move lf@%s bool@false\n", varName);
+			break;
+		default :
+			raise_error(SYNTAX_ERROR, "Expecet type int, double ...\n");
+	}
+}
+
  /*
   * \brief Non terminal For reading func header and adding
   *  to symbol table list
@@ -106,39 +130,30 @@ char *convert(int inType, int outType, token_value val, char *frame)
   */
 void ntFunc(bool dec, char **funcName)
 {
-	
 	match(active_token->type, token_function);
-	node_val_t *val = STL_search(functions, active_token->value.c);
+	// saving metadata about function which could be already declared for
+	// later comparison
+	node_val_t *oldFuncMeta = STL_search(functions, active_token->value.c);
 	if (active_token->type != token_identifier)
 	{
 		raise_error(SYNTAX_ERROR, "Expectd identifier\n");
 		return;
 	}
 	*funcName = active_token->value.c;
-	node_val_t funcVal;
-	funcVal.dec = dec;
-	funcVal.args = NULL;
+	// creating variable for later storing and comparing with oldFuncMeta
+	node_val_t newFuncMeta;
+	newFuncMeta.dec = dec;
+	newFuncMeta.args = NULL;
 	get_token_free();
 	match(active_token->type, token_lbrace);
-	tArglist **arglist = &(funcVal.args);
 	// storing arguments to arglist
-	while (1)
-	{
-		tArglist *node = funcVal.args;  // for testing if node with this name is already inserted
-		while (node)
-		{	
-			// if name already there
-			if (strcmp(node->name, active_token->value.c) == 0)
-			{
-				raise_error(SEM_ERROR, "Two arguments with same name\n");
-				return;
-			}
-			node = node->next;
-		}
-		// new argument in list
-		*arglist = (tArglist *)malloc(sizeof (tArglist));
-		(*arglist)->name = active_token->value.c;
-		(*arglist)->next = NULL;
+	tArglist *argList = NULL;
+	// storing arguments to newFuncMeta.args
+	while (active_token->type != token_rbrace)
+	{	
+		tArglist *tmpNode = (tArglist *)malloc(sizeof (tArglist));
+		tmpNode->name = active_token->value.c;
+		tmpNode->next = NULL;
 		get_token_free();
 		match(active_token->type, token_as);
 
@@ -147,24 +162,25 @@ void ntFunc(bool dec, char **funcName)
 			raise_error( SYNTAX_ERROR, "Expectd type\n");
 			return;
 		}
-		(*arglist)->type = active_token->type;
-		arglist = &((*arglist)->next);
+		tmpNode->type = active_token->type;
 		get_token_free();
+		// token comma means there will be other argument so continue
 		if (active_token->type == token_comma)
 		{
 			get_token_free();
+			if (argListAppend(&argList, tmpNode))
+				return;
 			continue;
 		}
 		else if (active_token->type != token_rbrace)
 		{
-			raise_error(SYNTAX_ERROR, "Expected token_rbrace");
+			raise_error(SYNTAX_ERROR, "Expected token_rbrace\n");
 			return;
 		}
-		else if (active_token->type == token_rbrace)
-		{
-			break;
-		}
+		if (argListAppend(&argList, tmpNode))
+			return;
 	}
+
 	get_token_free();
 	match(active_token->type, token_as);
 	if (!istype(active_token->type))
@@ -172,21 +188,23 @@ void ntFunc(bool dec, char **funcName)
 		raise_error(SYNTAX_ERROR, "Expected type\n");
 		return;
 	}
-	funcVal.type = active_token->type; // storing type of function
-	if ((val = STL_search(functions, *funcName)))
+	newFuncMeta.type = active_token->type;
+	newFuncMeta.args = argList;
+	oldFuncMeta = STL_search(functions, *funcName);
+	if (oldFuncMeta && (oldFuncMeta->dec == dec || (!oldFuncMeta->dec && dec) || 
+		!isSameArglists(newFuncMeta.args, oldFuncMeta->args) || newFuncMeta.type != oldFuncMeta->type))
 	{
-		if (isSameArglists(val->args, funcVal.args) && 
-			val->type == funcVal.type && funcVal.dec)
-		{
-			DisposeArgList(val->args);
-		}
-		else
-		{
-			raise_error( SEM_ERROR, "Redefinition of function %s\n");
-			return;
-		}
+		raise_error( SEM_ERROR, "Redefinition of function %s\n");
+		DisposeArgList(argList);
+		return;
 	}
-	STL_insert_top(functions, *funcName, &funcVal);
+	// if there were no old metadata insert new
+	// otherwise no need for inserting new ones consistence were checked
+
+	if (!oldFuncMeta)
+		STL_insert_top(functions, *funcName, &newFuncMeta);
+	else
+		DisposeArgList(newFuncMeta.args);
 	get_token_free();
 	match(active_token->type, token_eol);
 	if (!dec)
@@ -331,9 +349,14 @@ void ntCallExpr(node_val_t *funcMeta, char *funcName, tSymbolTable *localVars)
 	match(active_token->type, token_lbrace);
 	fprintf(output, "createframe\n");
 	tArglist *arg = funcMeta->args;
+	// read check types and convert arguments for calling function
 	while (active_token->type != token_rbrace)
 	{
-
+		if (!arg)	// no bracket but still expected argument
+		{
+			raise_error(SEM_ERROR, "Too many arguments for function\n");
+			return;
+		}
 		fprintf(output, "defvar tf@%s\n", arg->name);
 		if (active_token->type == token_identifier)
 		{
@@ -341,11 +364,7 @@ void ntCallExpr(node_val_t *funcMeta, char *funcName, tSymbolTable *localVars)
 			node_val_t *tmpMeta;
 			if ((tmpMeta = STL_search(localVars, id)))
 			{
-				if (tmpMeta->dec)
-				{
-					raise_error(SEM_ERROR, "Use of uninitialised variable\n");
-				}
-				else if (tmpMeta->type == funcMeta->type)
+				if (tmpMeta->type == funcMeta->type)
 				{
 					fprintf(output, "move tf@%s lf@%s\n", arg->name, id);
 				}
@@ -363,6 +382,8 @@ void ntCallExpr(node_val_t *funcMeta, char *funcName, tSymbolTable *localVars)
 				return;
 			}
 		}
+		// tvalToKeyword returns corresponding keyword to literal for example token_val_integer -> token_integer
+		// it is used because types are in structures stored as keyword for example token_integer
 		else if (TvalToKeyword(active_token->type) == arg->type)
 		{
 			fprintf(output, "move tf@%s ", arg->name);
@@ -376,6 +397,15 @@ void ntCallExpr(node_val_t *funcMeta, char *funcName, tSymbolTable *localVars)
 		}
 		arg = arg->next;
 		get_token_free();
+		if (active_token->type != token_comma)
+			break;
+		get_token_free();
+	}
+
+	if (arg)
+	{
+		raise_error(SEM_ERROR, "Too few arguments for function\n");
+		return;
 	}
 	fprintf(output, "pushframe\ncall %s\n", funcName);
 }
@@ -471,10 +501,6 @@ void ntExpr(int type, tSymbolTable *localVars)
 				{
 					raise_error(TYPE_ERROR, "Wrong type\n");
 					return;
-				}
-				else if (var->dec)
-				{
-					raise_error(SEM_ERROR, "Use of uninitialised variable\n");
 				}
 				else if (var->type != type)
 				{
@@ -573,6 +599,7 @@ void ntCompoundStmt(tSymbolTable *localVars)
 		newVal.type = active_token->type;
 		newVal.dec = true;
 		fprintf(output, "defvar lf@%s\n", varName);
+		zeroVarInit(varName);
 		STL_insert_top(localVars, varName, &newVal);
 		get_token_free();
 	break;
