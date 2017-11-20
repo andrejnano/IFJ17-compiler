@@ -1,7 +1,7 @@
 /**
  * @file Scanner.c
  * @author Jan Švanda
- * @date 2017-11-17
+ * @date 2017-11-20
  * Implementation of source code scanner and lexical analysis.
  */
 
@@ -133,6 +133,7 @@ bool dStrOptimize(string_t *s)
 static string_t value; // Token value
 static unsigned int line; // Line counter
 static bool end_of_file = true; // Identifies end of file
+static bool new_line_start = true; // Identify empty line
 
 /**
  * @brief Initialize scanner
@@ -454,6 +455,10 @@ bool get_next_token(FILE *file, Token_t *token)
         switch (state)
         {
         case EMPTY:
+
+            // Update empty line check - line is not empty
+            if (c != '\n' && c != 13 && c != '\'') new_line_start = false;
+
             // Identifier beginning
             if ((c>='a' && c<='z') || c == '_')
             {
@@ -485,11 +490,19 @@ bool get_next_token(FILE *file, Token_t *token)
                 case '(': token->type = token_lbrace; return true;
                 case ')': token->type = token_rbrace; return true;
                 case ';': token->type = token_semicolon; return true;
-                case '\n': token->type = token_eol; line++; return true;
+                case '\n': line++;
+                    // Return only one EOL per group of EOL's
+                    if (!new_line_start)
+                    {
+                        new_line_start = true;
+                        token->type = token_eol;
+                        return true;
+                    }
+                    // Skip repeating empty line
                 case 13: continue; // Windows CRLF compatibility
                 default:
                     // Unknown character
-                    raise_error(E_LEX, "Unknown character @line:x");
+                    raise_error(E_LEX, "Unknown character @line:%u", line);
                     return_eof_false(token);
                 }
             }
@@ -712,7 +725,7 @@ bool get_next_token(FILE *file, Token_t *token)
             {
                 // Returns unknown token (!)
                 ungetc(c, file);
-                raise_error(E_LEX, "Unknown character @line:x");
+                raise_error(E_LEX, "Unknown character @line:%u", line);
                 return_eof_false(token);
             }
             break;
@@ -760,7 +773,7 @@ bool get_next_token(FILE *file, Token_t *token)
             else
             {
                 // Wrong character string
-                raise_error(E_LEX, "String contains wrong character @line:x");
+                raise_error(E_LEX, "String contains wrong character @line:%u", line);
                 return_eof_false(token);
             }
             break;
@@ -835,7 +848,7 @@ bool get_next_token(FILE *file, Token_t *token)
             else
             {
                 // Wrong escape sequence string
-                raise_error(E_LEX, "Escape character with no meaning @line:x");
+                raise_error(E_LEX, "Escape character with no meaning @line:%u", line);
                 return_eof_false(token);
             }
             break;
@@ -849,7 +862,7 @@ bool get_next_token(FILE *file, Token_t *token)
             else
             {
                 // Wrong escape sequence string
-                raise_error(E_LEX, "Terminated escape sequence @line:x");
+                raise_error(E_LEX, "Terminated escape sequence @line:%u", line);
                 return_eof_false(token);
             }
             break;
@@ -862,7 +875,7 @@ bool get_next_token(FILE *file, Token_t *token)
                 // Check invalidity of the character
                 if (strEcsValue < 1 || strEcsValue > 255)
                 {
-                    raise_error(E_LEX, "Escape sequence out of bounds @line:x");
+                    raise_error(E_LEX, "Escape sequence out of bounds @line:%u", line);
                     return_eof_false(token);
                 }
 
@@ -904,7 +917,7 @@ bool get_next_token(FILE *file, Token_t *token)
             else
             {
                 // Wrong escape sequence string
-                raise_error(E_LEX, "Terminated escape sequence @line:x");
+                raise_error(E_LEX, "Terminated escape sequence @line:%u", line);
                 return_eof_false(token);
             }
             break;
