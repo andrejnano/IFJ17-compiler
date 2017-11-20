@@ -30,6 +30,7 @@
     TOKEN MATCH 
  *****************************************************************************/
 
+
 	/*
 	 * \brief	Checks if the current token is the expected one.
 	 * 			If it is. It either frees the token and its memory
@@ -50,14 +51,20 @@
 		//	1) the scanner returns false, signaling erro
 		//  2) the token is EOF, which is unexpected until the end of program
 		// --------------------------------------------------------------------
-        static block_scanner = false;
+        static bool block_scanner = false;
 
 
 		if (block_scanner)
 		{
             raise_error(E_SYNTAX, "Unexpected END OF FILE ! ! !");
             return false;
-        }
+
+			// not exactly right, @TODO change this
+			if (expected_token_type == token_eof)
+			{
+				return true;
+			}
+		}
 		else
 		{
 			// if the token exists and its type is the expected type
@@ -81,6 +88,10 @@
 			}
             else
             {
+				// if the token is string, free the char array
+				if (active_token->type == token_val_string)
+					free(active_token->value.c);
+
 				// free the memory allocated by token
 				free(active_token);
 
@@ -97,6 +108,7 @@
     }
 
 
+
 /******************************************************************************
  *****************************************************************************/
 
@@ -106,29 +118,36 @@
 	* @param output_code Destination file in IFJcode17 language
 	*/
 
-	int parse(FILE *source_code, FILE* output_code)
-    {
+		tSymbolTable *GST;
 
-		//@TODO Instruction List init
-		//InstructionList_t InstList; // Instruction list for output code
-		//IL_Init(&InstList);
+		int parse(FILE * source_code, FILE * output_code)
+		{
 
-		// @TODO probably do it with malloc on heap... 
-        SymbolTable_t GST;
-        ST_Init(&GST);
+			//@TODO Instruction List init
+			//InstructionList_t InstList; // Instruction list for output code
+			//IL_Init(&InstList);
 
+			ST_Init(&GST);
+			new_context(&GST);
 
-        active_token = get_token(); // @TODO check if not EOF... 
+			// first token reading
+			if (get_next_token(active_token) == false || active_token->type == token_eof)
+			{
+				free(active_token);
+				scanner_free();
+				return compiler_error;
+			}
+			else
+			{
+				// EVERYTHING IS OK HERE :)
 
+				// root nonterminal
+				NT_Program();
+			}
 
-        NT_Program();   // root nonterminal
-
-        return compiler_error;
-
-        // @TODO clean up
-        // @TODO finish the syntax control
-
-		scanner_free(); // @TODO 
+			scanner_free();
+			STL_clean_up(&GST);
+			return SUCCESS;
     }
 
 
@@ -158,17 +177,16 @@
 
     void NT_Head()
     {
-
         if (active_token->type == token_declare)
         {
-            NT_FunctionDec();
+			NT_FunctionDec();
             NT_Head();
         }
         else 
         if (active_token->type == token_function)
         {
-            NT_FunctionDef();
-            NT_Head();
+			NT_FunctionDef();
+			NT_Head();
         }
         // epsilon rule is OK here
     }
@@ -191,6 +209,7 @@
             // of tables, change the pointer of the first to this local
 
             NT_CompoundStmt();
+
 
         // ------------------
         // END OF LOCAL SCOPE
@@ -234,24 +253,35 @@
     void NT_FunctionDec()
     {
 
-        match(token_declare);
+		node_val_t *val;
 
-        if (match(token_function) == false)
+		match(token_declare);
+
+		if (match(token_function) == false)
             raise_error(E_SYNTAX, "'Function' keyword expected at this point.");
 
-
+		// only process the token if it is an identifier
         if (active_token->type == token_identifier)
         {
-            // Insert(GST, active_token); 
-            // ??? something like this Insert(SymTable *table, Token_t *token);
 
-            // test function name for collision with builtins & other functions.. 
+			//  
+			val = STL_Search(functions, active_token->value.c);
 
-            // create new symbol inside symtable
-            Symbol* new_symbol = ST_Insert(GST, active_token->value.c); // ?? toto neviem ako robit..
+			// ak nieje v tabulke symbolov
+			if (val == NULL)
+			{
+				char * new_function_name;
 
+				// skopirovat string hodnotu tokenu
+				active_token->value.c
 
-        }
+				// vytvorit novu deklaraciu
+				node_val_t new_declaration;
+
+				// set new val
+				val = STL_Insert();
+			}
+		}
         
         if (match(token_identifier) == false)
             raise_error(E_SYNTAX, "Identifier expected.");
@@ -290,8 +320,10 @@
 
         if (active_token->type == token_identifier)
         {
-            // lookup the identifier in symtable... 
-        }
+            // lookup the identifier in symtable...
+
+			node_val_t declaration_check = STL_Search(functions, active_token->value.c);
+		}
 
         if (match(token_identifier) == false)
             raise_error(E_SYNTAX, "Identifier expected.");
