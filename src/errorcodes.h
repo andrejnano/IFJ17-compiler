@@ -3,7 +3,6 @@
     | PROJEKT IFJ17  |
     + -------------- +
     Implementace prekladace imperativního jazyka IFJ17.
-
     Autori:
         xmarko15 Peter Marko
         xmechl00 Stanislav Mechl
@@ -36,5 +35,13 @@
 
     //interna chyba prekladaca, neovplyvnena vstupnim programom. napr. bad mem alloc
     #define E_INTERNAL      99
+
+    /**
+     * @brief Print formated error message - printf()
+     *
+     * Prints error message, creates custom prefix based on error_code,
+     * appends '\n' character to the end of the message.
+     */
+    void raise_error(int error_code, const char *msg, ...);
 
 #endif
