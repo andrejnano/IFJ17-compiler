@@ -2,22 +2,25 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include "errorcodes.h"
+#include "token.h"
 
 // global error flag - if error occurs,
 int compiler_error = 0;
 extern char *source_file_name;
+extern Token_t *active_token;
 
 /**
  *  Error printout to stderr with details.
  */
 void raise_error(int error_code, const char *msg, ...)
 {
-    int line = 42;
+    int line = active_token->line;
 
     // VA list
     va_list args;
     va_start(args, msg);
 
+    fputs("\n", stderr);
 
     switch (error_code)
     {

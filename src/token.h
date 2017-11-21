@@ -16,6 +16,9 @@
 #define TOKEN_H
 
     #include <stdbool.h>
+    #include <stdio.h>
+    #include <string.h>
+    #include <stdlib.h>
 
     // Token type, identifies token
     typedef enum {
@@ -116,5 +119,9 @@
             mytoken->value.i = 1234;
             mytoken->line = 3; // <1, inf)
         */
+
+
+    const char* debug_token_name(Token_t *token);
+    
 
 #endif

@@ -5,6 +5,22 @@
 #include "errorcodes.h"
 
 
+// DEBUG HELP FUNC
+
+const char* print_type(int type)
+{
+    // @TODO add bool
+    switch(type)
+    {
+        case token_integer: return "Integer";
+        case token_double: return "Double";
+        case token_string: return "String";
+        default: return "";
+    }
+}
+
+
+
 /*
  * @TODO list : pridat limit pre alokaciu Key na max velkost identifikatora
  *
@@ -72,7 +88,8 @@ bool stl_insert_top(SymbolTable_t *tree, char *key, Metadata_t *new_data)
 
         Metadata_t *tmp = tree->top->metadata;
 
-        printf(ANSI_COLOR_YELLOW" [DEBUG]\n"ANSI_COLOR_CYAN"+ NEW ITEM IN SYMTABLE"ANSI_COLOR_RESET"(first one)\n\tItem key : %s\n\tItem metadata type : %d\n", tree->top->key, tmp->type);
+        // DEBUG
+        printf(ANSI_COLOR_CYAN "\n\t+ NEW ITEM IN SYMTABLE" ANSI_COLOR_RESET "(first)\n\t\t [KEY] : " ANSI_COLOR_MAGENTA " '%s'" ANSI_COLOR_RESET "\n\t\t[TYPE] :  %s\n\n", tree->top->key, print_type(tmp->type));
         return true;
     }
 
@@ -128,7 +145,10 @@ bool stl_insert_top(SymbolTable_t *tree, char *key, Metadata_t *new_data)
     current_item->metadata = (Metadata_t *) malloc(sizeof(Metadata_t));
     memcpy(current_item->metadata, new_data, sizeof(Metadata_t));
 
-    printf(ANSI_COLOR_YELLOW" [DEBUG]\n" ANSI_COLOR_CYAN "+ NEW ITEM IN SYMTABLE" ANSI_COLOR_RESET "\n\tItem key : %s\n\tItem metadata type : %d\n", current_item->key, current_item->metadata->type);
+
+    // DEBUG
+    printf(ANSI_COLOR_CYAN "\n\t+ NEW ITEM IN SYMTABLE" ANSI_COLOR_RESET "\n\t\t [KEY] : " ANSI_COLOR_MAGENTA " '%s'" ANSI_COLOR_RESET "\n\t\t[TYPE] :  %s\n\n", current_item->key, print_type(current_item->metadata->type));
+    
     return true;
 }
 

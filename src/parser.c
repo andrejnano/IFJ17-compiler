@@ -224,14 +224,15 @@
                     if (is_datatype(active_token->type))
                     {
                         new_parameter->type = active_token->type;
+                        match(active_token->type);
                     }
                     else
                     {
                         raise_error(E_SYNTAX, "Expected datatype after a parameter.");
+                        match(token_blank); // @TODO len sa posunut, zaruceny fail sice,..
                     }
 
-                    match(token_blank); // @TODO len sa posunut, zaruceny fail sice,.. pozriet co je blank
-
+        
                     if (active_token->type == token_comma)
                     {
                         match(token_comma);
@@ -271,17 +272,18 @@
                 if (is_datatype(active_token->type))
                 {
                     new_function_metadata.type = active_token->type;
+                    match(active_token->type);
                 }
                 else
                 {
                     raise_error(E_SYNTAX, "Expected datatype after a parameter.");
                     declaration_error = true;
+                    match(token_blank); // @TODO len sa posunut, zaruceny fail sice,..
                 }
 
-                match(token_blank); // just move
 
                 // FINALLY add to symtable if there are no error during declaration
-                if (!declaration_error && !compiler_error)
+                if (!declaration_error) //&& !compiler_error)
                 {
                     stl_insert_top(functions, new_function_name, &new_function_metadata);
                     free(new_function_name);
@@ -304,10 +306,15 @@
         if (match(token_as) == false)
             raise_error(E_SYNTAX, "'As' keyword was expected.");
 
-        if (is_datatype(active_token->type) == false)
+        if (is_datatype(active_token->type))
+        {
+            match(active_token->type);
+        }
+        else
+        {
             raise_error(E_SYNTAX, "Expected datatype after a parameter.");
-
-        match(token_blank); // just move
+            match(token_blank); // just move
+        }
     }
 
 /*****************************************************************************/
@@ -350,10 +357,16 @@
         if (match(token_as) == false)
             raise_error(E_SYNTAX, "Keyword 'As' expected and not found.");
 
-        if (is_datatype(active_token->type) == false)
+        if (is_datatype(active_token->type))
+        {
+            match(active_token->type);
+        }
+        else
+        {
             raise_error(E_SYNTAX, "Expected datatype after a parameter.");
-    
-        match(token_blank); // just move
+            match(token_blank); // just move
+        }
+        
     }
 
 

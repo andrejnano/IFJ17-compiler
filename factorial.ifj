@@ -1,5 +1,5 @@
-Declare Function factorial (n As Integer) As Double
-Declare Function test () As String
-Declare Function test () As String
+Declare Function factorial (n As Integer) As Integer
+Declare Function abc (n As Integer) As Double
+Declare Function ab2c (n As Integer) As Double
 Scope
 End Scope
