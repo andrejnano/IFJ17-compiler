@@ -3,7 +3,6 @@
 #include "scanner.h"
 #include "token.h"
 #include "errors.h"
-
  /*
   * \brief Reads token from input and dispose current token
   */

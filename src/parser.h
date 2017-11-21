@@ -16,6 +16,7 @@
 #include "scanner.h"
 #include "symtable.h"
 #include "errors.h"
+#include "symtable.h"
 
 enum ins {
 	MOVE,
@@ -70,20 +71,6 @@ enum ins {
 	BREAK,
 	DPRINT,
 	};
-
-	#include "symtable.h"
-	#include "errorcodes.h"
-	
-	typedef struct sStack {
-		int type;
-		int priority;
-		struct sStack *next;
-	}tStack;
-	
-	#define STACK_STOPPER 100
-	void sInit(tStack **s);
-	void sPush(tStack **s, tStack *val);
-	tStack *sPop(tStack **s);
 
     int parse(FILE *input, FILE *output);
 
