@@ -86,10 +86,14 @@ bool stl_insert_top(SymbolTable_t *tree, char *key, Metadata_t *new_data)
         tree->top->metadata = (Metadata_t *) malloc(sizeof(Metadata_t));
         memcpy(tree->top->metadata, new_data, sizeof(Metadata_t));
 
-        Metadata_t *tmp = tree->top->metadata;
+        
 
         // DEBUG
+        #ifdef DEBUG
+        Metadata_t *tmp = tree->top->metadata;
         printf(ANSI_COLOR_CYAN "\n\t+ NEW ITEM IN SYMTABLE" ANSI_COLOR_RESET "(first)\n\t\t [KEY] : " ANSI_COLOR_MAGENTA " '%s'" ANSI_COLOR_RESET "\n\t\t[TYPE] :  %s\n\n", tree->top->key, print_type(tmp->type));
+        #endif
+
         return true;
     }
 
@@ -147,8 +151,10 @@ bool stl_insert_top(SymbolTable_t *tree, char *key, Metadata_t *new_data)
 
 
     // DEBUG
+    #ifdef DEBUG
     printf(ANSI_COLOR_CYAN "\n\t+ NEW ITEM IN SYMTABLE" ANSI_COLOR_RESET "\n\t\t [KEY] : " ANSI_COLOR_MAGENTA " '%s'" ANSI_COLOR_RESET "\n\t\t[TYPE] :  %s\n\n", current_item->key, print_type(current_item->metadata->type));
-    
+    #endif
+
     return true;
 }
 

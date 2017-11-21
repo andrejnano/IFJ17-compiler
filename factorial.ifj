@@ -1,9 +1,5 @@
-Declare Function factorial (n As Integer) As Integer
 
-Function factorial (n As Integer) As Double
+Declare Function factorial(n As Integer) As Integer
 
-End Function
-
-Declare Function test (s as Integer) As Double
 Scope
 End Scope

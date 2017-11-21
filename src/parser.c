@@ -5,10 +5,6 @@
  *  output -> vector/list of Intruction_t* ( generated instruction pointers)
  *
  *  @TODO add instruction data structure and operations + vector of intructions
- *  @TODO add expression parsing
- *  @TODO define all semantic checks
- *  @TODO create a parse table with First() / Follow() tokens defined for each
- *        non-terminal or define First() and Follow() functions...
  *
  *****************************************************************************/
 
@@ -27,10 +23,7 @@
     // current token from input
 
     Token_t* active_token = NULL;
-
-
     SymbolTable_t *functions;
-
     extern int compiler_error;
 
     extern FILE* source_code;
@@ -69,10 +62,13 @@
         else
         {
             // EVERYTHING IS OK HERE :)
+            #ifdef DEBUG
+            printf("\n\t--- START---\n\n");
+            #endif
             // root nonterminal
             NT_Program();
         }
-
+        free(active_token);
         scanner_free();
         stl_clean_all(&functions);
     }
@@ -317,56 +313,6 @@
         }
     }
 
-/*****************************************************************************/
-
-    void NT_ParamList()
-    {
-        if (active_token->type == token_identifier)
-        {
-            NT_Param();
-
-            if (active_token->type == token_comma)
-                NT_NextParam();
-        }
-        // epsilon rule
-    }
-
-/*****************************************************************************/
-
-    void NT_NextParam()
-    {
-        if (active_token->type == token_comma)
-        {
-            match(token_comma);
-
-            NT_Param();
-            NT_NextParam();
-        }
-        //  epsilon rule
-    }
-
-/*****************************************************************************/
-
-    void NT_Param()
-    {
-        // @TODO >>>>>>>>
-        // generate instruction to push identifier to stack or something..
-        if (match(token_identifier) == false)
-            raise_error(E_SYNTAX, "Identifier expected and not found.");
-
-        if (match(token_as) == false)
-            raise_error(E_SYNTAX, "Keyword 'As' expected and not found.");
-
-        if (is_datatype(active_token->type))
-        {
-            match(active_token->type);
-        }
-        else
-        {
-            raise_error(E_SYNTAX, "Expected datatype after a parameter.");
-            match(token_blank); // just move
-        }
-    }
 
 
 /*****************************************************************************/
@@ -500,6 +446,10 @@
                         {
                             datatypes_equal = true;
                         }
+                        else
+                        {
+                            raise_error(E_SYNTAX, "Function Datatype doesn't match with it's declaration.");
+                        }
                         match(active_token->type);
                     }
                     else // not datatype token
@@ -513,25 +463,28 @@
                         raise_error(E_SYNTAX, "EOL expected at this point.");
 
                     // COMPARE PARAMETER LISTS
-                    if (datatypes_equal && param_list_cmp(function_metadata->parameters,  function_parameters))
+                    if (param_list_cmp(function_metadata->parameters,  function_parameters) == false )
                     {
+                        raise_error(E_SYNTAX, "Function definition parameters do not match with it's declaration.");
+                        definition_error = true;
+                    }
 
+                    if (!definition_error)
+                    {
                         // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
                         //  GENERATE CODE FROM CompoundStmt
                         // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
                         NT_CompoundStmt();
-
                         // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
                         // END OF CODE GENERATING
                         // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
                     }
                     else
                     {
-                        raise_error(E_SYNTAX, "Function definition parameters or return type does not match with it's declaration.");
+                        // without code generating
+                        NT_CompoundStmt();
                     }
-
+                        
                     if (match(token_end) == false)
                         raise_error(E_SYNTAX, "'End' keyword was expected at this point.");
 
@@ -710,7 +663,56 @@
 
     }
 
+/*****************************************************************************/
 
+    void NT_ParamList()
+    {
+        if (active_token->type == token_identifier)
+        {
+            NT_Param();
+
+            if (active_token->type == token_comma)
+                NT_NextParam();
+        }
+        // epsilon rule
+    }
+
+/*****************************************************************************/
+
+    void NT_NextParam()
+    {
+        if (active_token->type == token_comma)
+        {
+            match(token_comma);
+
+            NT_Param();
+            NT_NextParam();
+        }
+        //  epsilon rule
+    }
+
+/*****************************************************************************/
+
+    void NT_Param()
+    {
+        // @TODO >>>>>>>>
+        // generate instruction to push identifier to stack or something..
+        if (match(token_identifier) == false)
+            raise_error(E_SYNTAX, "Identifier expected and not found.");
+
+        if (match(token_as) == false)
+            raise_error(E_SYNTAX, "Keyword 'As' expected and not found.");
+
+        if (is_datatype(active_token->type))
+        {
+            match(active_token->type);
+        }
+        else
+        {
+            raise_error(E_SYNTAX, "Expected datatype after a parameter.");
+            match(token_blank); // just move
+        }
+    }
 
 /*****************************************************************************/
 
@@ -731,7 +733,7 @@
         // assign symtable pointer to this local table, or make a linked list
         // of tables, change the pointer of the first to this local
 
-        //NT_CompoundStmt();
+        NT_CompoundStmt();
 
         // ------------------
         // END OF LOCAL SCOPE

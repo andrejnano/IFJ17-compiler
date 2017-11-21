@@ -64,5 +64,11 @@
         fclose(source_code);
         fclose(output_code);
 
+        // DEBUG
+        #ifdef DEBUG
+            if (compiler_error) printf(" EXIT STATUS : "ANSI_COLOR_RED"ERROR | %d \n\n" ANSI_COLOR_RESET, compiler_error);
+            else                printf(" EXIT STATUS : " ANSI_COLOR_GREEN "SUCCESS | %d\n\n" ANSI_COLOR_RESET, compiler_error);
+        #endif
+
         return (!compiler_error) ? SUCCESS : compiler_error;
     }

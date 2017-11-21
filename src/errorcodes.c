@@ -52,7 +52,7 @@ void raise_error(int error_code, const char *msg, ...)
     va_end(args);
 
     // Append end of line
-    fputs("\n", stderr);
+    fputs("\n\n", stderr);
     
     // if the code is 0 (not changed yet)
     if (!compiler_error)

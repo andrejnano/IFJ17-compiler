@@ -269,11 +269,14 @@ bool match(token_type expected_token_type)
         // not exactly right, @TODO change this
         if (expected_token_type == token_eof)
         {
-            printf(ANSI_COLOR_YELLOW "[DEBUG]" ANSI_COLOR_RESET " match %s\n", debug_token_name(active_token));
+            #ifdef DEBUG
+            printf(ANSI_COLOR_YELLOW "[DEBUG]" ANSI_COLOR_RESET " match %s\n\n\t--- END ---\n\n", debug_token_name(active_token));
+            #endif
+
             return true;
         }
         
-        raise_error(E_SYNTAX, "Unexpected END OF FILE ! ! !");
+        raise_error(E_SYNTAX, "Unexpected EOF.");
         return false;
     }
     else
@@ -288,7 +291,11 @@ bool match(token_type expected_token_type)
 
             // free the memory allocated by token
             //free(active_token);
+
+            #ifdef DEBUG
             printf(ANSI_COLOR_YELLOW "[DEBUG]" ANSI_COLOR_RESET " match %s\n", debug_token_name(active_token));
+            #endif
+
             // if error occurs in scanner,
             if (get_next_token(source_code, active_token) == false || active_token->type == token_eof)
             {
@@ -306,6 +313,10 @@ bool match(token_type expected_token_type)
 
             // free the memory allocated by token
             //free(active_token);
+
+            #ifdef DEBUG
+            printf(ANSI_COLOR_YELLOW "[DEBUG]" ANSI_COLOR_RESET " unexpected %s\n", debug_token_name(active_token));
+            #endif
 
             // if error occurs in scanner,
             if (get_next_token(source_code, active_token) == false || active_token->type == token_eof)
