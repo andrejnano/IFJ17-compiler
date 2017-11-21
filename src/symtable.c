@@ -3,6 +3,12 @@
 #include <stdlib.h>
 #include "symtable.h"
 
+
+/*
+ * @TODO list : pridat limit pre alokaciu Key na max velkost identifikatora
+ *
+ */
+
 #define DEF_NODE_STACK_SIZE 20
 
 /* 
@@ -55,7 +61,7 @@ bool stl_insert_top(SymbolTable_t *tree, char *key, Metadata_t *new_data)
 
         // create new Metadata for the Item
         tree->top->data= (Metadata_t *) malloc(sizeof(Metadata_t));
-        memcpy(tree->top->data, new_data, sizeof(Metadata_t));
+        memcpy(tree->top->metadata, new_data, sizeof(Metadata_t));
 
         return true;
     }
@@ -72,7 +78,7 @@ bool stl_insert_top(SymbolTable_t *tree, char *key, Metadata_t *new_data)
         // update metadata of an already existing item and end
         if (key_difference == 0)
         {
-            memcpy(current_item->data, new_data, sizeof(Metadata_t));
+            memcpy(current_item->metadata, new_data, sizeof(Metadata_t));
             return true; 
         }
 
@@ -109,8 +115,8 @@ bool stl_insert_top(SymbolTable_t *tree, char *key, Metadata_t *new_data)
     strcpy(current_item->key, key);
 
     // create new Metadata for the Item
-    current_item->data = (Metadata_t *) malloc(sizeof(Metadata_t));
-    memcpy(current_item->data, new_data, sizeof(Metadata_t));
+    current_item->metadata = (Metadata_t *) malloc(sizeof(Metadata_t));
+    memcpy(current_item->metadata, new_data, sizeof(Metadata_t));
 
     return true;
 }
@@ -151,55 +157,14 @@ Metadata_t *stl_search(SymbolTable_t *tree, char *key)
     return NULL;
 }
 
-typedef struct
-{
-      node_t **arr;
-      int idx;
-      unsigned len;
-} stack_t;
-
-//TODO node conections print
-void print_tree(node_t *t, int i)
-{
-      if (t->l_ptr)
-      {
-            int j = i;
-            while (j != 0)
-            {
-                  printf("  ");
-                  j--;
-            }
-            print_tree(t->l_ptr, i + 1);
-      }
-      if (t)
-      {
-            int j = i;
-            while (j != 0)
-            {
-                  printf("  ");
-                  j--;
-            }
-            printf("%s\n", t->key);
-      }
-      if (t->r_ptr)
-      {
-            int j = i;
-            while (j != 0)
-            {
-                  printf("  ");
-                  j--;
-            }
-            print_tree(t->r_ptr, i + 1);
-      }
-}
 
 /*
  * \brief Free memory of arglist node by node
  * \param args List of arguments
  */
-void param_list_clear(Parameter_t *parameters)
+void param_list_dispose(Parameter_t *parameter)
 {
-    Parameter_t *tmp
+    Parameter_t *tmp;
     
     while (parameters != NULL)
     {
@@ -211,153 +176,213 @@ void param_list_clear(Parameter_t *parameters)
 }
 
 /*
- * \brief compares two arglists node by node
- * \return 1 if arglists are same 0 otherwise
+ * \brief compares two parameters lists node by node
+ * \return true if they are same false otherwise
  */
-bool param_cmp(Parameter_t *parameters, Parameter_t *parameters)
+bool param_list_cmp(Parameter_t *p1, Parameter_t *p2)
 {
-      while (arg1 && arg2)
-      {
-            if (strcmp(arg1->name, arg2->name) != 0)
-            {
-                  return 0;
-            }
-            if (arg1->type != arg2->type)
-            {
-                  return 0;
-            }
-            arg1 = arg1->next;
-            arg2 = arg2->next;
-      }
-      if (!arg1 && !arg2)
-            return 1;
-      return 0;
+    while (p1 != NULL && p2 != NULL)
+    {
+        if (strcmp(p1->name, p2->name) != 0)
+            return false;
+        
+        if (p1->type != p2->type)
+            return false;
+
+        p1 = p1->next;
+        p2 = p2->next;
+    }
+
+    if (p1 == NULL && p2 == NULL)
+        return true;
+    else
+        return false;
 }
 
 /*
- * \brief Append new node to argument list
- * \param arglist Top of the list
- * \param node node to be inserted
- * \return true at succes, 0 otherwise
+ * \brief Append new node to parameter list
+ * \param parameter_list Top of the list
+ * \param parameter parameter to be inserted
+ * \return true if success, false if failed
  */
-bool param_list_append(tArglist **arglist, tArglist *node)
+bool param_list_append(Parameter_t **parameter_list, Parameter_t *new_parameter)
 {
-      tArglist *prev = NULL;
-      tArglist *tmp = *arglist;
-      if (!tmp)
-      {
-            *arglist = node;
-            return 0;
-      }
-      while (tmp)
-      {
-            if (tmp->name && strcmp(tmp->name, node->name) == 0)
-            {
-                  raise_error(SEM_ERROR, "Same named arguments in function declaration\n");
-                  return 1;
-            }
-            prev = tmp;
-            tmp = tmp->next;
-      }
-      if (prev)
-            prev->next = node;
-      return 0;
+    Parameter_t *prev_parameter = NULL;
+    Parameter_t *current_parameter = (*parameter_list);
+
+    if (current_parameter == NULL)
+    {
+        (*parameter_list) = new_parameter;
+        return true;
+    }
+
+    while (current_parameter != NULL)
+    {
+
+        // if there are 2 same parameters
+        if ( strcmp(current_parameter->name, new_parameter->name) == 0 )
+        {
+            raise_error(SEM_ERROR, "Same named parameters in function declaration\n");
+            return false;
+        }
+
+        prev_parameter = current_parameter;
+        current_parameter = current_parameter->next;
+    }
+    
+    prev_parameter->next = new_parameter;
+
+    return 0;
 }
 
 /*
- * \brief Generates symboltable from arguments of function
+ * \brief Generates symbol table from parameters of function
  * \param funcName Name of the functio
  * \param functions Table of functions
  * \return Symboltable containing arguments of function
  */
-SymbolTable_t *params_to_symtable(char *func_name, SymbolTable_t *functions)
+SymbolTable_t *param_to_symtable(char *func_name, SymbolTable_t *functions)
 {
     SymbolTable_t *local_vars;
-    stl_init(&local_vars);
+    stl_init(&local_vars); // @TODO Kde sa toto cisti ??? 
 
-
+    // find the function in symtable
     Metadata_t *metadata_query = STL_search(functions, func_name);
+    
     if (metadata_query == NULL)
         return NULL;
 
-    Parameter_t *parameters;
 
-    parameters = ->args;
+    // find function's parameters
+    Parameter_t *parameters = metadata_query->parameters;
 
-    while (argList)
+    // for each parameter create new Item in symtable
+    while (parameters != NULL)
     {
-        node_val_t val;
-        val.args = NULL;
-        val.dec = false;
-        val.type = argList->type;
-        STL_insert_top(localVars, argList->name, &val);
-        argList = argList->next;
+        // create Metadata for each item
+        Metadata_t metadata;
+        metadata.parameters = NULL;
+        metadata.is_declared = true; // probably?
+        metadata.is_defined = false;
+        metadata.type = parameters->type;
+        
+        stl_insert_top(local_vars, parameters->name, &metadata);
+        parameters = parameters->next;
     }
-    return localVars;
+
+    return local_vars;
 }
 
 /*
  * \brief Recursive function for cleaning up tree
  * \param top Top of the tree to be cleaned
  */
-void DisposeTree(node_t **top)
+void tree_dispose(SymbolTable_t *st)
 {
-      if (!(*top))
-      {
-            return;
-      }
-      if (!(*top)->l_ptr && !(*top)->r_ptr)
-      {
-            free((*top)->key);
-            tArglist *args = (*top)->val->args;
-            DisposeArgList(args);
-            free((*top)->val);
-            free((*top));
-            (*top) = NULL;
-      }
-      else
-      {
-            if ((*top)->l_ptr)
-                  DisposeTree(&((*top)->l_ptr));
-            if ((*top)->r_ptr)
-                  DisposeTree(&(((*top))->r_ptr));
-            free((*top)->key);
-            tArglist *args = (*top)->val->args;
-            DisposeArgList(args);
-            free((*top)->val);
-            free((*top));
-      }
+    Item_t current_item = st->top;
+
+    if ( st->top == NULL )
+    {
+        return;
+    }
+
+    if (current_item->left_ptr == NULL && current_item->right_ptr == NULL)
+    {
+        free(current_item->key);
+        param_list_dispose(current_item->metadata->parameters);
+        free(current_item->metadata);
+        free(current_item);
+        current_item = NULL;
+    }
+    else
+    {
+        if (current_item->left_ptr)
+            tree_dispose(current_item->left_ptr);
+        if (current_item->right_ptr)
+            tree_dispose(current_item->right_ptr);
+        
+        free(current_item->key);
+        param_list_dispose(current_item->metadata->parameters);
+        free(current_item->metadata);
+        free(current_item);
+    }
 }
 
 /*
  * \brief Disposes symboltable from the top of symtable list
  * and pops the list
- * \param tree First simboltable in the list pointer
- * \return 0 on success 1 otherwise
+ * \param tree First symboltable in the list pointer
+ * \return true on success false on fail
  */
-int STL_pop(tSymbolTable **tree)
+bool stl_pop(SymbolTable_t **tree)
 {
-      if (!tree || !*tree)
-      {
-            return 1;
-      }
-      DisposeTree(&((*tree)->top));
-      tSymbolTable *tmp;
-      tmp = (*tree)->next;
-      free(*tree);
-      *tree = tmp;
-      return 0;
+    if (tree == NULL || (*tree) == NULL)
+    {
+        return false;
+    }
+
+    tree_dispose((*tree));
+    SymbolTable_t *tmp = (*tree)->next;
+    free(*tree);
+    *tree = tmp;
+
+    return true;
 }
 
 /*
  * \brief Disposes whole list of symboltables
  * \param tree First simboltable in the list pointer
  */
-void STL_clean_up(tSymbolTable **tree)
+void stl_clean_all(SymbolTable_t **tree)
 {
       int out;
       while (out != 1)
       {
-            out = STL_pop(tree);
+          out = STL_pop(tree);
       }
+}
+
+/**************************************************/
+/**************************************************/
+
+typedef struct
+{
+    node_t **arr;
+    int idx;
+    unsigned len;
+} stack_t;
+
+//TODO node conections print
+void print_tree(node_t *t, int i)
+{
+    if (t->l_ptr)
+    {
+        int j = i;
+        while (j != 0)
+        {
+            printf("  ");
+            j--;
+        }
+        print_tree(t->l_ptr, i + 1);
+    }
+    if (t)
+    {
+        int j = i;
+        while (j != 0)
+        {
+            printf("  ");
+            j--;
+        }
+        printf("%s\n", t->key);
+    }
+    if (t->r_ptr)
+    {
+        int j = i;
+        while (j != 0)
+        {
+            printf("  ");
+            j--;
+        }
+        print_tree(t->r_ptr, i + 1);
+    }
 }
