@@ -24,6 +24,7 @@
 
     Token_t* active_token = NULL;
     SymbolTable_t *functions;
+    SymbolTable_t *variables;
     extern int compiler_error;
 
     extern FILE* source_code;
@@ -53,6 +54,9 @@
         stl_init(&functions);
         stl_push(&functions);
 
+        stl_init(&variables);
+        stl_push(&variables);
+
         // first token reading
         if (get_next_token(source_code, active_token) == false)
         {
@@ -71,6 +75,7 @@
         free(active_token);
         scanner_free();
         stl_clean_all(&functions);
+        stl_clean_all(&variables);
     }
 
 
@@ -169,12 +174,12 @@
             {
                 if (function_metadata->is_defined)
                 {
-                    raise_error(E_SYNTAX, "Function with this name is already defined.");
+                    raise_error(E_SEM_DEF, "Function with this name is already defined.");
                     declaration_error = true;
                 }
                 else if (function_metadata->is_declared)
                 {
-                    raise_error(E_SYNTAX, "Function with this name is already declared.");
+                    raise_error(E_SEM_DEF, "Function with this name is already declared.");
                     declaration_error = true;
                 }
             }
@@ -355,7 +360,7 @@
 
                 if (function_metadata->is_defined)
                 {
-                    raise_error(E_SYNTAX, "Function with this name is already defined.");
+                    raise_error(E_SEM_DEF, "Function with this name is already defined.");
                     definition_error = true;
                 }
                 else if (function_metadata->is_declared)
@@ -448,7 +453,7 @@
                         }
                         else
                         {
-                            raise_error(E_SYNTAX, "Function Datatype doesn't match with it's declaration.");
+                            raise_error(E_SEM_DEF, "Function Datatype doesn't match with it's declaration.");
                         }
                         match(active_token->type);
                     }
@@ -465,7 +470,7 @@
                     // COMPARE PARAMETER LISTS
                     if (param_list_cmp(function_metadata->parameters,  function_parameters) == false )
                     {
-                        raise_error(E_SYNTAX, "Function definition parameters do not match with it's declaration.");
+                        raise_error(E_SEM_DEF, "Function definition parameters do not match with it's declaration.");
                         definition_error = true;
                     }
 
@@ -752,16 +757,16 @@
 
     void NT_CompoundStmt()
     {   
-        printf("--inside CompoundStmt --\n");
+        printf("\n--inside CompoundStmt --\n\n");
 
-        // switch (active_token->type)
-        // {
-        // case token_dim:
-        //     NT_VarDef();
-        //     break; // keyword 'Dim'
-        // case token_identifier:
-        //     NT_AssignStmt();
-        //     break; // identifier
+        switch (active_token->type)
+        {
+        case token_dim:
+            NT_VarDef();
+            break; // keyword 'Dim'
+        case token_identifier:
+            NT_AssignStmt();
+            break; // identifier
         // case token_return:
         //     NT_ReturnStmt();
         //     break; // keyword 'Return'
@@ -777,126 +782,229 @@
         // case token_do:
         //     NT_WhileStmt();
         //     break; // keyword 'Do'
-        // default:
-        //     return; // epsilon rule
-        // }
+        default:
+            return; // epsilon rule
+        }
 
-        // if (match(token_eol) == false) // end of line
-        //     raise_error(E_SYNTAX, "EOL expected at this point.");
+        if (match(token_eol) == false) // end of line
+            raise_error(E_SYNTAX, "EOL expected at this point.");
 
-        // NT_CompoundStmt();
+        NT_CompoundStmt();
     }
 
 
 
 
 
-// /*****************************************************************************/
+/*****************************************************************************/
+    
+    // RETURNS the name of the function being declared/defined
 
-//     void NT_VarDec()
-//     {
-//         if (match(token_dim) == false)
-//             raise_error(E_SYNTAX, "Keyword 'Dim' was expected.");
+    char * NT_VarDec()
+    {
+        if (match(token_dim) == false)
+            raise_error(E_SYNTAX, "Keyword 'Dim' was expected.");
 
-//         // @TODO >>>>>>>>
-//         // Generate instruction, declare inside symtable.. etc. 
-//         if (match(token_identifier) == false)
-//             raise_error(E_SYNTAX, "Identifier expected and not found.");
-
-//         if (match(token_as) == false)
-//             raise_error(E_SYNTAX, "Keyword 'As' expected and not found.");
-
-//         // @TODO >>>>>>>>
-//         // Update inside symtable ? & generate instruction probz.
-//         // if (match(token_datatype) == false)
-//         //     raise_error(E_SYNTAX, "Data type missing in the parameter.");
-//     }
-
-
-// /*****************************************************************************/
-
-//     void NT_VarDef()
-//     {
-//         // NT_VarDec();
-
-//         // if (active_token->type == token_equal)
-//         // {
-//         //     if (match(token_equals) == false)
-//         //         raise_error(E_SYNTAX, "Assignment operator '=' expected.");
-            
-//         //     NT_Expr();
-
-//         //     // generate instruction for definition
-//         //     return;
-//         // }
-//         // if no equals, just declare.. 
-//         // finish generating instructions just for declaration
-//     }
-
-// /*****************************************************************************/
-
-//     void NT_AssignStmt()
-//     {
-//         // @TODO >>>>>>>>
-//         // Generate instruction, declare inside symtable.. etc.
-
-//         if (match(token_identifier) == false)
-//             raise_error(E_SYNTAX, "Identifier expected and not found.");
-
-//         // if (match(token_equals) == false)
-//         //     raise_error(E_SYNTAX, "Assignment operator '=' expected.");
-
-//         NT_Expr();
-//     }
-
-// /*****************************************************************************/
-
-//     void NT_IfStmt()
-//     {
-
-//         if (match(token_if) == false)
-//             raise_error(E_SYNTAX, "Keyword 'If' expected.");
-
-//         NT_Expr();
-
-//         if (match(token_then) == false)
-//             raise_error(E_SYNTAX, "Keyword 'Then' expected.");
-
-//         if (match(token_eol) == false)
-//             raise_error(E_SYNTAX, "EOL expected at this point.");
-
-//         // -----------------
-//         // NEW LOCAL SCOPE
-//         // -----------------
-
-//         NT_CompoundStmt();
-
-//         // ------------------
-//         // END OF LOCAL SCOPE
-//         // ------------------
-
-//         if (match(token_else) == false)
-//             raise_error(E_SYNTAX, "Keyword 'Else' expected.");
-
-//         if (match(token_eol) == false)
-//             raise_error(E_SYNTAX, "EOL expected at this point.");
-
-//         // -----------------
-//         // NEW LOCAL SCOPE
-//         // -----------------
-
-//         NT_CompoundStmt();
-
-//         // ------------------
-//         // END OF LOCAL SCOPE
-//         // ------------------
-
-//         if (match(token_end) == false)
-//             raise_error(E_SYNTAX, "Keyword 'End' expected.");
         
-//         if (match(token_if) == false)
-//             raise_error(E_SYNTAX, "Keyword 'If' expected.");
-//     }
+        char *new_variable_name = NULL;
+
+        if (active_token->type == token_identifier)
+        {
+            Metadata_t *variable_metadata = stl_search(variables, active_token->value.c);
+
+            // if variable already exists
+            if (variable_metadata)
+            {
+                raise_error(E_SEM_DEF, "This variable is already declared.");
+            }
+            else
+            {
+                // +++++++++++++++++++++
+                //  create new instance
+                // ++++++++++++++++++++
+
+                // save the name
+                new_variable_name = (char *)malloc(sizeof(char) * strlen(active_token->value.c) + 1);
+                strcpy(new_variable_name, active_token->value.c);
+
+
+                match(token_identifier);
+
+                if (match(token_as) == false)
+                    raise_error(E_SYNTAX, "Keyword 'As' expected and not found.");
+
+
+                // check if the token is one of the datatypes
+                if (is_datatype(active_token->type))
+                {
+                    // Create metadata for the new Variable
+                    Metadata_t new_variable_metadata;
+
+                    new_variable_metadata.parameters = NULL;
+                    new_variable_metadata.type = active_token->type;
+                    new_variable_metadata.is_defined = 0;
+                    new_variable_metadata.is_declared = 1;
+
+                    match(active_token->type);
+
+                    if (stl_insert_top(variables, new_variable_name, &new_variable_metadata))
+                    {
+                        return new_variable_name;
+                    }
+
+                    return NULL;
+                }
+                else // not datatype token
+                {
+                    raise_error(E_SYNTAX, "Expected datatype at this point.");
+                    match(token_blank); // @TODO len sa posunut, zaruceny fail sice,..
+                    return NULL;
+                }
+            }
+        }
+        
+        if (match(token_identifier) == false)
+            raise_error(E_SYNTAX, "Identifier expected and not found.");
+
+        if (match(token_as) == false)
+            raise_error(E_SYNTAX, "Keyword 'As' expected and not found.");
+
+        // check if the token is one of the datatypes
+        if (is_datatype(active_token->type))
+        {
+            match(active_token->type);
+        }
+        else
+        {
+            raise_error(E_SYNTAX, "Expected datatype at this point.");
+            match(token_blank); // @TODO len sa posunut, zaruceny fail sice,..
+        }
+
+        return NULL;
+    }
+
+
+/*****************************************************************************/
+
+    void NT_VarDef()
+    {
+        // gets the name of declared variable if everything is OK
+        char* variable_name = NT_VarDec();
+
+        if (active_token->type == token_op_eq)
+        {
+            match(token_op_eq);
+            
+            if (variable_name)
+            {
+
+                printf("\nGENERATE CODE & ASSIGN VALUE to variable %s", variable_name);
+                //NT_Expr();
+
+
+                free(variable_name);
+                return;
+            }
+            else 
+            {
+                // if there was error declaring the variable or 
+                // the variable was already declared
+                raise_error(E_SEM_DEF, "Cannot define a variable.");
+
+                    //NT_Expr();
+            }
+        }
+
+        free(variable_name);
+        // if no equals, just declare.. 
+        // finish generating instructions just for declaration
+    }
+
+// /*****************************************************************************/
+
+    void NT_AssignStmt()
+    {
+        // @TODO >>>>>>>>
+        // Generate instruction, declare inside symtable.. etc.
+
+        Metadata_t *variable = NULL;
+
+        if (active_token->type == token_identifier)
+        {
+
+            variable = stl_search(variables, active_token->value.c);
+
+            if (variable)
+            {
+                // -------
+                // somehow assign value to this variable
+                // & generate code
+                // -------
+            }
+            else
+            {
+                raise_error(E_SEM_OTHER, "This variable doesn't exist.");
+            }
+        }
+
+        if (match(token_identifier) == false)
+            raise_error(E_SYNTAX, "Identifier expected and not found.");
+
+
+        if (match(token_op_eq) == false)
+            raise_error(E_SYNTAX, "Assignment operator '=' expected.");
+
+        //NT_Expr();
+    }
+
+// /*****************************************************************************/
+
+    // void NT_IfStmt()
+    // {
+
+    //     if (match(token_if) == false)
+    //         raise_error(E_SYNTAX, "Keyword 'If' expected.");
+
+    //     NT_Expr();
+
+    //     if (match(token_then) == false)
+    //         raise_error(E_SYNTAX, "Keyword 'Then' expected.");
+
+    //     if (match(token_eol) == false)
+    //         raise_error(E_SYNTAX, "EOL expected at this point.");
+
+    //     // -----------------
+    //     // NEW LOCAL SCOPE
+    //     // -----------------
+
+    //     NT_CompoundStmt();
+
+    //     // ------------------
+    //     // END OF LOCAL SCOPE
+    //     // ------------------
+
+    //     if (match(token_else) == false)
+    //         raise_error(E_SYNTAX, "Keyword 'Else' expected.");
+
+    //     if (match(token_eol) == false)
+    //         raise_error(E_SYNTAX, "EOL expected at this point.");
+
+    //     // -----------------
+    //     // NEW LOCAL SCOPE
+    //     // -----------------
+
+    //     NT_CompoundStmt();
+
+    //     // ------------------
+    //     // END OF LOCAL SCOPE
+    //     // ------------------
+
+    //     if (match(token_end) == false)
+    //         raise_error(E_SYNTAX, "Keyword 'End' expected.");
+    
+    //     if (match(token_if) == false)
+    //         raise_error(E_SYNTAX, "Keyword 'If' expected.");
+    // }
 
 
 // /*****************************************************************************/

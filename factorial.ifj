@@ -2,4 +2,7 @@
 Declare Function factorial(n As Integer) As Integer
 
 Scope
+Dim test As Integer
+
+
 End Scope

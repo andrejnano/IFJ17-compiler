@@ -59,7 +59,7 @@
     void NT_ParamList();
     void NT_Param();
     void NT_NextParam();
-    void NT_VarDec();
+    char *NT_VarDec();
     void NT_VarDef();
     void NT_AssignStmt();
     void NT_IfStmt();
