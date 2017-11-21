@@ -16,6 +16,15 @@
 #ifndef ERRORCODES_H
 #define ERRORCODES_H
 
+    #define ANSI_COLOR_RED     "\x1b[31m"
+    #define ANSI_COLOR_GREEN   "\x1b[32m"
+    #define ANSI_COLOR_YELLOW  "\x1b[33m"
+    #define ANSI_COLOR_BLUE    "\x1b[34m"
+    #define ANSI_COLOR_MAGENTA "\x1b[35m"
+    #define ANSI_COLOR_CYAN    "\x1b[36m"
+    #define ANSI_COLOR_RESET   "\x1b[0m"
+
+
     // everything OK
     #define SUCCESS         0
 
@@ -38,23 +47,41 @@
     #define E_INTERNAL      99
 
     // global error flag - if error occurs,
-    extern int compiler_error = 0;
+    int compiler_error = 0;
 
+
+    extern char *source_file_name;
+    
     /**
      *  Error printout to stderr with details.
      */
     void raise_error(int error_code, const char *error_message)
     {
+        int line = 2;
 
         switch (error_code)
         {
-            case E_LEX:         fprintf(stderr, "ERROR[%d][Lexical error] : %s\n", E_LEX, error_message); break;
-            case E_SYNTAX:      fprintf(stderr, "ERROR[%d][Syntax error] : %s\n", E_SYNTAX, error_message); break;
-            case E_SEM_DEF:     fprintf(stderr, "ERROR[%d][Definiton error] : %s\n", E_SEM_DEF, error_message); break;
-            case E_SEM_TYPE:    fprintf(stderr, "ERROR[%d][Type error] : %s\n", E_SEM_TYPE, error_message); break;
-            case E_SEM_OTHER:   fprintf(stderr, "ERROR[%d][Semantic error] : %s\n", E_SEM_OTHER, error_message); break;
-            case E_INTERNAL:    fprintf(stderr, "ERROR[%d][Internal error] : %s\n", E_INTERNAL, error_message); break;
-            default: fprintf(stderr, "This error code --> ERROR[%d] is not defined by this program. \n It's message is : %s\n", error_code, error_message); break;
+            case E_LEX:
+                fprintf(stderr, "%s:%d:" ANSI_COLOR_RED "ERROR" ANSI_COLOR_RESET "[%d][Lexical error] : %s\n",source_file_name, line, E_LEX, error_message); 
+                break;
+            case E_SYNTAX:
+                fprintf(stderr, "%s:%d:" ANSI_COLOR_RED "ERROR" ANSI_COLOR_RESET "[%d][Syntax error] : %s\n", source_file_name, line, E_SYNTAX, error_message);
+                break;
+            case E_SEM_DEF:
+                fprintf(stderr, "%s:%d:" ANSI_COLOR_RED "ERROR" ANSI_COLOR_RESET "[%d][Definiton error] : %s\n", source_file_name, line, E_SEM_DEF, error_message);
+                break;
+            case E_SEM_TYPE:
+                fprintf(stderr, "%s:%d:" ANSI_COLOR_RED "ERROR" ANSI_COLOR_RESET "[%d][Type error] : %s\n", source_file_name, line, E_SEM_TYPE, error_message);
+                break;
+            case E_SEM_OTHER:
+                fprintf(stderr, "%s:%d:" ANSI_COLOR_RED "ERROR" ANSI_COLOR_RESET "[%d][Semantic error] : %s\n", source_file_name, line, E_SEM_OTHER, error_message);
+                break;
+            case E_INTERNAL:
+                fprintf(stderr, "%s:%d:" ANSI_COLOR_RED "ERROR" ANSI_COLOR_RESET "[%d][Internal error] : %s\n", source_file_name, line, E_INTERNAL, error_message);
+                break;
+            default: 
+                fprintf(stderr, "This error code --> ERROR[%d] is not defined by this program. \n It's message is : %s\n", error_code, error_message); 
+                break;
         }
 
         // if the code is 0 (not changed yet)

@@ -23,10 +23,11 @@
     #include "symtable.h"
     #include "parser.h"
 
-    extern FILE* source_code;
-    extern FILE* output_code;
+    FILE* source_code;
+    FILE* output_code;
+    char* source_file_name;
 
-
+    extern int compiler_error;
 
 /******************************************************************************
     MAIN FUNCTION of the IFJ17 COMPILER
@@ -41,9 +42,9 @@
 
     int main(int argc, char* argv[])
     {
-
+        
         // check arguments, input file @TODO make sepparate function for argument parsing
-        if (argc != 2)
+        if (argc != 3)
             return E_INTERNAL;
 
         if (! (source_code = fopen(argv[1], "r")))
@@ -52,8 +53,17 @@
         if (!(output_code = fopen(argv[2], "r")))
             return E_INTERNAL;
 
-        parse(); // uses globals source_code & output_code
+        // save the source name
+        source_file_name = argv[1];
 
+        printf("\n");
+        printf("\n");
+        raise_error(E_SYNTAX, "test sprava");
+        printf("\n");
+        raise_error(E_SEM_DEF, "...");
+        printf("\n");
+        //scanner_init();
+        //parse(); // uses globals source_code & output_code
 
         //cleanup();
         fclose(source_code);

@@ -2,42 +2,62 @@
 #define SYM_TABLE
 
 #include <stdio.h>
+#include <stdbool.h>
+#include "token.h"
+#include "errors.h"
 
-enum val_type {
-   TYPE_INT,
-   TYPE_CHAR,
-   TYPE_DOUBLE,
+enum val_type
+{
+    TYPE_INT = token_integer,
+    TYPE_STRING = token_string,
+    TYPE_BOOLEAN = token_boolean,
+    TYPE_DOUBLE = token_double,
 };
 
-typedef union
+typedef struct Parameter
 {
-   char c;
-   double d;
-   int i;
-} val_union;
+    int type;
+    char *name;
+    Parameter_t *next;
+} Parameter_t;
 
-typedef struct
+typedef struct Metadata
 {
-   int type;  // type of value in union
-   val_union value;
-} node_val_t;
-  
-typedef struct node_s
-{
-   char *key;
-   node_val_t val;
-   struct node_s *l_ptr;
-   struct node_s *r_ptr;
-} node_t;
+    int type;
+    Parameter_t *parameters;
+    bool is_defined;
+    bool is_declared;
+} Metadata_t;
 
-typedef struct
+typedef struct Item 
 {
-   struct node_s *top;
-} b_tree;
+    char *key;
+    Metadata_t *data;
+    Item_t *left_ptr;
+    Item_t *right_ptr;
+} Item_t;
 
-void b_tree_init(b_tree *tree);
-int b_tree_insert(b_tree *tree, char *key, int varType, val_union val);
-node_val_t *b_tree_search(b_tree *tree, char *key);
-void b_tree_free(node_t *tree);
+typedef struct SymbolTable
+{
+    Item_t *top;
+    SymbolTable_t *next;
+} SymbolTable_t;
+
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include "symtable.h"
+
+#define DEF_NODE_STACK_SIZE 20
+void STL_init(tSymbolTable **tree);
+void STL_push(tSymbolTable **tree);
+int STL_insert_top(tSymbolTable *tree, char *key, node_val_t *value);
+node_val_t *STL_search(tSymbolTable *tree, char *key);
+int STL_pop(tSymbolTable **tree);
+void STL_clean_up(tSymbolTable **tree);
+void DisposeArgList(tArglist *args);
+int argListAppend(tArglist **arglist, tArglist *node);
+bool isSameArglists(tArglist *arg1, tArglist *arg2);
+tSymbolTable *argsToSymtable(char *funcName, tSymbolTable *functions);
 
 #endif

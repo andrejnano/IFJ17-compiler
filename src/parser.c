@@ -26,87 +26,6 @@
     Token_t* active_token;
 
 
-/******************************************************************************
-    TOKEN MATCH 
- *****************************************************************************/
-
-
-	/*
-	 * \brief	Checks if the current token is the expected one.
-	 * 			If it is. It either frees the token and its memory
-	 * 			or just moves on. In case of EOF, the function gets
-	 * 			blocked for futher token getting. Just prints the error message.
-	 * \param	expected_token_type The expected token by syntax
-	 * \return	bool value, wether the token was found or not
-	 * 			
-	 * 			@TODO refactor a bit
-	 */
-
-    bool match(token_type expected_token_type)
-    {
-
-        // guard flag that, if switched on, forbids further reading from scanner
-		// and therefore prevents wrong memory access.
-		// switches on when at least one of these events happen:
-		//	1) the scanner returns false, signaling erro
-		//  2) the token is EOF, which is unexpected until the end of program
-		// --------------------------------------------------------------------
-        static bool block_scanner = false;
-
-
-		if (block_scanner)
-		{
-            raise_error(E_SYNTAX, "Unexpected END OF FILE ! ! !");
-            return false;
-
-			// not exactly right, @TODO change this
-			if (expected_token_type == token_eof)
-			{
-				return true;
-			}
-		}
-		else
-		{
-			// if the token exists and its type is the expected type
-			if (active_token && active_token->type == expected_token_type)
-			{
-				// if the token is string, free the char array
-				if (active_token->type == token_val_string)
-					free(active_token->value.c);
-
-				// free the memory allocated by token
-                free(active_token);
-
-				// if error occurs in scanner,
-				if (get_next_token(active_token) == false || active_token->type == token_eof)
-				{
-					block_scanner = true;
-					printf("\n[DEBUG]: from match() > error in scanner or EOF token.\n"); // remove later
-				}
-
-				return true;
-			}
-            else
-            {
-				// if the token is string, free the char array
-				if (active_token->type == token_val_string)
-					free(active_token->value.c);
-
-				// free the memory allocated by token
-				free(active_token);
-
-				// if error occurs in scanner,
-				if (get_next_token(active_token) == false || active_token->type == token_eof)
-				{
-					block_scanner = true;
-					printf("\n[DEBUG]: from match() > error in scanner or EOF token.\n"); // remove later
-				}
-
-				return false;
-            }
-        }
-    }
-
 
 
 /******************************************************************************
@@ -120,7 +39,7 @@
 
 		tSymbolTable *GST;
 
-		int parse(FILE * source_code, FILE * output_code)
+		void parse()
 		{
 
 			//@TODO Instruction List init
@@ -147,7 +66,6 @@
 
 			scanner_free();
 			STL_clean_up(&GST);
-			return SUCCESS;
     }
 
 
@@ -177,6 +95,7 @@
 
     void NT_Head()
     {
+
         if (active_token->type == token_declare)
         {
 			NT_FunctionDec();
@@ -193,104 +112,107 @@
 
 
 /*****************************************************************************/
-
-    void NT_Scope()
-    {
-
-        if (match(token_scope) == false) // keyword 'Scope'
-            raise_error(E_SYNTAX, "Expected 'Scope' keyword not found.");
-
-        // -----------------
-        // NEW LOCAL SCOPE
-        // -----------------
-        
-            // create new symtable
-            // assign symtable pointer to this local table, or make a linked list
-            // of tables, change the pointer of the first to this local
-
-            NT_CompoundStmt();
-
-
-        // ------------------
-        // END OF LOCAL SCOPE
-        // ------------------
-
-        if (match(token_end) == false) // keyword 'End'
-            raise_error(E_SYNTAX, "Expected 'End' keyword not found.");
-
-        if (match(token_scope) == false) // keyword 'Scope'
-            rraise_error(E_SYNTAX, "Expected 'Scope' keyword not found.");
-    }
-
-
-/*****************************************************************************/
-
-    void NT_CompoundStmt()
-    {
-
-        switch(active_token->type)
-        {
-            case token_dim:         NT_VarDef(); break;     // keyword 'Dim'
-            case token_identifier:  NT_AssignStmt(); break; // identifier
-            case token_return:      NT_ReturnStmt(); break; // keyword 'Return'
-            case token_input:       NT_InputStmt();  break; // keyword 'Input'
-            case token_print:       NT_PrintStmt(); break;  // keyword 'Print'
-            case token_if:          NT_IfStmt(); break;     // keyword 'If'
-            case token_do:          NT_WhileStmt(); break;  // keyword 'Do'
-            default: return;        // epsilon rule 
-        }
-
-        if (match(token_eol) == false) // end of line
-            raise_error(E_SYNTAX, "EOL expected at this point.");
-
-        NT_CompoundStmt();
-    }
-
-
-/*****************************************************************************/
     // @TODO skombinovat s tym co robil Peto
 
     void NT_FunctionDec()
     {
-
-		node_val_t *val;
 
 		match(token_declare);
 
 		if (match(token_function) == false)
             raise_error(E_SYNTAX, "'Function' keyword expected at this point.");
 
-		// only process the token if it is an identifier
+        /*
+            Function Declaration
+            3 scenarios can occur
+
+            1) Function was already declared
+            2) Function was already defined
+            3) Function was neither defined nor declared
+
+            in case 1) raise ERROR & quit
+                        if ( is_declared == TRUE ) 
+    
+            in case 2) raise ERROR & quit
+                        if ( is_defined == TRUE )
+
+            in case 3) create new symtable item and declare
+                        if ( no item exists ) ...  is_declared = TRUE;
+
+        */
+
+        // declare a new symtable item.
+        node_val_t  new_function_metadata;
+        char*       new_function_name;
+        
+        bool declaration_error = false;
+
         if (active_token->type == token_identifier)
         {
+            // lookup the identifier in symtable...
+            node_val_t *function_metadata = STL_Search(functions, active_token->value.c);
 
-			//  
-			val = STL_Search(functions, active_token->value.c);
+            // if the identifier is in symtable
+            if (function_metadata)
+            {
+                if (function_metadata->is_defined)
+                {
+                    raise_error(E_SYNTAX, "Function with this name is already defined.");
+                    declaration_error = true;
+                    break;
+                }
+                else if (function_metadata->is_declared)
+                {
+                    raise_error(E_SYNTAX, "Function with this name is already declared.");
+                    declaration_error = true;
+                    break;
+                }
+            }
+            else   // if the identifier in NOT in symtable
+            {
+                // create a new symtable item locally.
+                new_function_metadata.is_declared = true;
+                new_function_metadata.is_defined = false;
+                new_function_metadata.args = NULL;
 
-			// ak nieje v tabulke symbolov
-			if (val == NULL)
-			{
-				char * new_function_name;
+                // create copy of the string
+                new_function_name = (char *) malloc( sizeof( (char) * strlen(active_token->value.c) + 1) );
+                strcpy(active_token->value.c, new_function_name);
 
-				// skopirovat string hodnotu tokenu
-				active_token->value.c
+                match(token_identifier);
 
-				// vytvorit novu deklaraciu
-				node_val_t new_declaration;
+                if (match(token_lbrace) == false)
+                    raise_error(E_SYNTAX, "'(' was expected.");
 
-				// set new val
-				val = STL_Insert();
-			}
-		}
+                // >>>>>>>>>>>>
+                //  PARAMETERS 
+                // >>>>>>>>>>>>
+
+                if (active_token->type = token_identifier)
+                {
+
+                }
+
+                    while (active_token->type = token_identifier)
+
+                        tArglist *arg_list = (tArgList *)malloc(sizeof(tArglist));
+
+
+
+
+
+                // <<<<<<<<<<<<
+                // <<<<<<<<<<<<
+
+            }
+        }
+
+
+
+
         
-        if (match(token_identifier) == false)
-            raise_error(E_SYNTAX, "Identifier expected.");
 
-
-        if (match(token_lbrace) == false)
-            raise_error(E_SYNTAX, "'(' was expected.");
-
-        NT_ParamList();
+        NT_ParamList(); // for 
 
         if (match(token_rbrace) == false)
             raise_error(E_SYNTAX, "')' was expected.");
@@ -298,14 +220,34 @@
         if (match(token_as) == false)
             raise_error(E_SYNTAX, "'As' keyword was expected.");
 
-
-        if (active_token->type == token_datatype)
+        // if it is a datatype
+        if (active_token->type == token_val_integer || 
+            active_token->type == token_val_double  || 
+            active_token->type == token_val_string )
         {
-            // something with symtable probably.. 
+            // if no declaration error occured, set new data type for this function and finally add it to symtable
+            if (!declaration_error)
+            {
+
+            new_function_metadata.type = active_token->
+
+            }
         }
 
-        if (match(token_datatype) == false)
-            raise_error(E_SYNTAX, "Data type expected at this point.");
+        // should be match(token_datatype) but every datatype has unique token type
+        // try every datatype, if no found, raise error on the last possible one.. 
+        if ( active_token->type == token_val_integer)
+            match(token_val_integer);
+        else if ( active_token->type == token_val_double)
+            match(token_val_double);
+        else
+        {
+            if (match(token_val_string) == false)
+                raise_error(E_SYNTAX, "Datatype was expected at the end of declaration.");
+        }
+
+        free(new_function_name);
+
     }
 
 
@@ -315,15 +257,63 @@
     void NT_FunctionDef()
     {
 
-       match(token_function);
+        // token_function token_identifier token_lbrace <ParameterList> token_rbrace token_as token_datatype
+        // token_eol <CompoundStmt> token_end token_function
+
+        /*
+            3 scenarios can occur
+
+            1) Function was already defined
+            2) Function was already declared
+            3) Function was neither defined nor declared
+
+            in case 1) raise ERROR & quit
+                        if ( is_defined == TRUE ) ... 
+    
+            in case 2) check if the parameters match the declaration, then push the body
+                        if ( is_declared == TRUE ) ...  is_defined = TRUE;
+
+            in case 3) declare and define a new symtable item.
+                        if ( no item exists ) ...  is_declared = TRUE ; is_defined = TRUE;
+
+        */
+
+        match(token_function);
        
 
         if (active_token->type == token_identifier)
         {
             // lookup the identifier in symtable...
+			node_val_t *function_metadata = STL_Search(functions, active_token->value.c);
 
-			node_val_t declaration_check = STL_Search(functions, active_token->value.c);
-		}
+            // if the identifier is in symtable
+            if ( function_metadata )
+            {
+
+                // if the function is already defined
+                if (function_metadata->is_defined)
+                {
+                    raise_error(E_SYNTAX, "Function is already defined.");
+                    return; // or better just break off this scope  
+                }
+                else 
+                if (function_metadata->is_declared)
+                {
+                    // check the parameters if they are consistent
+
+                    node_val_t new_function_metadata;
+                    tArglist *param_list = NULL;
+                    // ...
+
+                }
+            }
+            else
+            {
+                // declare and define a new symtable item.
+                node_val_t new_function_metadata;
+                // ...
+            }
+        }
 
         if (match(token_identifier) == false)
             raise_error(E_SYNTAX, "Identifier expected.");
@@ -395,6 +385,7 @@
         //  epsilon rule
     }
 
+
 /*****************************************************************************/
 
     void NT_Param()
@@ -413,6 +404,82 @@
             raise_error(E_SYNTAX, "Data type missing in the parameter.");
 
     }
+
+
+
+/*****************************************************************************/
+
+    void NT_Scope()
+    {
+
+        if (match(token_scope) == false) // keyword 'Scope'
+            raise_error(E_SYNTAX, "Expected 'Scope' keyword not found.");
+
+        // -----------------
+        // NEW LOCAL SCOPE
+        // -----------------
+
+        // create new symtable
+        // assign symtable pointer to this local table, or make a linked list
+        // of tables, change the pointer of the first to this local
+
+        NT_CompoundStmt();
+
+        // ------------------
+        // END OF LOCAL SCOPE
+        // ------------------
+
+        if (match(token_end) == false) // keyword 'End'
+            raise_error(E_SYNTAX, "Expected 'End' keyword not found.");
+
+        if (match(token_scope) == false) // keyword 'Scope'
+            rraise_error(E_SYNTAX, "Expected 'Scope' keyword not found.");
+    }
+
+
+
+/*****************************************************************************/
+
+    void NT_CompoundStmt()
+    {
+
+        switch (active_token->type)
+        {
+        case token_dim:
+            NT_VarDef();
+            break; // keyword 'Dim'
+        case token_identifier:
+            NT_AssignStmt();
+            break; // identifier
+        case token_return:
+            NT_ReturnStmt();
+            break; // keyword 'Return'
+        case token_input:
+            NT_InputStmt();
+            break; // keyword 'Input'
+        case token_print:
+            NT_PrintStmt();
+            break; // keyword 'Print'
+        case token_if:
+            NT_IfStmt();
+            break; // keyword 'If'
+        case token_do:
+            NT_WhileStmt();
+            break; // keyword 'Do'
+        default:
+            return; // epsilon rule
+        }
+
+        if (match(token_eol) == false) // end of line
+            raise_error(E_SYNTAX, "EOL expected at this point.");
+
+        NT_CompoundStmt();
+    }
+
+
+
+
+
 /*****************************************************************************/
 
     void NT_VarDec()
