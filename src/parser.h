@@ -56,6 +56,8 @@
     void NT_FunctionDec();
     void NT_FunctionDef();
     void NT_ParameterList();
+    void NT_ParamList();
+    void NT_Param();
     void NT_NextParam();
     void NT_VarDec();
     void NT_VarDef();

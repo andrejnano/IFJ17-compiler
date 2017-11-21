@@ -49,21 +49,30 @@ bool stl_insert_top(SymbolTable_t *tree, char *key, Metadata_t *new_data)
     if (!tree)
         return false;
 
+    
+
     // if ST List is empty
     if (tree->top == NULL)
     {
+        
         // create new Symbol Table Item
         tree->top = (Item_t *) malloc(sizeof(Item_t));
         memset(tree->top, 0, sizeof(Item_t));
+
+        tree->top->left_ptr = NULL;
+        tree->top->right_ptr = NULL;
 
         // create new Key for the Item
         tree->top->key = (char *) malloc(sizeof(char) * strlen(key) + 1);
         strcpy(tree->top->key, key);
 
         // create new Metadata for the Item
-        tree->top->metadata= (Metadata_t *) malloc(sizeof(Metadata_t));
+        tree->top->metadata = (Metadata_t *) malloc(sizeof(Metadata_t));
         memcpy(tree->top->metadata, new_data, sizeof(Metadata_t));
 
+        Metadata_t *tmp = tree->top->metadata;
+
+        printf(ANSI_COLOR_YELLOW" [DEBUG]\n"ANSI_COLOR_CYAN"+ NEW ITEM IN SYMTABLE"ANSI_COLOR_RESET"(first one)\n\tItem key : %s\n\tItem metadata type : %d\n", tree->top->key, tmp->type);
         return true;
     }
 
@@ -119,6 +128,7 @@ bool stl_insert_top(SymbolTable_t *tree, char *key, Metadata_t *new_data)
     current_item->metadata = (Metadata_t *) malloc(sizeof(Metadata_t));
     memcpy(current_item->metadata, new_data, sizeof(Metadata_t));
 
+    printf(ANSI_COLOR_YELLOW" [DEBUG]\n" ANSI_COLOR_CYAN "+ NEW ITEM IN SYMTABLE" ANSI_COLOR_RESET "\n\tItem key : %s\n\tItem metadata type : %d\n", current_item->key, current_item->metadata->type);
     return true;
 }
 
@@ -134,13 +144,13 @@ Metadata_t *stl_search(SymbolTable_t *tree, char *key)
         return NULL;
     }
 
+    
     Item_t *current_item = tree->top;
     int key_difference;
 
     while (current_item != NULL)
     {
         key_difference = strcmp(key, current_item->key);
-        
         if (key_difference == 0)
         {
             return current_item->metadata;
@@ -278,11 +288,10 @@ SymbolTable_t *param_to_symtable(char *func_name, SymbolTable_t *functions)
  * \brief Recursive function for cleaning up tree
  * \param top Top of the tree to be cleaned
  */
-void tree_dispose(SymbolTable_t *st)
+void tree_dispose(Item_t *current_item)
 {
-    Item_t *current_item = st->top;
 
-    if ( st->top == NULL )
+    if (current_item == NULL)
     {
         return;
     }
@@ -322,7 +331,7 @@ bool stl_pop(SymbolTable_t **tree)
         return false;
     }
 
-    tree_dispose((*tree));
+    tree_dispose((*tree)->top);
     SymbolTable_t *tmp = (*tree)->next;
     free(*tree);
     *tree = tmp;
@@ -336,54 +345,9 @@ bool stl_pop(SymbolTable_t **tree)
  */
 void stl_clean_all(SymbolTable_t **tree)
 {
-      int out;
-      while (out != 1)
-      {
-          out = STL_pop(tree);
-      }
+    while (stl_pop(tree) != false)
+        {;}
 }
 
 /**************************************************/
 /**************************************************/
-
-typedef struct
-{
-    node_t **arr;
-    int idx;
-    unsigned len;
-} stack_t;
-
-//TODO node conections print
-void print_tree(node_t *t, int i)
-{
-    if (t->l_ptr)
-    {
-        int j = i;
-        while (j != 0)
-        {
-            printf("  ");
-            j--;
-        }
-        print_tree(t->l_ptr, i + 1);
-    }
-    if (t)
-    {
-        int j = i;
-        while (j != 0)
-        {
-            printf("  ");
-            j--;
-        }
-        printf("%s\n", t->key);
-    }
-    if (t->r_ptr)
-    {
-        int j = i;
-        while (j != 0)
-        {
-            printf("  ");
-            j--;
-        }
-        print_tree(t->r_ptr, i + 1);
-    }
-}

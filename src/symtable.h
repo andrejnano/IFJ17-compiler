@@ -110,15 +110,15 @@
      * @brief Recursive function for cleaning up tree
      * @param top Top of the tree to be cleaned
      */
-    void tree_dispose(SymbolTable_t *st);
-
-    /*
+    void tree_dispose(Item_t *current_item);
+    
+        /*
      * @brief Disposes symboltable from the top of symtable list
      * and pops the list
      * @param tree First symboltable in the list pointer
      * @return true on success false on fail
      */
-    bool stl_pop(SymbolTable_t **tree);
+        bool stl_pop(SymbolTable_t **tree);
 
     /**
      * @brief Disposes whole list of symboltables

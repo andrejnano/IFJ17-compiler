@@ -22,25 +22,25 @@ void raise_error(int error_code, const char *msg, ...)
     switch (error_code)
     {
     case E_LEX:
-        fprintf(stderr, "%s:%d:" ANSI_COLOR_RED "ERROR" ANSI_COLOR_RESET "[%d][Lexical error] : %s\n", source_file_name, line, E_LEX, msg);
+        fprintf(stderr, "%s:%d:" ANSI_COLOR_RED "ERROR" ANSI_COLOR_RESET "[%d][Lexical error]: ", source_file_name, line, E_LEX);
         break;
     case E_SYNTAX:
-        fprintf(stderr, "%s:%d:" ANSI_COLOR_RED "ERROR" ANSI_COLOR_RESET "[%d][Syntax error] : %s\n", source_file_name, line, E_SYNTAX, msg);
+        fprintf(stderr, "%s:%d:" ANSI_COLOR_RED "ERROR" ANSI_COLOR_RESET "[%d][Syntax error]: ", source_file_name, line, E_SYNTAX);
         break;
     case E_SEM_DEF:
-        fprintf(stderr, "%s:%d:" ANSI_COLOR_RED "ERROR" ANSI_COLOR_RESET "[%d][Definiton error] : %s\n", source_file_name, line, E_SEM_DEF, msg);
+        fprintf(stderr, "%s:%d:" ANSI_COLOR_RED "ERROR" ANSI_COLOR_RESET "[%d][Definiton error]: ", source_file_name, line, E_SEM_DEF);
         break;
     case E_SEM_TYPE:
-        fprintf(stderr, "%s:%d:" ANSI_COLOR_RED "ERROR" ANSI_COLOR_RESET "[%d][Type error] : %s\n", source_file_name, line, E_SEM_TYPE, msg);
+        fprintf(stderr, "%s:%d:" ANSI_COLOR_RED "ERROR" ANSI_COLOR_RESET "[%d][Type error]: ", source_file_name, line, E_SEM_TYPE);
         break;
     case E_SEM_OTHER:
-        fprintf(stderr, "%s:%d:" ANSI_COLOR_RED "ERROR" ANSI_COLOR_RESET "[%d][Semantic error] : %s\n", source_file_name, line, E_SEM_OTHER, msg);
+        fprintf(stderr, "%s:%d:" ANSI_COLOR_RED "ERROR" ANSI_COLOR_RESET "[%d][Semantic error]: ", source_file_name, line, E_SEM_OTHER);
         break;
     case E_INTERNAL:
-        fprintf(stderr, "%s:%d:" ANSI_COLOR_RED "ERROR" ANSI_COLOR_RESET "[%d][Internal error] : %s\n", source_file_name, line, E_INTERNAL, msg);
+        fprintf(stderr, "%s:%d:" ANSI_COLOR_RED "ERROR" ANSI_COLOR_RESET "[%d][Internal error]: ", source_file_name, line, E_INTERNAL);
         break;
     default:
-        fprintf(stderr, "This error code --> ERROR[%d] is not defined by this program. \n It's message is : %s\n", error_code, msg);
+        fprintf(stderr, "This error code --> ERROR[%d] is not defined by this program. \n It's message is : \n\t", error_code);
         break;
     }
 

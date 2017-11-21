@@ -25,8 +25,13 @@
     #include "symtable.h"
 
     // current token from input
-    Token_t* active_token;
+
+    Token_t* active_token = NULL;
+
+
     SymbolTable_t *functions;
+
+    extern int compiler_error;
 
     extern FILE* source_code;
 
@@ -42,17 +47,23 @@
     void parse()
     {
 
+        active_token = create_empty_token();
+        if (!active_token)
+            exit(7);
+
+        scanner_init();
+
         //@TODO Instruction List init
         //InstructionList_t InstList; // Instruction list for output code
         //IL_Init(&InstList);
 
         stl_init(&functions);
+        stl_push(&functions);
 
         // first token reading
-        if (get_next_token(source_code, active_token) == false || active_token->type == token_eof)
+        if (get_next_token(source_code, active_token) == false)
         {
-            free(active_token);
-            scanner_free();
+            //free(active_token);
             raise_error(E_SYNTAX, "EOF at the beginning of file.");
         }
         else
@@ -80,9 +91,12 @@
 
     void NT_Program()
     {
-
+        
         NT_Head();
         NT_Scope();
+
+        if (match(token_eol) == false)
+            raise_error(E_SYNTAX, "EOL expected at this point.");
 
         if (match(token_eof) == false)  // end of file
             raise_error(E_SYNTAX, "EOF expected after End Scope, not found.");
@@ -96,13 +110,16 @@
 
         if (active_token->type == token_declare)
         {
-			NT_FunctionDec();
+            NT_FunctionDec();
+            if (match(token_eol) == false)
+                raise_error(E_SYNTAX, "EOL expected at this point.");
             NT_Head();
         }
         else 
         if (active_token->type == token_function)
         {
-			NT_FunctionDef();
+			//NT_FunctionDef();
+            printf("def\n");
 			NT_Head();
         }
         // epsilon rule is OK here
@@ -116,10 +133,10 @@
     {
 
 		match(token_declare);
-
-		if (match(token_function) == false)
+        
+        if (match(token_function) == false)
             raise_error(E_SYNTAX, "'Function' keyword expected at this point.");
-
+       
         /*
             Function Declaration
             3 scenarios can occur
@@ -145,6 +162,7 @@
         
         bool declaration_error = false;
 
+        
         if (active_token->type == token_identifier)
         {
             // lookup the identifier in symtable...
@@ -173,7 +191,7 @@
 
                 // create copy of the string
                 new_function_name = (char *) malloc( sizeof(char) * strlen(active_token->value.c) + 1);
-                strcpy(active_token->value.c, new_function_name);
+                strcpy(new_function_name, active_token->value.c);
 
                 match(token_identifier);
 
@@ -217,7 +235,7 @@
                     if (active_token->type == token_comma)
                     {
                         match(token_comma);
-
+                       
                         // append current parameter and continue with next one
                         if ( param_list_append(&function_parameters, new_parameter) )
                             continue;
@@ -267,13 +285,75 @@
                 {
                     stl_insert_top(functions, new_function_name, &new_function_metadata);
                     free(new_function_name);
+                    return;
                 }
             }
         }
+         // if identifier was not found, but we dont want to ruin syntax of the whole statement
         if (match(token_identifier) == false)
-            raise_error(E_SYNTAX, "Identifier was expected.");
-        
-        free(new_function_name);
+            raise_error(E_SYNTAX, "Function identifier expected.");
+
+        if (match(token_lbrace) == false)
+            raise_error(E_SYNTAX, "'(' was expected.");
+
+        NT_ParamList();
+
+        if (match(token_rbrace) == false)
+            raise_error(E_SYNTAX, "')' was expected.");
+
+        if (match(token_as) == false)
+            raise_error(E_SYNTAX, "'As' keyword was expected.");
+
+        if (is_datatype(active_token->type) == false)
+            raise_error(E_SYNTAX, "Expected datatype after a parameter.");
+
+        match(token_blank); // just move
+    }
+
+/*****************************************************************************/
+
+    void NT_ParamList()
+    {
+        if (active_token->type == token_identifier)
+        {
+            NT_Param();
+
+            if (active_token->type == token_comma)
+                NT_NextParam();
+        }
+        // epsilon rule
+    }
+
+/*****************************************************************************/
+
+    void NT_NextParam()
+    {
+        if (active_token->type == token_comma)
+        {
+            match(token_comma);
+
+            NT_Param();
+            NT_NextParam();
+        }
+        //  epsilon rule
+    }
+
+/*****************************************************************************/
+
+    void NT_Param()
+    {
+        // @TODO >>>>>>>>
+        // generate instruction to push identifier to stack or something..
+        if (match(token_identifier) == false)
+            raise_error(E_SYNTAX, "Identifier expected and not found.");
+
+        if (match(token_as) == false)
+            raise_error(E_SYNTAX, "Keyword 'As' expected and not found.");
+
+        if (is_datatype(active_token->type) == false)
+            raise_error(E_SYNTAX, "Expected datatype after a parameter.");
+    
+        match(token_blank); // just move
     }
 
 
@@ -390,6 +470,9 @@
 
         if (match(token_scope) == false) // keyword 'Scope'
             raise_error(E_SYNTAX, "Expected 'Scope' keyword not found.");
+        
+        if (match(token_eol) == false)
+            raise_error(E_SYNTAX, "EOL expected at this point.");
 
         // -----------------
         // NEW LOCAL SCOPE
@@ -399,7 +482,7 @@
         // assign symtable pointer to this local table, or make a linked list
         // of tables, change the pointer of the first to this local
 
-        NT_CompoundStmt();
+        //NT_CompoundStmt();
 
         // ------------------
         // END OF LOCAL SCOPE
@@ -416,41 +499,41 @@
 
 /*****************************************************************************/
 
-    void NT_CompoundStmt()
-    {
+    // void NT_CompoundStmt()
+    // {
 
-        switch (active_token->type)
-        {
-        case token_dim:
-            NT_VarDef();
-            break; // keyword 'Dim'
-        case token_identifier:
-            NT_AssignStmt();
-            break; // identifier
-        case token_return:
-            NT_ReturnStmt();
-            break; // keyword 'Return'
-        case token_input:
-            NT_InputStmt();
-            break; // keyword 'Input'
-        case token_print:
-            NT_PrintStmt();
-            break; // keyword 'Print'
-        case token_if:
-            NT_IfStmt();
-            break; // keyword 'If'
-        case token_do:
-            NT_WhileStmt();
-            break; // keyword 'Do'
-        default:
-            return; // epsilon rule
-        }
+    //     switch (active_token->type)
+    //     {
+    //     case token_dim:
+    //         NT_VarDef();
+    //         break; // keyword 'Dim'
+    //     case token_identifier:
+    //         NT_AssignStmt();
+    //         break; // identifier
+    //     case token_return:
+    //         NT_ReturnStmt();
+    //         break; // keyword 'Return'
+    //     case token_input:
+    //         NT_InputStmt();
+    //         break; // keyword 'Input'
+    //     case token_print:
+    //         NT_PrintStmt();
+    //         break; // keyword 'Print'
+    //     case token_if:
+    //         NT_IfStmt();
+    //         break; // keyword 'If'
+    //     case token_do:
+    //         NT_WhileStmt();
+    //         break; // keyword 'Do'
+    //     default:
+    //         return; // epsilon rule
+    //     }
 
-        if (match(token_eol) == false) // end of line
-            raise_error(E_SYNTAX, "EOL expected at this point.");
+    //     if (match(token_eol) == false) // end of line
+    //         raise_error(E_SYNTAX, "EOL expected at this point.");
 
-        NT_CompoundStmt();
-    }
+    //     NT_CompoundStmt();
+    // }
 
 
 

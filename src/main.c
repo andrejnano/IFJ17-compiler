@@ -18,12 +18,14 @@
 
     #include <stdio.h>
     #include <stdlib.h>
+
     #include "errorcodes.h"
     #include "token.h"
     #include "symtable.h"
     #include "parser.h"
+    #include "scanner.h"
 
-    extern FILE* source_code;
+    FILE* source_code;
     FILE* output_code;
     char* source_file_name;
 
@@ -56,17 +58,11 @@
         // save the source name
         source_file_name = argv[1];
 
-        printf("\n");
-        printf("\n");
-        raise_error(E_SYNTAX, "test sprava");
-        printf("\n");
-        raise_error(E_SEM_DEF, "...");
-        printf("\n");
-        //scanner_init();
-        //parse(); // uses globals source_code & output_code
+        parse(); // uses globals source_code & output_code
 
         //cleanup();
         fclose(source_code);
+        fclose(output_code);
 
         return (!compiler_error) ? SUCCESS : compiler_error;
     }
