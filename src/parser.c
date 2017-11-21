@@ -118,16 +118,16 @@
         else 
         if (active_token->type == token_function)
         {
-			//NT_FunctionDef();
-            printf("def\n");
-			NT_Head();
+			NT_FunctionDef();
+            if (match(token_eol) == false)
+                raise_error(E_SYNTAX, "EOL expected at this point.");
+            NT_Head();
         }
         // epsilon rule is OK here
     }
 
 
 /*****************************************************************************/
-    // @TODO skombinovat s tym co robil Peto
 
     void NT_FunctionDec()
     {
@@ -366,22 +366,15 @@
             raise_error(E_SYNTAX, "Expected datatype after a parameter.");
             match(token_blank); // just move
         }
-        
     }
 
 
 /*****************************************************************************/
-    // @TODO skombinovat s tym co robil Peto
+
     
     void NT_FunctionDef()
     {
-
-        // token_function token_identifier token_lbrace <ParameterList> token_rbrace token_as token_datatype
-        // token_eol <CompoundStmt> token_end token_function
-
         /*
-            3 scenarios can occur
-
             1) Function was already defined
             2) Function was already declared
             3) Function was neither defined nor declared
@@ -394,49 +387,294 @@
 
             in case 3) declare and define a new symtable item.
                         if ( no item exists ) ...  is_declared = TRUE ; is_defined = TRUE;
+        */
 
-        
+        if (match(token_function) == false)
+            raise_error(E_SYNTAX, "'Function' keyword expected at this point.");
 
-        match(token_function);
-       
+        // declare a new symtable item.
+        Metadata_t new_function_metadata;
+        char *new_function_name = NULL;
+        bool definition_error = false;
+
 
         if (active_token->type == token_identifier)
         {
             // lookup the identifier in symtable...
-			node_val_t *function_metadata = STL_Search(functions, active_token->value.c);
+            Metadata_t *function_metadata = stl_search(functions, active_token->value.c);
 
-            // if the identifier is in symtable
-            if ( function_metadata )
+            // function is in symtable
+            if (function_metadata)
             {
 
-                // if the function is already defined
                 if (function_metadata->is_defined)
                 {
-                    raise_error(E_SYNTAX, "Function is already defined.");
-                    return; // or better just break off this scope  
+                    raise_error(E_SYNTAX, "Function with this name is already defined.");
+                    definition_error = true;
                 }
-                else 
-                if (function_metadata->is_declared)
+                else if (function_metadata->is_declared)
                 {
-                    // check the parameters if they are consistent
+                    // check the parameters
+                    // if they match push the body
 
-                    node_val_t new_function_metadata;
-                    tArglist *param_list = NULL;
-                    // ...
+                    match(token_identifier);
 
-                }
-            }
+                    if (match(token_lbrace) == false)
+                        raise_error(E_SYNTAX, "'(' was expected.");
+
+                    // >>>>>>>>>>>>>>>
+                    //  PARAMETERS
+                    // >>>>>>>>>>>>>>>
+
+                    Parameter_t *function_parameters = NULL;
+
+                    while (true)
+                    {
+                        // in case of undefined symbol or no parameters
+                        if (active_token->type != token_identifier)
+                            break;
+
+                        // create new Parameter
+                        Parameter_t *new_parameter = (Parameter_t *)malloc(sizeof(Parameter_t));
+                        new_parameter->name = active_token->value.c;
+                        new_parameter->next = NULL;
+
+                        match(token_identifier);
+
+                        if (match(token_as) == false)
+                            raise_error(E_SYNTAX, "Keyword 'As' expected and not found.");
+
+                        // check if the token is one of the datatypes
+                        if (is_datatype(active_token->type))
+                        {
+                            new_parameter->type = active_token->type;
+                            match(active_token->type);
+                        }
+                        else
+                        {
+                            raise_error(E_SYNTAX, "Expected datatype after a parameter.");
+                            match(token_blank); // @TODO len sa posunut, zaruceny fail sice,..
+                        }
+
+                        if (active_token->type == token_comma)
+                        {
+                            match(token_comma);
+
+                            // append current parameter and continue with next one
+                            if (param_list_append(&function_parameters, new_parameter))
+                                continue;
+                            else
+                                free(new_parameter);
+                        }
+                        else if (active_token->type == token_rbrace)
+                        {
+                            param_list_append(&function_parameters, new_parameter);
+                            break;
+                        }
+                        else
+                        {
+                            // some unexpected token
+                            break;
+                        }
+
+                    } // end of while loop
+
+                    // <<<<<<<<<<<<<<<<<<
+                    //  END OF PARAMETERS
+                    // <<<<<<<<<<<<<<<<<<
+
+                    if (match(token_rbrace) == false)
+                        raise_error(E_SYNTAX, "')' was expected.");
+
+                    if (match(token_as) == false)
+                        raise_error(E_SYNTAX, "'As' keyword was expected.");
+
+                    
+                    bool datatypes_equal = false;
+
+                    // check if the token is one of the datatypes
+                    if (is_datatype(active_token->type))
+                    {
+                        // compare the return datatypes
+                        if (active_token->type == function_metadata->type)
+                        {
+                            datatypes_equal = true;
+                        }
+                        match(active_token->type);
+                    }
+                    else // not datatype token
+                    {
+                        raise_error(E_SYNTAX, "Expected datatype after a parameter.");
+                        definition_error = true;
+                        match(token_blank); // @TODO len sa posunut, zaruceny fail sice,..
+                    }
+
+                    if (match(token_eol) == false)
+                        raise_error(E_SYNTAX, "EOL expected at this point.");
+
+                    // COMPARE PARAMETER LISTS
+                    if (datatypes_equal && param_list_cmp(function_metadata->parameters,  function_parameters))
+                    {
+
+                        // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+                        //  GENERATE CODE FROM CompoundStmt
+                        // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+                        NT_CompoundStmt();
+
+                        // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+                        // END OF CODE GENERATING
+                        // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+                    }
+                    else
+                    {
+                        raise_error(E_SYNTAX, "Function definition parameters or return type does not match with it's declaration.");
+                    }
+
+                    if (match(token_end) == false)
+                        raise_error(E_SYNTAX, "'End' keyword was expected at this point.");
+
+                    if (match(token_function) == false)
+                        raise_error(E_SYNTAX, "'Function' keyword expected at this point.");
+
+                    return; // !IMPORTANT
+
+                } // end of 'else if (function_metadata->is_declared)'
+            } // end of 'if (function_metadata)'
             else
             {
-                // declare and define a new symtable item.
-                node_val_t new_function_metadata;
-                // ...
+                // create new instance
+                // create a new symtable item locally.
+                new_function_metadata.is_declared = true;
+                new_function_metadata.is_defined = true;
+                new_function_metadata.parameters = NULL;
+
+                // create copy of the string
+                new_function_name = (char *)malloc(sizeof(char) * strlen(active_token->value.c) + 1);
+                strcpy(new_function_name, active_token->value.c);
+
+                match(token_identifier);
+
+                if (match(token_lbrace) == false)
+                    raise_error(E_SYNTAX, "'(' was expected.");
+
+                // >>>>>>>>>>>>>>>
+                //  PARAMETERS
+                // >>>>>>>>>>>>>>>
+
+                Parameter_t *function_parameters = NULL;
+
+                while (true)
+                {
+                    // in case of undefined symbol or no parameters
+                    if (active_token->type != token_identifier)
+                        break;
+
+                    // create new Parameter
+                    Parameter_t *new_parameter = (Parameter_t *)malloc(sizeof(Parameter_t));
+                    new_parameter->name = active_token->value.c;
+                    new_parameter->next = NULL;
+
+                    match(token_identifier);
+
+                    if (match(token_as) == false)
+                        raise_error(E_SYNTAX, "Keyword 'As' expected and not found.");
+
+                    // check if the token is one of the datatypes
+                    if (is_datatype(active_token->type))
+                    {
+                        new_parameter->type = active_token->type;
+                        match(active_token->type);
+                    }
+                    else
+                    {
+                        raise_error(E_SYNTAX, "Expected datatype after a parameter.");
+                        match(token_blank); // @TODO len sa posunut, zaruceny fail sice,..
+                    }
+
+                    if (active_token->type == token_comma)
+                    {
+                        match(token_comma);
+
+                        // append current parameter and continue with next one
+                        if (param_list_append(&function_parameters, new_parameter))
+                            continue;
+                        else
+                            free(new_parameter);
+                    }
+                    else if (active_token->type == token_rbrace)
+                    {
+                        param_list_append(&function_parameters, new_parameter);
+                        break;
+                    }
+                    else
+                    {
+                        // some unexpected token
+                        break;
+                    }
+
+                } // end of while loop
+
+                new_function_metadata.parameters = function_parameters;
+
+                // <<<<<<<<<<<<<<<<<<
+                //  END OF PARAMETERS
+                // <<<<<<<<<<<<<<<<<<
+
+                if (match(token_rbrace) == false)
+                    raise_error(E_SYNTAX, "')' was expected.");
+
+                if (match(token_as) == false)
+                    raise_error(E_SYNTAX, "'As' keyword was expected.");
+
+                // check if the token is one of the datatypes
+                if (is_datatype(active_token->type))
+                {
+                    new_function_metadata.type = active_token->type;
+                    match(active_token->type);
+                }
+                else
+                {
+                    raise_error(E_SYNTAX, "Expected datatype after a parameter.");
+                    definition_error = true;
+                    match(token_blank); // @TODO len sa posunut, zaruceny fail sice,..
+                }
+
+                if (match(token_eol) == false)
+                    raise_error(E_SYNTAX, "EOL expected at this point.");
+
+
+                // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+                //  GENERATE CODE FROM CompoundStmt
+                // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+                NT_CompoundStmt();
+
+                // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+                // END OF CODE GENERATING
+                // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+                if (match(token_end) == false)
+                    raise_error(E_SYNTAX, "'End' keyword was expected at this point.");
+
+                if (match(token_function) == false)
+                    raise_error(E_SYNTAX, "'Function' keyword expected at this point.");
+
+
+                // FINALLY add to symtable if there are no error during declaration
+                if (!definition_error) //&& !compiler_error)
+                {
+                    stl_insert_top(functions, new_function_name, &new_function_metadata);
+                    free(new_function_name);
+                    return;
+                }
             }
-        }
-
+        } // end of IF identifier
+        
+        // if identifier was not found, but we dont want to ruin syntax of the whole statement
         if (match(token_identifier) == false)
-            raise_error(E_SYNTAX, "Identifier expected.");
-
+            raise_error(E_SYNTAX, "Function identifier expected.");
 
         if (match(token_lbrace) == false)
             raise_error(E_SYNTAX, "'(' was expected.");
@@ -449,29 +687,27 @@
         if (match(token_as) == false)
             raise_error(E_SYNTAX, "'As' keyword was expected.");
 
-        // @TODO do semantics check if datatype matches the one in symtable
-        if (match(token_datatype) == false)
-            raise_error(E_SYNTAX, "Data type was expected.");
+        if (is_datatype(active_token->type))
+        {
+            match(active_token->type);
+        }
+        else
+        {
+            raise_error(E_SYNTAX, "Expected datatype after a parameter.");
+            match(token_blank); // just move
+        }
 
         if (match(token_eol) == false)
             raise_error(E_SYNTAX, "EOL expected at this point.");
 
-        // -----------------
-        // NEW LOCAL SCOPE
-        // -----------------
-
-            NT_CompoundStmt();
-
-        // ------------------
-        // END OF LOCAL SCOPE
-        // ------------------
+        NT_CompoundStmt();
 
         if (match(token_end) == false)
-            raise_error(E_SYNTAX, "Keyword 'End' expected.");
+            raise_error(E_SYNTAX, "'End' keyword was expected at this point.");
 
-        if (match(token_function) == false )
-            raise_error(E_SYNTAX, "Keyword 'Function' expected.");
-            */
+        if (match(token_function) == false)
+            raise_error(E_SYNTAX, "'Function' keyword expected at this point.");
+
     }
 
 
@@ -512,41 +748,42 @@
 
 /*****************************************************************************/
 
-    // void NT_CompoundStmt()
-    // {
+    void NT_CompoundStmt()
+    {   
+        printf("--inside CompoundStmt --\n");
 
-    //     switch (active_token->type)
-    //     {
-    //     case token_dim:
-    //         NT_VarDef();
-    //         break; // keyword 'Dim'
-    //     case token_identifier:
-    //         NT_AssignStmt();
-    //         break; // identifier
-    //     case token_return:
-    //         NT_ReturnStmt();
-    //         break; // keyword 'Return'
-    //     case token_input:
-    //         NT_InputStmt();
-    //         break; // keyword 'Input'
-    //     case token_print:
-    //         NT_PrintStmt();
-    //         break; // keyword 'Print'
-    //     case token_if:
-    //         NT_IfStmt();
-    //         break; // keyword 'If'
-    //     case token_do:
-    //         NT_WhileStmt();
-    //         break; // keyword 'Do'
-    //     default:
-    //         return; // epsilon rule
-    //     }
+        // switch (active_token->type)
+        // {
+        // case token_dim:
+        //     NT_VarDef();
+        //     break; // keyword 'Dim'
+        // case token_identifier:
+        //     NT_AssignStmt();
+        //     break; // identifier
+        // case token_return:
+        //     NT_ReturnStmt();
+        //     break; // keyword 'Return'
+        // case token_input:
+        //     NT_InputStmt();
+        //     break; // keyword 'Input'
+        // case token_print:
+        //     NT_PrintStmt();
+        //     break; // keyword 'Print'
+        // case token_if:
+        //     NT_IfStmt();
+        //     break; // keyword 'If'
+        // case token_do:
+        //     NT_WhileStmt();
+        //     break; // keyword 'Do'
+        // default:
+        //     return; // epsilon rule
+        // }
 
-    //     if (match(token_eol) == false) // end of line
-    //         raise_error(E_SYNTAX, "EOL expected at this point.");
+        // if (match(token_eol) == false) // end of line
+        //     raise_error(E_SYNTAX, "EOL expected at this point.");
 
-    //     NT_CompoundStmt();
-    // }
+        // NT_CompoundStmt();
+    }
 
 
 
