@@ -5,8 +5,6 @@
 #include <stdbool.h>
 #include <string.h>
 #include <stdlib.h>
-#include "token.h"
-#include "errors.h"
 
 typedef struct sArglist {
    int type;

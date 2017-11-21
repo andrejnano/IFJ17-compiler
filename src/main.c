@@ -18,8 +18,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "errorcodes.h"
 #include "token.h"
+#include "scanner.h"
 #include "parser.h"
 
 int main(int argc, char* argv[])
@@ -27,12 +27,12 @@ int main(int argc, char* argv[])
 
     // check arguments, input file @TODO make sepparate function for argument parsing
     if (argc != 2)
-        return E_INTERNAL;
+        return 99;
 
     FILE* source_code;  // make global ?
 
     if (! (source_code = fopen(argv[1], "r")))
-        return E_INTERNAL;
+        return 99;
 
     scanner_init();
     parse(source_code, stdout);
@@ -48,5 +48,5 @@ int main(int argc, char* argv[])
 */
 
 
-    return SUCCESS;
+    return 0;
 }

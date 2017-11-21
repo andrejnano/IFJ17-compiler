@@ -1,4 +1,6 @@
 #include "expression.h"
+#include "symtable.h"
+#include "errors.h"
 /*
 * \brief Generates new unused name
 */

@@ -1,11 +1,13 @@
 #include "parser.h"
+#include "scanner.h"
+#include "symtable.h"
+#include "errors.h"
 #include "expression.h"
-
+#include "errorcodes.h"
 Token_t *active_token = NULL;
 FILE *input = NULL, *output = NULL;
 int counterVar = 1;
 tSymbolTable *functions, *vars;
-
 
 /*
  * \brief Non terminal for evaluating body of function
@@ -13,6 +15,7 @@ tSymbolTable *functions, *vars;
  */
 void ntCompoundStmt(tSymbolTable *localVars)
 {
+	
 	char *id; // value of token identifier
 	node_val_t newVal; // for inserting of new variable into symtable
 	node_val_t *tmpMeta; // variable metadata for detecting of redefinition..

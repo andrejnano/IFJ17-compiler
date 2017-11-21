@@ -13,10 +13,6 @@
 #ifndef PARSER_H
 #define PARSER_H
 #include <stdio.h>
-#include "scanner.h"
-#include "symtable.h"
-#include "errors.h"
-#include "symtable.h"
 
 enum ins {
 	MOVE,

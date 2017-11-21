@@ -4,7 +4,6 @@
 #include <stdio.h>
 #include "scanner.h"
 #include "symtable.h"
-#include "parser.h"
 
 typedef struct sStack {
    int type;

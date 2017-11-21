@@ -17,7 +17,6 @@
 #include <inttypes.h>
 #include <stdio.h>
 #include <stdbool.h>
-#include "symtable.h"
     // Token type, identifies token
     typedef enum
     {

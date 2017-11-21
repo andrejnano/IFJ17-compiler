@@ -2,6 +2,9 @@
 #include <string.h>
 #include <stdlib.h>
 #include "symtable.h"
+#include "token.h"
+#include "errors.h"
+
 
 #define DEF_NODE_STACK_SIZE 20
 void STL_init(tSymbolTable **tree) {
