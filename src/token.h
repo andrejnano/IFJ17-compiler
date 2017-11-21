@@ -108,6 +108,7 @@
         unsigned int line; // On which line is the token located
     } Token_t;
 
+    bool is_datatype(int type);
     /*
         Token_t *mytoken;
         mytoken = get_token(file);
@@ -117,4 +118,3 @@
     */
 
 #endif
-    

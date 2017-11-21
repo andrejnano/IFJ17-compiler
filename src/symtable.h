@@ -5,7 +5,6 @@
     #include <stdio.h>
     #include <stdbool.h>
     #include "token.h"
-    #include "errors.h"
 
     enum val_type
     {
@@ -19,7 +18,7 @@
     {
         int type;
         char *name;
-        Parameter_t *next;
+        struct Parameter *next;
     } Parameter_t;
 
     typedef struct Metadata
@@ -33,15 +32,15 @@
     typedef struct Item 
     {
         char *key;
-        Metadata_t *metadata;
-        Item_t *left_ptr;
-        Item_t *right_ptr;
+        struct Metadata *metadata;
+        struct Item *left_ptr;
+        struct Item *right_ptr;
     } Item_t;
 
     typedef struct SymbolTable
     {
         Item_t *top;
-        SymbolTable_t *next;
+        struct SymbolTable *next;
     } SymbolTable_t;
 
     #include <stdio.h>

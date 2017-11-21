@@ -4,6 +4,9 @@
 #include "token.h"
 #include "errors.h"
 
+
+extern FILE* source_code;
+
 /*
   * \brief Reads token from input and dispose current token
   */
@@ -19,7 +22,7 @@ void get_token_free()
 /*
     * \brief Checks if token type is int, double, bool, string
     */
-bool istype(int type)
+bool is_datatype(int type)
 {
     if (type != token_integer && type != token_double &&
         type != token_boolean && type != token_string)
@@ -283,7 +286,7 @@ bool match(token_type expected_token_type)
             free(active_token);
 
             // if error occurs in scanner,
-            if (get_next_token(active_token) == false || active_token->type == token_eof)
+            if (get_next_token(source_code, active_token) == false || active_token->type == token_eof)
             {
                 block_scanner = true;
                 printf("\n[DEBUG]: from match() > error in scanner or EOF token.\n"); // remove later
@@ -302,7 +305,7 @@ bool match(token_type expected_token_type)
             free(active_token);
 
             // if error occurs in scanner,
-            if (get_next_token(active_token) == false || active_token->type == token_eof)
+            if (get_next_token(source_code, active_token) == false || active_token->type == token_eof)
             {
                 block_scanner = true;
                 printf("\n[DEBUG]: from match() > error in scanner or EOF token.\n"); // remove later

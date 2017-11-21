@@ -20,52 +20,50 @@
     #include "errorcodes.h"
     #include "symtable.h"
     #include "token.h"
+    #include "scanner.h"
     #include "parser.h"
+    #include "symtable.h"
 
     // current token from input
     Token_t* active_token;
+    SymbolTable_t *functions;
 
-
+    extern FILE* source_code;
 
 
 /******************************************************************************
  *****************************************************************************/
 
-	/*
+    /*
 	* @brief Main parsing function
 	* @param source_code Source file in IFJ17 language
 	* @param output_code Destination file in IFJcode17 language
 	*/
+    void parse()
+    {
 
-		tSymbolTable *GST;
+        //@TODO Instruction List init
+        //InstructionList_t InstList; // Instruction list for output code
+        //IL_Init(&InstList);
 
-		void parse()
-		{
+        stl_init(&functions);
 
-			//@TODO Instruction List init
-			//InstructionList_t InstList; // Instruction list for output code
-			//IL_Init(&InstList);
+        // first token reading
+        if (get_next_token(source_code, active_token) == false || active_token->type == token_eof)
+        {
+            free(active_token);
+            scanner_free();
+            raise_error(E_SYNTAX, "EOF at the beginning of file.");
+        }
+        else
+        {
+            // EVERYTHING IS OK HERE :)
+            // root nonterminal
+            NT_Program();
+        }
 
-			ST_Init(&GST);
-			new_context(&GST);
-
-			// first token reading
-			if (get_next_token(active_token) == false || active_token->type == token_eof)
-			{
-				free(active_token);
-				scanner_free();
-				return compiler_error;
-			}
-			else
-			{
-				// EVERYTHING IS OK HERE :)
-
-				// root nonterminal
-				NT_Program();
-			}
-
-			scanner_free();
-			STL_clean_up(&GST);
+        scanner_free();
+        stl_clean_all(&functions);
     }
 
 
@@ -142,15 +140,15 @@
         */
 
         // declare a new symtable item.
-        node_val_t  new_function_metadata;
-        char*       new_function_name;
+        Metadata_t  new_function_metadata;
+        char*       new_function_name = NULL;
         
         bool declaration_error = false;
 
         if (active_token->type == token_identifier)
         {
             // lookup the identifier in symtable...
-            node_val_t *function_metadata = STL_Search(functions, active_token->value.c);
+            Metadata_t *function_metadata = stl_search(functions, active_token->value.c);
 
             // if the identifier is in symtable
             if (function_metadata)
@@ -171,10 +169,10 @@
                 // create a new symtable item locally.
                 new_function_metadata.is_declared = true;
                 new_function_metadata.is_defined = false;
-                new_function_metadata.args = NULL;
+                new_function_metadata.parameters = NULL;
 
                 // create copy of the string
-                new_function_name = (char *) malloc( sizeof( (char) * strlen(active_token->value.c) + 1) );
+                new_function_name = (char *) malloc( sizeof(char) * strlen(active_token->value.c) + 1);
                 strcpy(active_token->value.c, new_function_name);
 
                 match(token_identifier);
@@ -186,7 +184,7 @@
                 //  PARAMETERS 
                 // >>>>>>>>>>>>>>>
 
-                Param_t *function_parameters = NULL;
+                Parameter_t *function_parameters = NULL;
 
                 while(true)
                 {
@@ -195,7 +193,7 @@
                         break;
 
                     // create new Parameter
-                    Param_t new_parameter = (Parameter_t *) malloc(sizeof(Parameter_t));
+                    Parameter_t *new_parameter = (Parameter_t *) malloc(sizeof(Parameter_t));
                     new_parameter->name = active_token->value.c;
                     new_parameter->next = NULL;
 
@@ -205,7 +203,7 @@
                         raise_error(E_SYNTAX, "Keyword 'As' expected and not found.");
                     
                     // check if the token is one of the datatypes
-                    if (is_datatype(active_token))
+                    if (is_datatype(active_token->type))
                     {
                         new_parameter->type = active_token->type;
                     }
@@ -228,7 +226,7 @@
                     }
                     else if (active_token->type == token_rbrace)
                     {
-                        param_list_append(&function_parameters, new_parameter)
+                        param_list_append(&function_parameters, new_parameter);
                         break;
                     }
                     else
@@ -252,7 +250,7 @@
                     raise_error(E_SYNTAX, "'As' keyword was expected.");
 
                 // check if the token is one of the datatypes
-                if (is_datatype(active_token))
+                if (is_datatype(active_token->type))
                 {
                     new_function_metadata.type = active_token->type;
                 }
@@ -267,7 +265,7 @@
                 // FINALLY add to symtable if there are no error during declaration
                 if (!declaration_error && !compiler_error)
                 {
-                    stl_insert_top(functions, *new_function_name, &new_function_metadata);
+                    stl_insert_top(functions, new_function_name, &new_function_metadata);
                     free(new_function_name);
                 }
             }
@@ -304,7 +302,7 @@
             in case 3) declare and define a new symtable item.
                         if ( no item exists ) ...  is_declared = TRUE ; is_defined = TRUE;
 
-        */
+        
 
         match(token_function);
        
@@ -380,57 +378,7 @@
 
         if (match(token_function) == false )
             raise_error(E_SYNTAX, "Keyword 'Function' expected.");
-    }
-
-
-
-/*****************************************************************************/
-
-    void NT_ParamList()
-    {
-        if (active_token->type == token_identifier)
-        {
-            NT_Param();
-
-            if (active_token->type == token_comma)
-                NT_NextParam();
-        }
-        // epsilon rule
-    }
-
-
-/*****************************************************************************/
-
-    void NT_NextParam()
-    {   
-        if (active_token->type == token_comma)
-        {   
-            match(token_comma);
-
-            NT_Param();
-            NT_NextParam();
-        }
-        //  epsilon rule
-    }
-
-
-/*****************************************************************************/
-
-    void NT_Param()
-    {   
-        // @TODO >>>>>>>> 
-        // generate instruction to push identifier to stack or something.. 
-        if (match(token_identifier) == false)
-            raise_error(E_SYNTAX, "Identifier expected and not found.");
-
-        if (match(token_as) == false)
-            raise_error(E_SYNTAX, "Keyword 'As' expected and not found.");
-
-        // @TODO >>>>>>>>
-        // Generate instruction, convert or something..
-        if (match(token_datatype) == false)
-            raise_error(E_SYNTAX, "Data type missing in the parameter.");
-
+            */
     }
 
 
@@ -461,7 +409,7 @@
             raise_error(E_SYNTAX, "Expected 'End' keyword not found.");
 
         if (match(token_scope) == false) // keyword 'Scope'
-            rraise_error(E_SYNTAX, "Expected 'Scope' keyword not found.");
+            raise_error(E_SYNTAX, "Expected 'Scope' keyword not found.");
     }
 
 
@@ -508,280 +456,281 @@
 
 
 
-/*****************************************************************************/
+// /*****************************************************************************/
 
-    void NT_VarDec()
-    {
-        if (match(token_dim) == false)
-            raise_error(E_SYNTAX, "Keyword 'Dim' was expected.");
+//     void NT_VarDec()
+//     {
+//         if (match(token_dim) == false)
+//             raise_error(E_SYNTAX, "Keyword 'Dim' was expected.");
 
-        // @TODO >>>>>>>>
-        // Generate instruction, declare inside symtable.. etc. 
-        if (match(token_identifier) == false)
-            raise_error(E_SYNTAX, "Identifier expected and not found.");
+//         // @TODO >>>>>>>>
+//         // Generate instruction, declare inside symtable.. etc. 
+//         if (match(token_identifier) == false)
+//             raise_error(E_SYNTAX, "Identifier expected and not found.");
 
-        if (match(token_as) == false)
-            raise_error(E_SYNTAX, "Keyword 'As' expected and not found.");
+//         if (match(token_as) == false)
+//             raise_error(E_SYNTAX, "Keyword 'As' expected and not found.");
 
-        // @TODO >>>>>>>>
-        // Update inside symtable ? & generate instruction probz.
-        if (match(token_datatype) == false)
-            raise_error(E_SYNTAX, "Data type missing in the parameter.");
-    }
+//         // @TODO >>>>>>>>
+//         // Update inside symtable ? & generate instruction probz.
+//         // if (match(token_datatype) == false)
+//         //     raise_error(E_SYNTAX, "Data type missing in the parameter.");
+//     }
 
 
-/*****************************************************************************/
+// /*****************************************************************************/
 
-    void NT_VarDef()
-    {
-        NT_VarDec();
+//     void NT_VarDef()
+//     {
+//         // NT_VarDec();
 
-        if (active_token->type == token_equals)
-        {
-            if (match(token_equals) == false)
-                raise_error(E_SYNTAX, "Assignment operator '=' expected.");
+//         // if (active_token->type == token_equal)
+//         // {
+//         //     if (match(token_equals) == false)
+//         //         raise_error(E_SYNTAX, "Assignment operator '=' expected.");
             
-            NT_Expr();
+//         //     NT_Expr();
 
-            // generate instruction for definition
-            return;
-        }
-        // if no equals, just declare.. 
-        // finish generating instructions just for declaration
-    }
+//         //     // generate instruction for definition
+//         //     return;
+//         // }
+//         // if no equals, just declare.. 
+//         // finish generating instructions just for declaration
+//     }
 
-/*****************************************************************************/
+// /*****************************************************************************/
 
-    void NT_AssignStmt()
-    {
-        // @TODO >>>>>>>>
-        // Generate instruction, declare inside symtable.. etc.
+//     void NT_AssignStmt()
+//     {
+//         // @TODO >>>>>>>>
+//         // Generate instruction, declare inside symtable.. etc.
 
-        if (match(token_identifier) == false)
-            raise_error(E_SYNTAX, "Identifier expected and not found.");
+//         if (match(token_identifier) == false)
+//             raise_error(E_SYNTAX, "Identifier expected and not found.");
 
-        if (match(token_equals) == false)
-            raise_error(E_SYNTAX, "Assignment operator '=' expected.");
+//         // if (match(token_equals) == false)
+//         //     raise_error(E_SYNTAX, "Assignment operator '=' expected.");
 
-        NT_Expr();
-    }
+//         NT_Expr();
+//     }
 
-/*****************************************************************************/
+// /*****************************************************************************/
 
-    void NT_IfStmt()
-    {
+//     void NT_IfStmt()
+//     {
 
-        if (match(token_if) == false)
-            raise_error(E_SYNTAX, "Keyword 'If' expected.");
+//         if (match(token_if) == false)
+//             raise_error(E_SYNTAX, "Keyword 'If' expected.");
 
-        NT_Expr();
+//         NT_Expr();
 
-        if (match(token_then) == false)
-            raise_error(E_SYNTAX, "Keyword 'Then' expected.");
+//         if (match(token_then) == false)
+//             raise_error(E_SYNTAX, "Keyword 'Then' expected.");
 
-        if (match(token_eol) == false)
-            raise_error(E_SYNTAX, "EOL expected at this point.");
+//         if (match(token_eol) == false)
+//             raise_error(E_SYNTAX, "EOL expected at this point.");
 
-        // -----------------
-        // NEW LOCAL SCOPE
-        // -----------------
+//         // -----------------
+//         // NEW LOCAL SCOPE
+//         // -----------------
 
-        NT_CompoundStmt();
+//         NT_CompoundStmt();
 
-        // ------------------
-        // END OF LOCAL SCOPE
-        // ------------------
+//         // ------------------
+//         // END OF LOCAL SCOPE
+//         // ------------------
 
-        if (match(token_else) == false)
-            raise_error(E_SYNTAX, "Keyword 'Else' expected.");
+//         if (match(token_else) == false)
+//             raise_error(E_SYNTAX, "Keyword 'Else' expected.");
 
-        if (match(token_eol) == false)
-            raise_error(E_SYNTAX, "EOL expected at this point.");
+//         if (match(token_eol) == false)
+//             raise_error(E_SYNTAX, "EOL expected at this point.");
 
-        // -----------------
-        // NEW LOCAL SCOPE
-        // -----------------
+//         // -----------------
+//         // NEW LOCAL SCOPE
+//         // -----------------
 
-        NT_CompoundStmt();
+//         NT_CompoundStmt();
 
-        // ------------------
-        // END OF LOCAL SCOPE
-        // ------------------
+//         // ------------------
+//         // END OF LOCAL SCOPE
+//         // ------------------
 
-        if (match(token_end) == false)
-            raise_error(E_SYNTAX, "Keyword 'End' expected.");
+//         if (match(token_end) == false)
+//             raise_error(E_SYNTAX, "Keyword 'End' expected.");
         
-        if (match(token_if) == false)
-            raise_error(E_SYNTAX, "Keyword 'If' expected.");
-    }
+//         if (match(token_if) == false)
+//             raise_error(E_SYNTAX, "Keyword 'If' expected.");
+//     }
 
 
-/*****************************************************************************/
+// /*****************************************************************************/
 
-    void NT_WhileStmt()
-    {
-        if (match(token_do) == false)
-            raise_error(E_SYNTAX, "Keyword 'Do' expected.");
+//     void NT_WhileStmt()
+//     {
+//         if (match(token_do) == false)
+//             raise_error(E_SYNTAX, "Keyword 'Do' expected.");
 
-        if (match(token_while) == false)
-            raise_error(E_SYNTAX, "Keyword 'While' expected.");
+//         if (match(token_while) == false)
+//             raise_error(E_SYNTAX, "Keyword 'While' expected.");
 
-        NT_Expr();
+//         NT_Expr();
 
-        if (match(token_eol) == false)
-            raise_error(E_SYNTAX, "EOL expected.");
+//         if (match(token_eol) == false)
+//             raise_error(E_SYNTAX, "EOL expected.");
 
-        // -----------------
-        // NEW LOCAL SCOPE
-        // -----------------
+//         // -----------------
+//         // NEW LOCAL SCOPE
+//         // -----------------
 
-        NT_CompoundStmt();
+//         NT_CompoundStmt();
 
-        // ------------------
-        // END OF LOCAL SCOPE
-        // ------------------
+//         // ------------------
+//         // END OF LOCAL SCOPE
+//         // ------------------
 
-        if (match(token_loop) == false)
-            raise_error(E_SYNTAX, "Keyword 'Loop' expected");
+//         if (match(token_loop) == false)
+//             raise_error(E_SYNTAX, "Keyword 'Loop' expected");
 
-    }
-
-
-/*****************************************************************************/
-
-    void NT_ReturnStmt()
-    {
-        if (match(token_return) == false)
-            raise_error(E_SYNTAX, "Keyword 'Return' expected.");
-
-        NT_Expr();
-
-        // generate instructions
-    }
+//     }
 
 
-/*****************************************************************************/
+// /*****************************************************************************/
 
-    void NT_InputStmt()
-    {
-        if (match(token_input) == false)
-            raise_error(E_SYNTAX, "Keyword 'Input' expected.");
+//     void NT_ReturnStmt()
+//     {
+//         if (match(token_return) == false)
+//             raise_error(E_SYNTAX, "Keyword 'Return' expected.");
 
-        if (active_token->type == token_identifier)
-        {
-            // check if identifier is declared
-            // update the identifier
-            // generate instruction
-        }
+//         NT_Expr();
 
-        if (match(token_identifier) == false)
-            raise_error(E_SYNTAX, "Identifier is expected right after 'Input' keyword.");
-    }
+//         // generate instructions
+//     }
 
-/*****************************************************************************/
 
-    void NT_PrintStmt()
-    {
-        if (match(token_print) == false)
-            raise_error(E_SYNTAX, "Keyword 'Print' expected.");
+// /*****************************************************************************/
+
+//     void NT_InputStmt()
+//     {
+//         if (match(token_input) == false)
+//             raise_error(E_SYNTAX, "Keyword 'Input' expected.");
+
+//         if (active_token->type == token_identifier)
+//         {
+//             // check if identifier is declared
+//             // update the identifier
+//             // generate instruction
+//         }
+
+//         if (match(token_identifier) == false)
+//             raise_error(E_SYNTAX, "Identifier is expected right after 'Input' keyword.");
+//     }
+
+// /*****************************************************************************/
+
+//     void NT_PrintStmt()
+//     {
+//         if (match(token_print) == false)
+//             raise_error(E_SYNTAX, "Keyword 'Print' expected.");
         
-        NT_ExprList();
+//         NT_ExprList();
 
-        // for each expression generate a print call inst. with it
-    }
+//         // for each expression generate a print call inst. with it
+//     }
 
 
-/*****************************************************************************/
+// /*****************************************************************************/
 
-    void NT_ExprList()
-    {
-        NT_Expr(); // CANNOT BE EMPTY EXPRESSIONS, at least one.. !! 
+//     void NT_ExprList()
+//     {
+//         NT_Expr(); // CANNOT BE EMPTY EXPRESSIONS, at least one.. !! 
 
-        if (match(token_semicolon) == false)
-            raise_error(E_SYNTAX, "Semicolon ';' is missing. ");
+//         if (match(token_semicolon) == false)
+//             raise_error(E_SYNTAX, "Semicolon ';' is missing. ");
         
-        if (is_expression(active_token)) // somehow do this test... 
-            NT_ExprList();
-        // epsilon rule otherwise
-    }
+//         if (is_expression(active_token)) // somehow do this test... 
+//             NT_ExprList();
+//         // epsilon rule otherwise
+//     }
 
 
-/*****************************************************************************/
+// /*****************************************************************************/
 
-    void NT_TermList()
-    {
-        // if the term list is empty end right brace is the next token..
-        if (active_token->type == token_rbrace) 
-            return;
+//     void NT_TermList()
+//     {
+//         // if the term list is empty end right brace is the next token..
+//         if (active_token->type == token_rbrace) 
+//             return;
         
-        switch (active_token->type)
-        {
-            case token_integer: 
-            {
-                // do something
-                match(token_integer);
-                break;
-            }
-            case token_double:
-            {
-                // do something
-                match(token_double);
-                break;
-            }
-            case token_string:
-            {
-                // do something
-                match(token_string);
-                break;
-            }
-            case token_identifier:
-            {
-                // do something
-                match(token_identifier);
-                break;
-            }
+//         switch (active_token->type)
+//         {
+//             case token_integer: 
+//             {
+//                 // do something
+//                 match(token_integer);
+//                 break;
+//             }
+//             case token_double:
+//             {
+//                 // do something
+//                 match(token_double);
+//                 break;
+//             }
+//             case token_string:
+//             {
+//                 // do something
+//                 match(token_string);
+//                 break;
+//             }
+//             case token_identifier:
+//             {
+//                 // do something
+//                 match(token_identifier);
+//                 break;
+//             }
 
-            default: 
-            {
-                raise_error(E_SYNTAX, "Unexpected term inside the term list.");
-                active_token = get_token();
-                return;
-            }
-        }
+//             default: 
+//             {
+//                 raise_error(E_SYNTAX, "Unexpected term inside the term list.");
+//                 active_token = get_token();
+//                 return;
+//             }
+//         }
 
-        if (active_token->type == token_comma)
-        {
-            match(token_comma);
-            NT_TermList();
-        }
-    }
+//         if (active_token->type == token_comma)
+//         {
+//             match(token_comma);
+//             NT_TermList();
+//         }
+//     }
 
 
-/*****************************************************************************/
+// /*****************************************************************************/
 
-    void NT_CallExpr()
-    {
+//     void NT_CallExpr()
+//     {
 
-        if (active_token->type == token_identifier)
-        {
-            // do something
-            match(token_identifier);
-        }
+//         if (active_token->type == token_identifier)
+//         {
+//             // do something
+//             match(token_identifier);
+//         }
 
-        if (match(token_lbrace) == false)
-            raise_error(E_SYNTAX, "Left brace '(' expected.");
+//         if (match(token_lbrace) == false)
+//             raise_error(E_SYNTAX, "Left brace '(' expected.");
 
-        NT_TermList();
+//         NT_TermList();
 
-        if (match(token_rbrace) == false)
-            raise_error(E_SYNTAX, "Right brace ')' expected.");
+//         if (match(token_rbrace) == false)
+//             raise_error(E_SYNTAX, "Right brace ')' expected.");
         
-    }
+//     }
 
 
-/*****************************************************************************/
+// /*****************************************************************************/
 
-    void NT_Expr()
-    {
-        // MAGIC HAPPENS HERE.. 
-    }
+//     void NT_Expr()
+//     {
+//         // MAGIC HAPPENS HERE.. 
+//     }
+

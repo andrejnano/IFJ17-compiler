@@ -23,7 +23,7 @@
     #include "symtable.h"
     #include "parser.h"
 
-    FILE* source_code;
+    extern FILE* source_code;
     FILE* output_code;
     char* source_file_name;
 

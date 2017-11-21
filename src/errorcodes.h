@@ -46,50 +46,9 @@
     //interna chyba prekladaca, neovplyvnena vstupnim programom. napr. bad mem alloc
     #define E_INTERNAL      99
 
-    // global error flag - if error occurs,
-    int compiler_error = 0;
-
-
-    extern char *source_file_name;
-    
     /**
      *  Error printout to stderr with details.
      */
-    void raise_error(int error_code, const char *error_message)
-    {
-        int line = 2;
-
-        switch (error_code)
-        {
-            case E_LEX:
-                fprintf(stderr, "%s:%d:" ANSI_COLOR_RED "ERROR" ANSI_COLOR_RESET "[%d][Lexical error] : %s\n",source_file_name, line, E_LEX, error_message); 
-                break;
-            case E_SYNTAX:
-                fprintf(stderr, "%s:%d:" ANSI_COLOR_RED "ERROR" ANSI_COLOR_RESET "[%d][Syntax error] : %s\n", source_file_name, line, E_SYNTAX, error_message);
-                break;
-            case E_SEM_DEF:
-                fprintf(stderr, "%s:%d:" ANSI_COLOR_RED "ERROR" ANSI_COLOR_RESET "[%d][Definiton error] : %s\n", source_file_name, line, E_SEM_DEF, error_message);
-                break;
-            case E_SEM_TYPE:
-                fprintf(stderr, "%s:%d:" ANSI_COLOR_RED "ERROR" ANSI_COLOR_RESET "[%d][Type error] : %s\n", source_file_name, line, E_SEM_TYPE, error_message);
-                break;
-            case E_SEM_OTHER:
-                fprintf(stderr, "%s:%d:" ANSI_COLOR_RED "ERROR" ANSI_COLOR_RESET "[%d][Semantic error] : %s\n", source_file_name, line, E_SEM_OTHER, error_message);
-                break;
-            case E_INTERNAL:
-                fprintf(stderr, "%s:%d:" ANSI_COLOR_RED "ERROR" ANSI_COLOR_RESET "[%d][Internal error] : %s\n", source_file_name, line, E_INTERNAL, error_message);
-                break;
-            default: 
-                fprintf(stderr, "This error code --> ERROR[%d] is not defined by this program. \n It's message is : %s\n", error_code, error_message); 
-                break;
-        }
-
-        // if the code is 0 (not changed yet)
-        if (! compiler_error)
-            compiler_error = error_code;
-        
-        // if error is already set, do not change it !!!! 
-    }
-
+    void raise_error(int error_code, const char *msg, ...);
 
 #endif

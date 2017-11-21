@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "symtable.h"
+#include "errorcodes.h"
 
 
 /*
@@ -32,7 +33,7 @@ void stl_push(SymbolTable_t **tree)
     SymbolTable_t *new_ST = (SymbolTable_t *) malloc(sizeof(SymbolTable_t));
     new_ST->next = (*tree);
     new_ST->top = NULL;
-    *tree = newST;
+    *tree = new_ST;
 }
 
 
@@ -60,7 +61,7 @@ bool stl_insert_top(SymbolTable_t *tree, char *key, Metadata_t *new_data)
         strcpy(tree->top->key, key);
 
         // create new Metadata for the Item
-        tree->top->data= (Metadata_t *) malloc(sizeof(Metadata_t));
+        tree->top->metadata= (Metadata_t *) malloc(sizeof(Metadata_t));
         memcpy(tree->top->metadata, new_data, sizeof(Metadata_t));
 
         return true;
@@ -133,16 +134,16 @@ Metadata_t *stl_search(SymbolTable_t *tree, char *key)
         return NULL;
     }
 
-    node_t *current_item = tree->top;
+    Item_t *current_item = tree->top;
     int key_difference;
 
     while (current_item != NULL)
     {
-        key_difference = strcmp(key, tmp->key);
+        key_difference = strcmp(key, current_item->key);
         
         if (key_difference == 0)
         {
-            return current_item->data;
+            return current_item->metadata;
         }
         else if (key_difference > 0)
         {
@@ -162,7 +163,7 @@ Metadata_t *stl_search(SymbolTable_t *tree, char *key)
  * \brief Free memory of arglist node by node
  * \param args List of arguments
  */
-void param_list_dispose(Parameter_t *parameter)
+void param_list_dispose(Parameter_t *parameters)
 {
     Parameter_t *tmp;
     
@@ -222,7 +223,7 @@ bool param_list_append(Parameter_t **parameter_list, Parameter_t *new_parameter)
         // if there are 2 same parameters
         if ( strcmp(current_parameter->name, new_parameter->name) == 0 )
         {
-            raise_error(SEM_ERROR, "Same named parameters in function declaration\n");
+            raise_error(E_SEM_OTHER, "Same named parameters in function declaration\n");
             return false;
         }
 
@@ -247,7 +248,7 @@ SymbolTable_t *param_to_symtable(char *func_name, SymbolTable_t *functions)
     stl_init(&local_vars); // @TODO Kde sa toto cisti ??? 
 
     // find the function in symtable
-    Metadata_t *metadata_query = STL_search(functions, func_name);
+    Metadata_t *metadata_query = stl_search(functions, func_name);
     
     if (metadata_query == NULL)
         return NULL;
@@ -279,7 +280,7 @@ SymbolTable_t *param_to_symtable(char *func_name, SymbolTable_t *functions)
  */
 void tree_dispose(SymbolTable_t *st)
 {
-    Item_t current_item = st->top;
+    Item_t *current_item = st->top;
 
     if ( st->top == NULL )
     {

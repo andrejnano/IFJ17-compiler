@@ -1,7 +1,7 @@
 /**
  * @file Scanner.c
  * @author Jan Švanda
- * @date 2017-10-29
+ * @date 2017-11-20
  * Implementation of source code scanner and lexical analysis.
  */
 
@@ -16,23 +16,23 @@ typedef struct dynstring
     int len;
     int max;
     char *str;
-}
-string_t;
+} string_t;
 
 // Initializes dynamic string
-bool strInit(string_t *s)
+bool dStrInit(string_t *s)
 {
 
     // Assert !NULL
-    assert (s != NULL);
+    assert(s);
 
     // Allocates first bytes of memory
-    s->str = (char *) malloc(sizeof(char) * DYNSTRING_INIT_LEN);
+    s->str = (char *)malloc(sizeof(char) * DYNSTRING_INIT_LEN);
 
     // Check
     if (s->str == NULL)
     {
-        fprintf(stderr, "Memory error. Could not initialize string.");
+        raise_error(E_INTERNAL, "Memory error @dStrInit");
+
         return false;
     }
 
@@ -41,38 +41,23 @@ bool strInit(string_t *s)
     s->len = 0;
     s->max = DYNSTRING_INIT_LEN - 1;
     return true;
-
-}
-
-// Empty dynamic string
-void strEmpty(string_t *s)
-{
-
-    // Assert !NULL
-    assert(s != NULL);
-    assert(s->str != NULL);
-
-    // Empty
-    s->str[0] = '\0';
-    s->len = 0;
-
 }
 
 // Enlarge dynamic string
-bool strEnlarge(string_t *s)
+bool dStrEnlarge(string_t *s)
 {
 
     // Assert !NULL
-    assert(s != NULL);
-    assert(s->str != NULL);
+    assert(s);
+    assert(s->str);
 
     // Reallocate more memory
-    char *new_str = (char *) realloc(s->str, sizeof(char) * (s->max + DYNSTRING_RES_LEN + 1));
+    char *new_str = (char *)realloc(s->str, sizeof(char) * (s->max + DYNSTRING_RES_LEN + 1));
 
     // Check
     if (new_str == NULL)
     {
-        fprintf(stderr, "Memory error. Could not reallocate string.");
+        raise_error(E_INTERNAL, "Memory error @dStrEnlarge");
         return false;
     }
 
@@ -80,22 +65,21 @@ bool strEnlarge(string_t *s)
     s->max += DYNSTRING_RES_LEN;
     s->str = new_str;
     return true;
-
 }
 
 // Append character to the string
-bool strAddChar(string_t *s, char c)
+bool dStrAddChar(string_t *s, char c)
 {
 
     // Assert !NULL
-    assert(s != NULL);
-    assert(s->str != NULL);
+    assert(s);
+    assert(s->str);
 
     // Check size
     if (s->len == s->max)
     {
         // Enlarge string
-        if (!strEnlarge(s))
+        if (!dStrEnlarge(s))
         {
             return false;
         }
@@ -105,28 +89,27 @@ bool strAddChar(string_t *s, char c)
     s->str[(s->len)++] = c;
     s->str[s->len] = '\0';
     return true;
-
 }
 
 // Optimize string size
-bool strOptimize(string_t *s)
+bool dStrOptimize(string_t *s)
 {
 
     // Assert !NULL
-    assert(s != NULL);
-    assert(s->str != NULL);
+    assert(s);
+    assert(s->str);
 
     // Check size
     if (s->len != s->max)
     {
 
         // Reallocate memory
-        char *new_str = (char *) realloc(s->str, sizeof(char) * (s->len + 1));
+        char *new_str = (char *)realloc(s->str, sizeof(char) * (s->len + 1));
 
         // Check
         if (new_str == NULL)
         {
-            fprintf(stderr, "Memory error. Could not optimize string length.");
+            raise_error(E_INTERNAL, "Memory error @dStrOptimize");
             return false;
         }
 
@@ -134,39 +117,52 @@ bool strOptimize(string_t *s)
         s->max = s->len;
         s->str = new_str;
         return true;
-
     }
 
     // Size max
     return true;
-
 }
 
-static string_t value; // Token value
-static unsigned int line; // Line counter
+// Static global variables
+static string_t value;             // Token value
+static unsigned int line;          // Line counter
+static bool end_of_file = true;    // Identifies end of file
+static bool new_line_start = true; // Identify empty line
 
-// Initialize scanner
+/**
+ * @brief Initialize scanner
+ *
+ * Initializes scanners global static memory.
+ *
+ * @param[out] Boolean success
+ */
 bool scanner_init(void)
 {
 
     // Reset line counter
     line = 1;
 
+    // Set eof to false
+    end_of_file = false;
+
     // Setup dynamic string
-    if (strInit(&value))
+    if (dStrInit(&value))
         return true;
     return false;
-
 }
 
-// Free scanner - in case of terminating the main program
+/**
+ * @brief Free scanner memory
+ *
+ * Deallocates dynamic memory for scanner.
+ */
 void scanner_free(void)
 {
 
     // Free dynamic string
     line = 0;
     free(value.str);
-
+    end_of_file = true;
 }
 
 /**
@@ -180,6 +176,9 @@ void scanner_free(void)
  */
 token_type check_keyword(char *s)
 {
+
+    // Assert !NULL
+    assert(s);
 
     // Compare keywords ...
 
@@ -327,78 +326,119 @@ token_type check_keyword(char *s)
     {
         return token_blank;
     }
+}
 
+/**
+ * @brief Allocates token memory and initializes it
+ *
+ * Allocate token memory, initialize values and return token pointer.
+ *
+ * @param[out] Token_t* pointer to the new token or NULL
+ */
+Token_t *create_empty_token(void)
+{
+
+    // Allocate token memory
+    Token_t *token = (Token_t *)malloc(sizeof(Token_t));
+
+    // Check token
+    if (!token)
+        return NULL;
+
+    // Initialize token
+    token->value.c = NULL;
+    token->value.d = 0.0;
+    token->value.i = 0;
+    token->type = token_blank;
+    token->line = 0;
+
+    // Return token pointer
+    return token;
 }
 
 // FSM states
-typedef enum
-{
-    EMPTY, ID, NUMBER, DECIMAL, DOUBLE_EXP, DOUBLE_EXP_SIGN, DOUBLE,
-    EXC_MARK, STRING, STRING_ESC, STRING_ESC_1N, STRING_ESC_2N,
-    DIV_SIGN, COMMENT_SINGLE, COMMENT_MULTI, COMMENT_MULTI_END,
-    OPER_LESS, OPER_GREAT
-}
-fsm_state;
+typedef enum {
+    EMPTY,
+    ID,
+    NUMBER,
+    DECIMAL,
+    DOUBLE_EXP,
+    DOUBLE_EXP_SIGN,
+    DOUBLE,
+    EXC_MARK,
+    STRING,
+    STRING_ESC,
+    STRING_ESC_1N,
+    STRING_ESC_2N,
+    STRING_END,
+    DIV_SIGN,
+    COMMENT_SINGLE,
+    COMMENT_MULTI,
+    COMMENT_MULTI_END,
+    OPER_LESS,
+    OPER_GREAT
+} fsm_state;
+
+#define return_eof_false(ptr)    \
+    {                            \
+        (ptr)->type = token_eof; \
+        return false;            \
+    }
 
 /**
  * @brief Gets the next token form the source code
  *
  * Reads the file with getc(), ignores comments and creates tokens.
- * Returns pointer to Token_t structure.
- * Reserves memory for token and char array with malloc().
+ * Modifies Token_t structure passed as parameter.
+ * Reserves memory for char array with malloc().
  * Use free() on "token->value.c" if token_val_string
- * and "token" to not cause memory leaks.
- * Might return NULL if error occurred.
- * When terminating the main program other than after receiving NULL pointer
- * or the token_eof signalizing EOF the scanner_free() function must be used.
+ * or token_identifier to not cause memory leaks.
+ * When terminating the main program the scanner_free() must be used.
+ * Returns boolean success.
  *
  * @param[in] File opened for reading
- * @param[out] Pointer to Token_t
+ * @param[in,out] Pointer to Token_t
  *
  */
-Token_t *get_next_token(FILE *f)
+bool get_next_token(FILE *file, Token_t *token)
 {
 
-    // Expect file
-    assert(f != NULL);
+    // Expect file and token
+    assert(file != NULL);
+    assert(token != NULL);
 
-    // Initialize FSM state and token memory
+    // Initialize FSM state
     fsm_state state = EMPTY;
-    Token_t *token = (Token_t *) malloc(sizeof(Token_t));
 
-    // Check token
-    if (token == NULL)
-    {
-        fprintf(stderr, "Memory error. Could not allocate token.");
-        free(value.str);
-        return NULL;
-    }
+    // Empty dynamic string
+    (value.str)[0] = '\0';
+    value.len = 0;
 
-    // Initialize token
-    token->type = token_blank;
+    // Reset token
+    // if (token->value.c) free(token->value.c); // [?]
     token->value.c = NULL;
     token->value.d = 0.0;
     token->value.i = 0;
-    token->line = 0;
 
-    // Cycle variables
+    // Cycle
     int strEcsValue; // Escape character value
-    int c = '\0'; // Character being read from the source
-    bool end = false; // Identifies end of file
+    int c = '\0';    // Character being read from the source
 
     // Reads source file
-    while (!end)
+    while (!end_of_file)
     {
 
         // Next char
-        c = getc(f);
+        c = getc(file);
 
         // Test for end
         if (c == EOF)
         {
             // Add final new line
             c = '\n';
-            end = true;
+            // Finish the output
+            if (state == EMPTY || state == COMMENT_MULTI)
+                end_of_file = true;
         }
 
         // Line count update
@@ -421,72 +461,88 @@ Token_t *get_next_token(FILE *f)
         switch (state)
         {
         case EMPTY:
+
+            // Update empty line check - line is not empty
+            if (c != '\n' && c != 13 && c != '\'')
+                new_line_start = false;
+
             // Identifier beginning
-            if ((c>='a' && c<='z') || c == '_')
+            if ((c >= 'a' && c <= 'z') || c == '_')
             {
-                strAddChar(&value, c);
+                if (!dStrAddChar(&value, c))
+                    return_eof_false(token);
                 state = ID;
             }
             // Number beginning
-            else if (c>='0' && c<='9')
+            else if (c >= '0' && c <= '9')
             {
-                strAddChar(&value, c);
+                if (!dStrAddChar(&value, c))
+                    return_eof_false(token);
                 state = NUMBER;
             }
-            // Single line comment
-            else if (c == '\'')
-            {
-                state = COMMENT_SINGLE;
-            }
-            // Might be operator
+            // Single char switch
             else
             {
-                // Operators switch
                 switch (c)
                 {
-                case '/': state = DIV_SIGN; break; // Might be comment or div
-                case '!': state = EXC_MARK; break; // Might be string or 'not'
-                case '<': state = OPER_LESS; break; // Might be <= or <> or <
-                case '>': state = OPER_GREAT; break; // Might be >= or >
+                case '/':
+                    state = DIV_SIGN;
+                    break; // Might be comment or div
+                case '!':
+                    state = EXC_MARK;
+                    break; // String beginning
+                case '\'':
+                    state = COMMENT_SINGLE;
+                    break; // Single line comm.
+                case '<':
+                    state = OPER_LESS;
+                    break; // Might be <= or <> or <
+                case '>':
+                    state = OPER_GREAT;
+                    break; // Might be >= or >
                 case '*':
                     token->type = token_op_mul;
-                    return token;
+                    return true;
                 case '\\':
                     token->type = token_op_mod;
-                    return token;
+                    return true;
                 case '+':
                     token->type = token_op_add;
-                    return token;
+                    return true;
                 case '-':
                     token->type = token_op_sub;
-                    return token;
+                    return true;
                 case '=':
                     token->type = token_op_eq;
-                    return token;
+                    return true;
                 case ',':
                     token->type = token_comma;
-                    return token;
+                    return true;
                 case '(':
                     token->type = token_lbrace;
-                    return token;
+                    return true;
                 case ')':
                     token->type = token_rbrace;
-                    return token;
+                    return true;
                 case ';':
                     token->type = token_semicolon;
-                    return token;
+                    return true;
                 case '\n':
-                    if (!end)
+                    line++;
+                    // Return only one EOL per group of EOL's
+                    if (!new_line_start)
                     {
-                        line++;
+                        new_line_start = true;
                         token->type = token_eol;
-                        return token;
+                        return true;
                     }
-                    break;
+                    // Skip repeating empty line
+                case 13:
+                    continue; // Windows CRLF compatibility
                 default:
-                    // Unknown token type
-                    token->type = token_blank;
-                    return token;
+                    // Unknown character
+                    raise_error(E_LEX, "Unknown character @line:%u", line);
+                    return_eof_false(token);
                 }
             }
             break;
@@ -496,7 +552,7 @@ Token_t *get_next_token(FILE *f)
             {
                 // Comment end
                 state = EMPTY;
-                ungetc(c, f);
+                ungetc(c, file);
             }
             break;
         case DIV_SIGN:
@@ -508,9 +564,9 @@ Token_t *get_next_token(FILE *f)
             else
             {
                 // Not comment -> return division token
-                ungetc(c, f);
+                ungetc(c, file);
                 token->type = token_op_div;
-                return token;
+                return true;
             }
             break;
         case COMMENT_MULTI:
@@ -548,163 +604,167 @@ Token_t *get_next_token(FILE *f)
             }
             break;
         case ID:
-            if ((c>='a' && c<='z') || (c>='0' && c<='9') || c == '_')
+            if ((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '_')
             {
                 // Identifier continues
-                strAddChar(&value, c);
+                if (!dStrAddChar(&value, c))
+                    return_eof_false(token);
             }
             else
             {
 
                 // Return back last char
-                ungetc(c, f);
+                ungetc(c, file);
 
                 // Check if id is not keyword
                 token_type keyword;
                 if ((keyword = check_keyword(value.str)) != token_blank)
                 {
                     // Returns keyword
-                    strEmpty(&value);
                     token->type = keyword;
-                    return token;
+                    return true;
                 }
 
                 // Return identifier token
                 token->type = token_identifier;
-                // Fix inentifier length
-                if (!strOptimize(&value))
-                {
-                    free(token);
-                    return NULL;
-                }
+
+                // Fix identifier length
+                if (!dStrOptimize(&value))
+                    return_eof_false(token);
+
                 // Pass string away
                 token->value.c = value.str;
 
                 // Get new string
-                if (!strInit(&value))
+                if (!dStrInit(&value))
                 {
-                    free(token->value.c);
-                    free(value.str);
-                    free(token);
-                    return NULL;
+                    // Take string away
+                    value.str = token->value.c;
+                    token->value.c = NULL;
+                    return_eof_false(token);
                 }
 
-                // Return final token
-                return token;
-
+                // Return success
+                return true;
             }
             break;
         case NUMBER:
-            if (c>='0' && c<='9')
+            if (c >= '0' && c <= '9')
             {
                 // Number continues
-                strAddChar(&value, c);
+                if (!dStrAddChar(&value, c))
+                    return_eof_false(token);
             }
-            else if (c=='.')
+            else if (c == '.')
             {
                 // Becomes decimal number
-                strAddChar(&value, c);
+                if (!dStrAddChar(&value, c))
+                    return_eof_false(token);
                 state = DECIMAL;
             }
-            else if (c=='e')
+            else if (c == 'e')
             {
                 // Becomes double with exponent
-                strAddChar(&value, c);
+                if (!dStrAddChar(&value, c))
+                    return_eof_false(token);
                 state = DOUBLE_EXP;
             }
             else
             {
                 // Returns integer token
-                ungetc(c, f);
-                int val = (int) strtol(value.str, NULL, 10);
-                strEmpty(&value); // Empty string
+                ungetc(c, file);
+                int val = (int)strtol(value.str, NULL, 10);
                 token->type = token_val_integer;
                 token->value.i = val;
-                return token;
+                return true;
             }
             break;
         case DECIMAL:
-            if (c>='0' && c<='9')
+            if (c >= '0' && c <= '9')
             {
                 // Decimal continues
-                strAddChar(&value, c);
+                if (!dStrAddChar(&value, c))
+                    return_eof_false(token);
             }
-            else if (c=='e')
+            else if (c == 'e')
             {
                 // Becomes double with exponent
-                strAddChar(&value, c);
+                if (!dStrAddChar(&value, c))
+                    return_eof_false(token);
                 state = DOUBLE_EXP;
             }
             else
             {
                 // Returns double token
-                ungetc(c, f);
-                double val = (double) strtod(value.str, NULL);
-                strEmpty(&value); // Empty string
+                ungetc(c, file);
+                double val = (double)strtod(value.str, NULL);
                 token->type = token_val_double;
                 token->value.d = val;
-                return token;
+                return true;
             }
             break;
         case DOUBLE_EXP:
-            if (c>='0' && c<='9')
+            if (c >= '0' && c <= '9')
             {
                 // Becomes full double
-                strAddChar(&value, c);
+                if (!dStrAddChar(&value, c))
+                    return_eof_false(token);
                 state = DOUBLE;
             }
-            else if (c=='+' || c=='-')
+            else if (c == '+' || c == '-')
             {
                 // Becomes double with exponent sign
-                strAddChar(&value, c);
+                if (!dStrAddChar(&value, c))
+                    return_eof_false(token);
                 state = DOUBLE_EXP_SIGN;
             }
             else
             {
                 // Returns double token (broken double 123e) appends '0'
-                ungetc(c, f);
-                strAddChar(&value, '0');
-                double val = (double) strtod(value.str, NULL);
-                strEmpty(&value); // Empty string
+                ungetc(c, file);
+                if (!dStrAddChar(&value, '0'))
+                    return_eof_false(token);
+                double val = (double)strtod(value.str, NULL);
                 token->type = token_val_double;
                 token->value.d = val;
-                return token;
+                return true;
             }
             break;
         case DOUBLE_EXP_SIGN:
-            if (c>='0' && c<='9')
+            if (c >= '0' && c <= '9')
             {
                 // Becomes full double
-                strAddChar(&value, c);
+                if (!dStrAddChar(&value, c))
+                    return_eof_false(token);
                 state = DOUBLE;
             }
             else
             {
                 // Returns double token (broken double 123e+) appends '0'
-                ungetc(c, f);
-                strAddChar(&value, '0');
-                double val = (double) strtod(value.str, NULL);
-                strEmpty(&value); // Empty string
+                ungetc(c, file);
+                if (!dStrAddChar(&value, '0'))
+                    return_eof_false(token);
+                double val = (double)strtod(value.str, NULL);
                 token->type = token_val_double;
                 token->value.d = val;
-                return token;
+                return true;
             }
             break;
         case DOUBLE:
-            if (c>='0' && c<='9')
+            if (c >= '0' && c <= '9')
             {
                 // Continues to be double
-                strAddChar(&value, c);
+                if (!dStrAddChar(&value, c))
+                    return_eof_false(token);
             }
             else
             {
                 // Returns double token
-                ungetc(c, f);
-                double val = (double) strtod(value.str, NULL);
-                strEmpty(&value); // Empty string
+                ungetc(c, file);
+                double val = (double)strtod(value.str, NULL);
                 token->type = token_val_double;
                 token->value.d = val;
-                return token;
+                return true;
             }
             break;
         case EXC_MARK:
@@ -716,9 +776,9 @@ Token_t *get_next_token(FILE *f)
             else
             {
                 // Returns unknown token (!)
-                ungetc(c, f);
-                token->type = token_blank;
-                return token;
+                ungetc(c, file);
+                raise_error(E_LEX, "Unknown character @line:%u", line);
+                return_eof_false(token);
             }
             break;
         case STRING:
@@ -728,119 +788,230 @@ Token_t *get_next_token(FILE *f)
                 state = STRING_ESC;
                 strEcsValue = 0;
             }
+            else if (c == ' ')
+            {
+                // Space character
+                if (!dStrAddChar(&value, '\\'))
+                    return_eof_false(token);
+                if (!dStrAddChar(&value, '0'))
+                    return_eof_false(token);
+                if (!dStrAddChar(&value, '3'))
+                    return_eof_false(token);
+                if (!dStrAddChar(&value, '2'))
+                    return_eof_false(token);
+            }
+            else if (c == '\t')
+            {
+                // Tabulator character
+                if (!dStrAddChar(&value, '\\'))
+                    return_eof_false(token);
+                if (!dStrAddChar(&value, '0'))
+                    return_eof_false(token);
+                if (!dStrAddChar(&value, '0'))
+                    return_eof_false(token);
+                if (!dStrAddChar(&value, '9'))
+                    return_eof_false(token);
+            }
+            else if (c == '#')
+            {
+                // Hash sign character
+                if (!dStrAddChar(&value, '\\'))
+                    return_eof_false(token);
+                if (!dStrAddChar(&value, '0'))
+                    return_eof_false(token);
+                if (!dStrAddChar(&value, '3'))
+                    return_eof_false(token);
+                if (!dStrAddChar(&value, '5'))
+                    return_eof_false(token);
+            }
             else if (c == '"')
             {
-
-                // Returns string token
-                token->type = token_val_string;
-                // Fix string length
-                if (!strOptimize(&value))
-                {
-                    free(token);
-                    return NULL;
-                }
-                // Pass string away
-                token->value.c = value.str;
-
-                // Get new string
-                if (!strInit(&value)) {
-                    free(token->value.c);
-                    free(value.str);
-                    free(token);
-                    return NULL;
-                }
-
-                // Return final string token
-                return token;
-
+                // End loading string - ignore till newline
+                state = STRING_END;
             }
-            else if (c > 31)
+            else if (c > 32)
             {
-                // Continues as string
-                strAddChar(&value, c);
-                state = STRING;
+                // Regular printable character
+                if (!dStrAddChar(&value, c))
+                    return_eof_false(token);
             }
             else
             {
                 // Wrong character string
-                free(value.str);
-                free(token);
-                return NULL;
+                raise_error(E_LEX, "String contains wrong character @line:%u", line);
+                return_eof_false(token);
+            }
+            break;
+        case STRING_END:
+            // Ignore everything till new line
+            if (c == '\n')
+            {
+
+                // Return newline back
+                ungetc(c, file);
+
+                // Returns string token
+                token->type = token_val_string;
+
+                // Fix string length
+                if (!dStrOptimize(&value))
+                    return_eof_false(token);
+
+                // Pass string away
+                token->value.c = value.str;
+
+                // Get new string
+                if (!dStrInit(&value))
+                {
+                    // Take string away
+                    value.str = token->value.c;
+                    token->value.c = NULL;
+                    return_eof_false(token);
+                }
+
+                // Return success
+                return true;
             }
             break;
         case STRING_ESC:
             if (c >= '0' && c <= '2')
             {
                 // Decimal escape sequence start
-                strEcsValue += 100*(c-'0');
+                strEcsValue += 100 * (c - '0');
                 state = STRING_ESC_1N;
             }
             else if (c == 'n')
             {
-                // Adds new line and continues as string
-                strAddChar(&value, '\n');
+                // Adds new line and continues as a string
+                if (!dStrAddChar(&value, '\\'))
+                    return_eof_false(token);
+                if (!dStrAddChar(&value, '0'))
+                    return_eof_false(token);
+                if (!dStrAddChar(&value, '1'))
+                    return_eof_false(token);
+                if (!dStrAddChar(&value, '0'))
+                    return_eof_false(token);
                 state = STRING;
             }
             else if (c == 't')
             {
-                // Adds tabulator and continues as string
-                strAddChar(&value, '\t');
+                // Adds tabulator and continues as a string
+                if (!dStrAddChar(&value, '\\'))
+                    return_eof_false(token);
+                if (!dStrAddChar(&value, '0'))
+                    return_eof_false(token);
+                if (!dStrAddChar(&value, '0'))
+                    return_eof_false(token);
+                if (!dStrAddChar(&value, '9'))
+                    return_eof_false(token);
+                state = STRING;
+            }
+            else if (c == '\\')
+            {
+                // Adds backslash and continues as a string
+                if (!dStrAddChar(&value, '\\'))
+                    return_eof_false(token);
+                if (!dStrAddChar(&value, '0'))
+                    return_eof_false(token);
+                if (!dStrAddChar(&value, '9'))
+                    return_eof_false(token);
+                if (!dStrAddChar(&value, '2'))
+                    return_eof_false(token);
                 state = STRING;
             }
             else if (c == '"')
             {
-                // Adds quotation mark and continues as string
-                strAddChar(&value, '"');
+                // Adds quotation mark and continues as a string
+                if (!dStrAddChar(&value, '"'))
+                    return_eof_false(token);
                 state = STRING;
             }
             else
             {
                 // Wrong escape sequence string
-                free(value.str);
-                free(token);
-                return NULL;
+                raise_error(E_LEX, "Escape character with no meaning @line:%u", line);
+                return_eof_false(token);
             }
             break;
         case STRING_ESC_1N:
             if (c >= '0' && c <= '9')
             {
                 // Decimal escape sequence continues
-                strEcsValue += 10*(c-'0');
+                strEcsValue += 10 * (c - '0');
                 state = STRING_ESC_2N;
             }
             else
             {
                 // Wrong escape sequence string
-                free(value.str);
-                free(token);
-                return NULL;
+                raise_error(E_LEX, "Terminated escape sequence @line:%u", line);
+                return_eof_false(token);
             }
             break;
         case STRING_ESC_2N:
             if (c >= '0' && c <= '9')
             {
                 // Decimal escape sequence ends
-                strEcsValue += (c-'0');
+                strEcsValue += (c - '0');
 
                 // Check invalidity of the character
                 if (strEcsValue < 1 || strEcsValue > 255)
                 {
-                    free(value.str);
-                    free(token);
-                    return NULL;
+                    raise_error(E_LEX, "Escape sequence out of bounds @line:%u", line);
+                    return_eof_false(token);
                 }
 
-                // Add character, continue as string
-                strAddChar(&value, strEcsValue);
-                state = STRING;
+                // Check if escape sequence must be used
+                if (strEcsValue < 33)
+                {
+                    // Add escape sequence
+                    if (!dStrAddChar(&value, '\\'))
+                        return_eof_false(token);
+                    if (!dStrAddChar(&value, '0'))
+                        return_eof_false(token);
+                    if (!dStrAddChar(&value, '0' + strEcsValue / 10))
+                        return_eof_false(token);
+                    if (!dStrAddChar(&value, '0' + strEcsValue % 10))
+                        return_eof_false(token);
+                }
+                else if (strEcsValue == 35)
+                {
+                    // Add hash sign
+                    if (!dStrAddChar(&value, '\\'))
+                        return_eof_false(token);
+                    if (!dStrAddChar(&value, '0'))
+                        return_eof_false(token);
+                    if (!dStrAddChar(&value, '3'))
+                        return_eof_false(token);
+                    if (!dStrAddChar(&value, '5'))
+                        return_eof_false(token);
+                }
+                else if (strEcsValue == 92)
+                {
+                    // Add backslash
+                    if (!dStrAddChar(&value, '\\'))
+                        return_eof_false(token);
+                    if (!dStrAddChar(&value, '0'))
+                        return_eof_false(token);
+                    if (!dStrAddChar(&value, '9'))
+                        return_eof_false(token);
+                    if (!dStrAddChar(&value, '2'))
+                        return_eof_false(token);
+                }
+                else
+                {
+                    // Add printable character
+                    if (!dStrAddChar(&value, strEcsValue))
+                        return_eof_false(token);
+                }
 
+                // Continue as string
+                state = STRING;
             }
             else
             {
                 // Wrong escape sequence string
-                free(value.str);
-                free(token);
-                return NULL;
+                raise_error(E_LEX, "Terminated escape sequence @line:%u", line);
+                return_eof_false(token);
             }
             break;
         case OPER_LESS:
@@ -853,11 +1024,11 @@ Token_t *get_next_token(FILE *f)
                 token->type = token_op_le;
                 break;
             default:
-                ungetc(c, f);
+                ungetc(c, file);
                 token->type = token_op_lt;
             }
             // Return token <?
-            return token;
+            return true;
             break;
         case OPER_GREAT:
             if (c == '=')
@@ -866,29 +1037,27 @@ Token_t *get_next_token(FILE *f)
             }
             else
             {
-                ungetc(c, f);
+                ungetc(c, file);
                 token->type = token_op_gt;
             }
             // Return token >?
-            return token;
+            return true;
             break;
         } // FSM switch end
-    } // While getc() != EOL
+    }     // While getc() != EOL
 
     // Reached end of file
-    if (state == COMMENT_MULTI || state == EMPTY)
-    {
-        // Correct end, return end of file
-        token->type = token_eof;
-        free(value.str);
-        return token;
-    }
-    else
+    token->type = token_eof;
+
+    // Check state at the end
+    if (!(state == COMMENT_MULTI || state == EMPTY))
     {
         // Unexpected end of file
-        free(value.str);
-        free(token);
-        return NULL;
+        raise_error(E_LEX, "End of file unexpected.");
+        return false;
     }
+
+    // Expected
+    return true;
 
 } // End get_next_token() definition
