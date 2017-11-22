@@ -285,8 +285,8 @@ bool match(token_type expected_token_type)
         if (active_token && active_token->type == expected_token_type)
         {
             
-            // if the token is string, free the char array
-            if (active_token->type == token_val_string)
+            // if the token is string type, free the char array
+            if (active_token->type == token_val_string || active_token->type == token_identifier)
                 free(active_token->value.c);
 
             // free the memory allocated by token
@@ -307,8 +307,8 @@ bool match(token_type expected_token_type)
         else
         {
 
-            // if the token is string, free the char array
-            if (active_token->type == token_val_string)
+            // if the token is string type, free the char array
+            if (active_token->type == token_val_string || active_token->type == token_identifier)
                 free(active_token->value.c);
 
             // free the memory allocated by token

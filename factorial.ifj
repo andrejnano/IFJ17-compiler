@@ -1,8 +1,14 @@
-
-Declare Function factorial(n As Integer) As Integer
-
-Scope
-Dim test As Integer
-
-
-End Scope
+Declare Function factorial (n As Integer) As Integer
+Function factorial (n As Integer) As Integer
+    Dim temp_result As Integer
+    Dim decremented_n As Integer
+    Dim result As Integer
+    If 4 Then
+    result = 1
+    Else
+    decremented_n = n - 1
+    /'temp_result = factorial(decremented_n)'/
+    result = n * temp_result
+    End If
+    Return result
+End Function

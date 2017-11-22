@@ -26,7 +26,6 @@ const char* print_type(int type)
  *
  */
 
-#define DEF_NODE_STACK_SIZE 20
 
 /* 
  * @brief Function Initializes symbol table list
@@ -87,11 +86,14 @@ bool stl_insert_top(SymbolTable_t *tree, char *key, Metadata_t *new_data)
         memcpy(tree->top->metadata, new_data, sizeof(Metadata_t));
 
         
-
         // DEBUG
         #ifdef DEBUG
-        Metadata_t *tmp = tree->top->metadata;
-        printf(ANSI_COLOR_CYAN "\n\t+ NEW ITEM IN SYMTABLE" ANSI_COLOR_RESET "(first)\n\t\t [KEY] : " ANSI_COLOR_MAGENTA " '%s'" ANSI_COLOR_RESET "\n\t\t[TYPE] :  %s\n\n", tree->top->key, print_type(tmp->type));
+            Metadata_t *tmp = tree->top->metadata;
+
+            if (tmp->parameters) // for function
+                printf(ANSI_COLOR_CYAN "\n\t+ New item in " ANSI_COLOR_RESET "FUNCTIONS" ANSI_COLOR_CYAN " symtable [first item]" ANSI_COLOR_RESET "\n\t\t [KEY] : " ANSI_COLOR_MAGENTA " '%s'" ANSI_COLOR_RESET "\n\t\t[TYPE] :  %s\n\n", tree->top->key, print_type(tmp->type));
+            else // for variable
+                printf(ANSI_COLOR_BLUE "\n\t+ New item in " ANSI_COLOR_RESET "VARIABLES" ANSI_COLOR_BLUE " symtable [first item]" ANSI_COLOR_RESET "\n\t\t [KEY] : " ANSI_COLOR_MAGENTA " '%s'" ANSI_COLOR_RESET "\n\t\t[TYPE] :  %s\n\n", tree->top->key, print_type(tmp->type));
         #endif
 
         return true;
@@ -149,10 +151,20 @@ bool stl_insert_top(SymbolTable_t *tree, char *key, Metadata_t *new_data)
     current_item->metadata = (Metadata_t *) malloc(sizeof(Metadata_t));
     memcpy(current_item->metadata, new_data, sizeof(Metadata_t));
 
-
     // DEBUG
     #ifdef DEBUG
-    printf(ANSI_COLOR_CYAN "\n\t+ NEW ITEM IN SYMTABLE" ANSI_COLOR_RESET "\n\t\t [KEY] : " ANSI_COLOR_MAGENTA " '%s'" ANSI_COLOR_RESET "\n\t\t[TYPE] :  %s\n\n", current_item->key, print_type(current_item->metadata->type));
+        Metadata_t *tmp = tree->top->metadata;
+
+        // for function
+        if (tmp->parameters)
+        {
+            printf(ANSI_COLOR_CYAN "\n\t+ New item in "ANSI_COLOR_RESET"FUNCTIONS"ANSI_COLOR_CYAN" symtable" ANSI_COLOR_RESET "\n\t\t [KEY] : " ANSI_COLOR_MAGENTA " '%s'" ANSI_COLOR_RESET "\n\t\t[TYPE] :  %s\n\n", tree->top->key, print_type(tmp->type));
+        }
+        else // for variable
+        {
+            printf(ANSI_COLOR_BLUE "\n\t+ New item in "ANSI_COLOR_RESET"VARIABLES"ANSI_COLOR_BLUE" symtable" ANSI_COLOR_RESET "\n\t\t [KEY] : " ANSI_COLOR_MAGENTA " '%s'" ANSI_COLOR_RESET "\n\t\t[TYPE] :  %s\n\n", tree->top->key, print_type(tmp->type));
+        }
+
     #endif
 
     return true;
@@ -269,7 +281,7 @@ bool param_list_append(Parameter_t **parameter_list, Parameter_t *new_parameter)
     
     prev_parameter->next = new_parameter;
 
-    return 0;
+    return true;
 }
 
 /*
