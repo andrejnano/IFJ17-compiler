@@ -16,8 +16,7 @@ typedef struct dynstring
     int len;
     int max;
     char *str;
-}
-string_t;
+} string_t;
 
 // Initializes dynamic string
 bool dStrInit(string_t *s)
@@ -27,7 +26,7 @@ bool dStrInit(string_t *s)
     assert (s);
 
     // Allocates first bytes of memory
-    s->str = (char *) malloc(sizeof(char) * DYNSTRING_INIT_LEN);
+    s->str = (char *)malloc(sizeof(char) * DYNSTRING_INIT_LEN);
 
     // Check
     if (s->str == NULL)
@@ -42,7 +41,6 @@ bool dStrInit(string_t *s)
     s->len = 0;
     s->max = DYNSTRING_INIT_LEN - 1;
     return true;
-
 }
 
 // Enlarge dynamic string
@@ -54,7 +52,7 @@ bool dStrEnlarge(string_t *s)
     assert(s->str);
 
     // Reallocate more memory
-    char *new_str = (char *) realloc(s->str, sizeof(char) * (s->max + DYNSTRING_RES_LEN + 1));
+    char *new_str = (char *)realloc(s->str, sizeof(char) * (s->max + DYNSTRING_RES_LEN + 1));
 
     // Check
     if (new_str == NULL)
@@ -67,7 +65,6 @@ bool dStrEnlarge(string_t *s)
     s->max += DYNSTRING_RES_LEN;
     s->str = new_str;
     return true;
-
 }
 
 // Append character to the string
@@ -92,7 +89,6 @@ bool dStrAddChar(string_t *s, char c)
     s->str[(s->len)++] = c;
     s->str[s->len] = '\0';
     return true;
-
 }
 
 // Optimize string size
@@ -108,7 +104,7 @@ bool dStrOptimize(string_t *s)
     {
 
         // Reallocate memory
-        char *new_str = (char *) realloc(s->str, sizeof(char) * (s->len + 1));
+        char *new_str = (char *)realloc(s->str, sizeof(char) * (s->len + 1));
 
         // Check
         if (new_str == NULL)
@@ -121,12 +117,10 @@ bool dStrOptimize(string_t *s)
         s->max = s->len;
         s->str = new_str;
         return true;
-
     }
 
     // Size max
     return true;
-
 }
 
 // Static global variables
@@ -155,7 +149,6 @@ bool scanner_init(void)
     if (dStrInit(&value))
         return true;
     return false;
-
 }
 
 /**
@@ -170,7 +163,6 @@ void scanner_free(void)
     line = 0;
     free(value.str);
     end_of_file = true;
-
 }
 
 /**
@@ -334,7 +326,6 @@ token_type check_keyword(char *s)
     {
         return token_blank;
     }
-
 }
 
 /**
@@ -348,37 +339,51 @@ Token_t *create_empty_token(void)
 {
 
     // Allocate token memory
-    Token_t *token = (Token_t *) malloc(sizeof(Token_t));
+    Token_t *token = (Token_t *)malloc(sizeof(Token_t));
 
     // Check token
-    if (!token) return NULL;
+    if (!token)
+        return NULL;
 
     // Initialize token
-    token->value.c = NULL;\
-    token->value.d = 0.0;\
-    token->value.i = 0;\
+    token->value.c = NULL;
+    token->value.d = 0.0;
+    token->value.i = 0;
     token->type = token_blank;
     token->line = 0;
 
     // Return token pointer
     return token;
-
 }
 
 // FSM states
-typedef enum
-{
-    EMPTY, ID, NUMBER, DECIMAL, DOUBLE_EXP, DOUBLE_EXP_SIGN, DOUBLE,
-    EXC_MARK, STRING, STRING_ESC, STRING_ESC_1N, STRING_ESC_2N, STRING_END,
-    DIV_SIGN, COMMENT_SINGLE, COMMENT_MULTI, COMMENT_MULTI_END,
-    OPER_LESS, OPER_GREAT
-}
-fsm_state;
+typedef enum {
+    EMPTY,
+    ID,
+    NUMBER,
+    DECIMAL,
+    DOUBLE_EXP,
+    DOUBLE_EXP_SIGN,
+    DOUBLE,
+    EXC_MARK,
+    STRING,
+    STRING_ESC,
+    STRING_ESC_1N,
+    STRING_ESC_2N,
+    STRING_END,
+    DIV_SIGN,
+    COMMENT_SINGLE,
+    COMMENT_MULTI,
+    COMMENT_MULTI_END,
+    OPER_LESS,
+    OPER_GREAT
+} fsm_state;
 
-#define return_eof_false(ptr) {\
-    (ptr)->type = token_eof;\
-    return false;\
-}
+#define return_eof_false(ptr)    \
+    {                            \
+        (ptr)->type = token_eof; \
+        return false;            \
+    }
 
 /**
  * @brief Gets the next token form the source code
@@ -460,13 +465,13 @@ bool get_next_token(FILE *file, Token_t *token)
             if (c != '\n' && c != 13 && c != '\'') new_line_start = false;
 
             // Identifier beginning
-            if ((c>='a' && c<='z') || c == '_')
+            if ((c >= 'a' && c <= 'z') || c == '_')
             {
                 if (!dStrAddChar(&value, c)) return_eof_false(token);
                 state = ID;
             }
             // Number beginning
-            else if (c>='0' && c<='9')
+            else if (c >= '0' && c <= '9')
             {
                 if (!dStrAddChar(&value, c)) return_eof_false(token);
                 state = NUMBER;
@@ -565,7 +570,7 @@ bool get_next_token(FILE *file, Token_t *token)
             }
             break;
         case ID:
-            if ((c>='a' && c<='z') || (c>='0' && c<='9') || c == '_')
+            if ((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '_')
             {
                 // Identifier continues
                 if (!dStrAddChar(&value, c)) return_eof_false(token);
@@ -604,22 +609,21 @@ bool get_next_token(FILE *file, Token_t *token)
 
                 // Return success
                 return true;
-
             }
             break;
         case NUMBER:
-            if (c>='0' && c<='9')
+            if (c >= '0' && c <= '9')
             {
                 // Number continues
                 if (!dStrAddChar(&value, c)) return_eof_false(token);
             }
-            else if (c=='.')
+            else if (c == '.')
             {
                 // Becomes decimal number
                 if (!dStrAddChar(&value, c)) return_eof_false(token);
                 state = DECIMAL;
             }
-            else if (c=='e')
+            else if (c == 'e')
             {
                 // Becomes double with exponent
                 if (!dStrAddChar(&value, c)) return_eof_false(token);
@@ -636,12 +640,12 @@ bool get_next_token(FILE *file, Token_t *token)
             }
             break;
         case DECIMAL:
-            if (c>='0' && c<='9')
+            if (c >= '0' && c <= '9')
             {
                 // Decimal continues
                 if (!dStrAddChar(&value, c)) return_eof_false(token);
             }
-            else if (c=='e')
+            else if (c == 'e')
             {
                 // Becomes double with exponent
                 if (!dStrAddChar(&value, c)) return_eof_false(token);
@@ -658,13 +662,13 @@ bool get_next_token(FILE *file, Token_t *token)
             }
             break;
         case DOUBLE_EXP:
-            if (c>='0' && c<='9')
+            if (c >= '0' && c <= '9')
             {
                 // Becomes full double
                 if (!dStrAddChar(&value, c)) return_eof_false(token);
                 state = DOUBLE;
             }
-            else if (c=='+' || c=='-')
+            else if (c == '+' || c == '-')
             {
                 // Becomes double with exponent sign
                 if (!dStrAddChar(&value, c)) return_eof_false(token);
@@ -682,7 +686,7 @@ bool get_next_token(FILE *file, Token_t *token)
             }
             break;
         case DOUBLE_EXP_SIGN:
-            if (c>='0' && c<='9')
+            if (c >= '0' && c <= '9')
             {
                 // Becomes full double
                 if (!dStrAddChar(&value, c)) return_eof_false(token);
@@ -700,7 +704,7 @@ bool get_next_token(FILE *file, Token_t *token)
             }
             break;
         case DOUBLE:
-            if (c>='0' && c<='9')
+            if (c >= '0' && c <= '9')
             {
                 // Continues to be double
                 if (!dStrAddChar(&value, c)) return_eof_false(token);
@@ -810,7 +814,7 @@ bool get_next_token(FILE *file, Token_t *token)
             if (c >= '0' && c <= '2')
             {
                 // Decimal escape sequence start
-                strEcsValue += 100*(c-'0');
+                strEcsValue += 100 * (c - '0');
                 state = STRING_ESC_1N;
             }
             else if (c == 'n')
@@ -856,7 +860,7 @@ bool get_next_token(FILE *file, Token_t *token)
             if (c >= '0' && c <= '9')
             {
                 // Decimal escape sequence continues
-                strEcsValue += 10*(c-'0');
+                strEcsValue += 10 * (c - '0');
                 state = STRING_ESC_2N;
             }
             else
@@ -870,7 +874,7 @@ bool get_next_token(FILE *file, Token_t *token)
             if (c >= '0' && c <= '9')
             {
                 // Decimal escape sequence ends
-                strEcsValue += (c-'0');
+                strEcsValue += (c - '0');
 
                 // Check invalidity of the character
                 if (strEcsValue < 1 || strEcsValue > 255)
@@ -913,6 +917,8 @@ bool get_next_token(FILE *file, Token_t *token)
                 // Continue as string
                 state = STRING;
 
+                // Continue as string
+                state = STRING;
             }
             else
             {
@@ -951,7 +957,7 @@ bool get_next_token(FILE *file, Token_t *token)
             return true;
             break;
         } // FSM switch end
-    } // While getc() != EOL
+    }     // While getc() != EOL
 
     // Reached end of file
     token->type = token_eof;

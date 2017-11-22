@@ -20,7 +20,7 @@
 # @TODO zip, documentation, tests
 
 CC=gcc
-CFLAGS=-O2 -std=c99 -g -Wall -pedantic
+CFLAGS=-DDEBUG -O2 -std=c99 -g -Wall -pedantic
 OBJFILES=$(patsubst src/%.c, build/%.o, $(shell ls src/*.c))
 
 all: ifj2017

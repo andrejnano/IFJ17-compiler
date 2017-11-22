@@ -52,3 +52,9 @@ Mkfile.old
 dkms.conf
 
 ifj2017
+
+stdout
+
+*.bas
+
+*.json

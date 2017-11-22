@@ -16,47 +16,57 @@
 
 */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include "errorcodes.h"
-#include "token.h"
-#include "symtable.h"
+    #include <stdio.h>
+    #include <stdlib.h>
 
-int main(int argc, char* argv[])
-{
+    #include "errorcodes.h"
+    #include "token.h"
+    #include "symtable.h"
+    #include "parser.h"
+    #include "scanner.h"
 
-    // check arguments, input file @TODO make sepparate function for argument parsing
-    /* if (argc != 2)
-        return E_INTERNAL;
+    FILE* source_code;
+    FILE* output_code;
+    char* source_file_name;
 
-    FILE* source_code;  // make global ?
+    extern int compiler_error;
 
-    if (! (source_code = fopen(argv[1], "r")))
-        return E_INTERNAL;*/
+/******************************************************************************
+    MAIN FUNCTION of the IFJ17 COMPILER
+    - checks arguments
+    - setups environment / source code file / source_code,output_code buffer/ symtable,...
+    - start parser (syntax analyzer)
+    - returns SUCESS or ERROR CODE
+    - cleanup, close file, etc..
 
-    /* structure of the program
-        option 1: call parse function, which inside calls scanner pointed to a global file variable.
-        option 2: call scanner with pointer to token vector as argument, call parser with updated token vector
-*/
-    // scan(source_code);
-    // parse();
+    @TODO how to output_code instruction code after compiling ???
+ *****************************************************************************/
 
-    // tests of symtable
-    val_union val, wal;
-    val.i = 43;
-    b_tree b;
-    b_tree_init(&b);
-    b_tree_insert(&b, "d", 1, val);
-    wal.i = 42;
-    b_tree_insert(&b, "b", 1, wal);
-    wal.i = 46;
-    b_tree_insert(&b, "c", 1, wal);
-    wal.i = 49;
-    b_tree_insert(&b, "r", 1, wal);
+    int main(int argc, char* argv[])
+    {
+        // check arguments, source_code file @TODO make sepparate function for argument parsing
+        if (argc != 3)
+            return E_INTERNAL;
 
-    node_val_t *out = b_tree_search(&b, "r");
-    printf("nasiel som %d\n", out->value.i);
-    b_tree_free(b.top);
+        if (! (source_code = fopen(argv[1], "r")))
+            return E_INTERNAL;
 
-    return SUCCESS;
-}
+        if (!(output_code = fopen(argv[2], "rw")))
+            return E_INTERNAL;
+
+        // save the source name
+        source_file_name = argv[1];
+        parse(); // uses globals source_code & output_code
+
+        //cleanup();
+        fclose(source_code);
+        fclose(output_code);
+
+        // DEBUG
+        #ifdef DEBUG
+            if (compiler_error) printf(" EXIT STATUS : "ANSI_COLOR_RED"ERROR | %d \n\n" ANSI_COLOR_RESET, compiler_error);
+            else                printf(" EXIT STATUS : " ANSI_COLOR_GREEN "SUCCESS | %d\n\n" ANSI_COLOR_RESET, compiler_error);
+        #endif
+
+        return (!compiler_error) ? SUCCESS : compiler_error;
+    }
