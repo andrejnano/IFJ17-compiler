@@ -1,7 +1,7 @@
-Declare Function factorial (n As Integer) As Integer
-Function factorial (n As Integer) As Integer
 
-Dim D as integer
-Dim vysl as integer
-vysl = factorial(2) + 2*7 - 3
+Declare Function factorial(n As Integer) As Integer
+Scope
+Dim test As Integer
+
+
 End Scope

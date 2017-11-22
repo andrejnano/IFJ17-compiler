@@ -19,8 +19,8 @@ tStack *sPop(tStack **s);
 
 void generateName(char **var);
 void zeroVarInit(char *varName);
-void ntFunc(bool dec, char **funcName);
-void ntCallExpr(node_val_t *funcMeta, char *funcName, tSymbolTable *localVars);
-void ntExpr(int type, tSymbolTable *localVars);
+void NT_Func(bool dec, char **funcName);
+void NT_CallExpr(Metadata_t *funcMeta, char *funcName, SymbolTable_t *localVars);
+void NT_Expr(int type, SymbolTable_t *localVars);
 char *convert(int inType, int outType, token_value val, char *frame);
 #endif

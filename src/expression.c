@@ -1,6 +1,8 @@
 #include "expression.h"
 #include "symtable.h"
 #include "errors.h"
+#include "token.h"
+#include "parser.h"
 
 
 
@@ -32,7 +34,7 @@ int TvalToKeyword(int val)
 */
 void generateName(char **var)
 {
-	if (!output)
+	if (!output_code)
 	{
 		raise_error(1, "Error : not valid ouput file generateVariable\n");
 		return;
@@ -41,7 +43,7 @@ void generateName(char **var)
 	char *before = *var;
 	*var = (char *)malloc(sizeof(*var) + 10);
 	sprintf(*var,"$%s%u", before, count);
-	fprintf(output, "defvar lf@%s\n", *var);
+	fprintf(output_code, "defvar lf@%s\n", *var);
 	count++;
 }
 
@@ -96,9 +98,9 @@ char *convert(int inType, int outType, token_value val, char *frame)
 		}
 		generateName(&tmpVar);
 		if (!frame)
-			fprintf(output, "float2r2eint lf@%s float@%g\n", tmpVar, val.d);
+			fprintf(output_code, "float2r2eint lf@%s float@%g\n", tmpVar, val.d);
 		else
-			fprintf(output, "float2r2eint lf@%s %s@%s\n", tmpVar, frame, val.c);
+			fprintf(output_code, "float2r2eint lf@%s %s@%s\n", tmpVar, frame, val.c);
 	break;
 	case  token_double:
 		if (inType != token_integer)
@@ -108,9 +110,9 @@ char *convert(int inType, int outType, token_value val, char *frame)
 		}
 		generateName(&tmpVar);
 		if (!frame)
-			fprintf(output, "int2float lf@%s int@%d\n", tmpVar, val.i);
+			fprintf(output_code, "int2float lf@%s int@%d\n", tmpVar, val.i);
 		else
-			fprintf(output, "int2float lf@%s %s@%s\n", tmpVar, frame, val.c);
+			fprintf(output_code, "int2float lf@%s %s@%s\n", tmpVar, frame, val.c);
 	break;
 	default:
 		raise_error(TYPE_ERROR, "Wrong type for conversion\n");
@@ -124,19 +126,19 @@ char *convert(int inType, int outType, token_value val, char *frame)
  * \param varName Name of variable to be initialized
  */
 void zeroVarInit(char *varName) {
-	switch (active_token.type)
+	switch (active_token->type)
 	{
 		case token_integer:
-			fprintf(output, "move lf@%s int@0\n", varName);
+			fprintf(output_code, "move lf@%s int@0\n", varName);
 			break;
 		case token_double:
-			fprintf(output, "move lf@%s float@0.0\n", varName);
+			fprintf(output_code, "move lf@%s float@0.0\n", varName);
 			break;
 		case token_string:
-			fprintf(output, "move lf@%s string@\n", varName);
+			fprintf(output_code, "move lf@%s string@\n", varName);
 			break;
 		case token_boolean:
-			fprintf(output, "move lf@%s bool@false\n", varName);
+			fprintf(output_code, "move lf@%s bool@false\n", varName);
 			break;
 		default :
 			raise_error(SYNTAX_ERROR, "Expecet type int, double ...\n");
@@ -149,86 +151,86 @@ void zeroVarInit(char *varName) {
   * \param If function is being declared
   * \param funcname Here will be stored name of function
   */
-void ntFunc(bool dec, char **funcName)
+void NT_Func(bool dec, char **funcName)
 {
-	match(active_token.type, token_function);
+	match(token_function);
 	// saving metadata about function which could be already declared for
 	// later comparison
-	node_val_t *oldFuncMeta = STL_search(functions, active_token.value.c);
-	if (active_token.type != token_identifier)
+	Metadata_t *oldFuncMeta = stl_search(functions, active_token->value.c);
+	if (active_token->type != token_identifier)
 	{
 		raise_error(SYNTAX_ERROR, "Expectd identifier\n");
 		return;
 	}
-	*funcName = active_token.value.c;
+	*funcName = active_token->value.c;
 	// creating variable for later storing and comparing with oldFuncMeta
-	node_val_t newFuncMeta;
-	newFuncMeta.dec = dec;
-	newFuncMeta.args = NULL;
-	get_next_token(input, &active_token);
-	match(active_token.type, token_lbrace);
+	Metadata_t newFuncMeta;
+	newFuncMeta.is_declared = dec;
+	newFuncMeta.parameters = NULL;
+	get_next_token(source_code, active_token);
+	match(token_lbrace);
 	// storing arguments to arglist
-	tArglist *argList = NULL;
-	// storing arguments to newFuncMeta.args
-	while (active_token.type != token_rbrace)
+	Parameter_t *argList = NULL;
+	// storing arguments to newFuncMeta.parameters
+	while (active_token->type != token_rbrace)
 	{	
-		tArglist *tmpNode = (tArglist *)malloc(sizeof (tArglist));
-		tmpNode->name = active_token.value.c;
+		Parameter_t *tmpNode = (Parameter_t *)malloc(sizeof (Parameter_t));
+		tmpNode->name = active_token->value.c;
 		tmpNode->next = NULL;
-		get_next_token(input, &active_token);
-		match(active_token.type, token_as);
+		get_next_token(source_code, active_token);
+		match(token_as);
 
-		if (!istype(active_token.type))
+		if (!istype(active_token->type))
 		{
 			raise_error( SYNTAX_ERROR, "Expectd type\n");
 			return;
 		}
-		tmpNode->type = active_token.type;
-		get_next_token(input, &active_token);
+		tmpNode->type = active_token->type;
+		get_next_token(source_code, active_token);
 		// token comma means there will be other argument so continue
-		if (active_token.type == token_comma)
+		if (active_token->type == token_comma)
 		{
-			get_next_token(input, &active_token);
-			if (argListAppend(&argList, tmpNode))
+			get_next_token(source_code, active_token);
+			if (param_list_append(&argList, tmpNode))
 				return;
 			continue;
 		}
-		else if (active_token.type != token_rbrace)
+		else if (active_token->type != token_rbrace)
 		{
 			raise_error(SYNTAX_ERROR, "Expected token_rbrace\n");
 			return;
 		}
-		if (argListAppend(&argList, tmpNode))
+		if (param_list_append(&argList, tmpNode))
 			return;
 	}
 
-	get_next_token(input, &active_token);
-	match(active_token.type, token_as);
-	if (!istype(active_token.type))
+	get_next_token(source_code, active_token);
+	match(token_as);
+	if (!istype(active_token->type))
 	{
 		raise_error(SYNTAX_ERROR, "Expected type\n");
 		return;
 	}
-	newFuncMeta.type = active_token.type;
-	newFuncMeta.args = argList;
-	if (oldFuncMeta && (oldFuncMeta->dec == dec || (!oldFuncMeta->dec && dec) || 
-		!isSameArglists(newFuncMeta.args, oldFuncMeta->args) || newFuncMeta.type != oldFuncMeta->type))
+	newFuncMeta.type = active_token->type;
+	newFuncMeta.parameters = argList;
+	if (oldFuncMeta && (oldFuncMeta->is_declared == dec || (!oldFuncMeta->is_declared && dec) || 
+		!param_list_cmp(newFuncMeta.parameters, oldFuncMeta->parameters) || newFuncMeta.type != oldFuncMeta->type))
 	{
 		raise_error( SEM_ERROR, "Redefinition of function %s\n");
-		DisposeArgList(argList);
+		param_list_dispose(argList);
 		return;
 	}
 	// if there were no old metadata insert new
 	// otherwise no need for inserting new ones consistence were checked
 
 	if (!oldFuncMeta)
-		STL_insert_top(functions, *funcName, &newFuncMeta);
+		stl_insert_top(functions, *funcName, &newFuncMeta);
 	else
-		DisposeArgList(newFuncMeta.args);
-	get_next_token(input, &active_token);
-	match(active_token.type, token_eol);
+		param_list_dispose(newFuncMeta.parameters);
+	get_next_token(source_code, active_token);
+	match(token_eol);
 	if (!dec)
-		fprintf(output, "label %s\n", *funcName);
+		fprintf(output_code, "label %s\n", *funcName);
 }
 
 /*
@@ -244,7 +246,7 @@ void converts(int old_type, int *last_type, bool byPriority)
 		return;
 	char *temp1 = "tmp";
 	generateName(&temp1);
-	fprintf(output, "pops lf@%s\n", temp1);
+	fprintf(output_code, "pops lf@%s\n", temp1);
 	if (istype(old_type) && istype(old_type))
 	{
 		if (old_type == token_double && *last_type == token_integer)
@@ -253,20 +255,20 @@ void converts(int old_type, int *last_type, bool byPriority)
 			{
 				char *temp2 = "tmp";
 				generateName(&temp2);
-				fprintf(output, "pops lf@%s\n", temp2);
-				fprintf(output, "int2float lf@%s lf@%s\n", temp2, temp2);
-				fprintf(output, "pushs lf@%s\n", temp2);
+				fprintf(output_code, "pops lf@%s\n", temp2);
+				fprintf(output_code, "int2float lf@%s lf@%s\n", temp2, temp2);
+				fprintf(output_code, "pushs lf@%s\n", temp2);
 				*last_type = token_double;
 			}
 			else
 			{
-				fprintf(output, "float2r2eint lf@%s lf@%s\n", temp1, temp1);
+				fprintf(output_code, "float2r2eint lf@%s lf@%s\n", temp1, temp1);
 				*last_type = token_integer;
 			}
 		}
 		else if (*last_type == token_double && old_type == token_integer)
 		{
-			fprintf(output, "int2float lf@%s lf@%s\n", temp1, temp1);
+			fprintf(output_code, "int2float lf@%s lf@%s\n", temp1, temp1);
 			*last_type = token_double;
 		}
 		else
@@ -280,7 +282,7 @@ void converts(int old_type, int *last_type, bool byPriority)
 		raise_error(SYNTAX_ERROR, "Wrong expression syntax\n");
 		return;
 	}
-	fprintf(output, "pushs lf@%s\n", temp1);
+	fprintf(output_code, "pushs lf@%s\n", temp1);
 }
 
 /*
@@ -301,9 +303,9 @@ void testCmpOps(int OP1, int *OP2)
 	{
 		char *temp1 = "tmp";
 		generateName(&temp1);
-		fprintf(output, "pops lf@%s\n", temp1);
-		fprintf(output, "int2float lf@%s lf@%s\n", temp1, temp1);
-		fprintf(output, "pushs lf@%s\n", temp1);
+		fprintf(output_code, "pops lf@%s\n", temp1);
+		fprintf(output_code, "int2float lf@%s lf@%s\n", temp1, temp1);
+		fprintf(output_code, "pushs lf@%s\n", temp1);
 		*OP2 = token_double;
 	}
 	else if (OP1 == token_integer && *OP2 == token_double)
@@ -311,12 +313,12 @@ void testCmpOps(int OP1, int *OP2)
 		char *temp1 = "tmp";
 		char *temp2 = "tmp";
 		generateName(&temp1);
-		fprintf(output, "pops lf@%s\n", temp1);
+		fprintf(output_code, "pops lf@%s\n", temp1);
 		generateName(&temp2);
-		fprintf(output, "pops lf@%s\n", temp2);
-		fprintf(output, "int2float lf@%s lf@%s\n", temp2, temp2);
-		fprintf(output, "pushs lf@%s\n", temp2);
-		fprintf(output, "pushs lf@%s\n", temp1);
+		fprintf(output_code, "pops lf@%s\n", temp2);
+		fprintf(output_code, "int2float lf@%s lf@%s\n", temp2, temp2);
+		fprintf(output_code, "pushs lf@%s\n", temp2);
+		fprintf(output_code, "pushs lf@%s\n", temp1);
 		*OP2 = token_double;
 	}
 	else
@@ -353,32 +355,32 @@ tStack execOp (tStack **s, int *numOp, int *last_type)
 			{
 				generateName(&tmpName1);
 				generateName(&tmpName2);
-				fprintf(output, "pops lf@%s\n", tmpName1);
-				fprintf(output, "pops lf@%s\n", tmpName2);
-				fprintf(output, "concat lf@%s lf@%s lf@%s\n", tmpName1, tmpName2, tmpName1);
-				fprintf(output, "pushs lf@%s\n", tmpName1);
+				fprintf(output_code, "pops lf@%s\n", tmpName1);
+				fprintf(output_code, "pops lf@%s\n", tmpName2);
+				fprintf(output_code, "concat lf@%s lf@%s lf@%s\n", tmpName1, tmpName2, tmpName1);
+				fprintf(output_code, "pushs lf@%s\n", tmpName1);
 				break;
 			}
 			converts(operation->lOperandType, last_type, 1);
-			fprintf(output,"adds\n");
+			fprintf(output_code,"adds\n");
 		break;
 		case token_op_sub:
 			converts(operation->lOperandType, last_type, 1);
 			if (*last_type == token_string)
 				raise_error(SEM_ERROR, "Invalid operation for strings\n");
-			fprintf(output,"subs\n");
+			fprintf(output_code,"subs\n");
 		break;  
 		case token_op_mul:
 			converts(operation->lOperandType, last_type, 1);
 			if (*last_type == token_string)
 				raise_error(SEM_ERROR, "Invalid operation for strings\n");
-			fprintf(output,"muls\n");
+			fprintf(output_code,"muls\n");
 		break;  
 		case token_op_div:
 			converts(operation->lOperandType, last_type, 1);
 			if (*last_type == token_string)
 				raise_error(SEM_ERROR, "Invalid operation for strings\n");
-			fprintf(output,"divs\n");
+			fprintf(output_code,"divs\n");
 		break;  
 		case token_op_mod:
 			converts(operation->lOperandType, last_type, 1);
@@ -386,74 +388,74 @@ tStack execOp (tStack **s, int *numOp, int *last_type)
 				raise_error(SEM_ERROR, "Invalid operation for strings\n");
 			generateName(&tmpName1);
 			generateName(&tmpName2);
-			fprintf(output, "pops lf@%s\n", tmpName1);
-			fprintf(output, "pops lf@%s\n", tmpName2);
-			fprintf(output, "pushs lf@%s\n", tmpName2);
-			fprintf(output, "pushs lf@%s\n", tmpName2);
-			fprintf(output, "pushs lf@%s\n", tmpName1);
-			fprintf(output, "divs\n");
-			fprintf(output, "pushs lf@%s\n", tmpName1);
-			fprintf(output, "muls\n");
-			fprintf(output, "subs\n");
+			fprintf(output_code, "pops lf@%s\n", tmpName1);
+			fprintf(output_code, "pops lf@%s\n", tmpName2);
+			fprintf(output_code, "pushs lf@%s\n", tmpName2);
+			fprintf(output_code, "pushs lf@%s\n", tmpName2);
+			fprintf(output_code, "pushs lf@%s\n", tmpName1);
+			fprintf(output_code, "divs\n");
+			fprintf(output_code, "pushs lf@%s\n", tmpName1);
+			fprintf(output_code, "muls\n");
+			fprintf(output_code, "subs\n");
 			free(tmpName1);
 			free(tmpName2);
-			fprintf(output,"divs\n");
+			fprintf(output_code,"divs\n");
 		break;
 		case token_op_eq:
 			testCmpOps(operation->lOperandType, last_type);
-			fprintf(output, "eqs\n");
+			fprintf(output_code, "eqs\n");
 			*last_type = token_boolean;
 		break;
 		case token_op_lt:
 			testCmpOps(operation->lOperandType, last_type);
-			fprintf(output, "lts\npushs");
+			fprintf(output_code, "lts\npushs");
 			*last_type = token_boolean;
 		break;
 		case token_op_le:
 			testCmpOps(operation->lOperandType, last_type);
 			generateName(&tmpName1);
 			generateName(&tmpName2);
-			fprintf(output, "pops lf@%s\n", tmpName1);
-			fprintf(output, "pops lf@%s\n", tmpName2);
-			fprintf(output, "pushs lf@%s\n", tmpName2);
-			fprintf(output, "pushs lf@%s\n", tmpName1);
-			fprintf(output, "lts\n");
-			fprintf(output, "pushs lf@%s\n", tmpName2);
-			fprintf(output, "pushs lf@%s\n", tmpName1);
-			fprintf(output, "eqs\nors\n");
+			fprintf(output_code, "pops lf@%s\n", tmpName1);
+			fprintf(output_code, "pops lf@%s\n", tmpName2);
+			fprintf(output_code, "pushs lf@%s\n", tmpName2);
+			fprintf(output_code, "pushs lf@%s\n", tmpName1);
+			fprintf(output_code, "lts\n");
+			fprintf(output_code, "pushs lf@%s\n", tmpName2);
+			fprintf(output_code, "pushs lf@%s\n", tmpName1);
+			fprintf(output_code, "eqs\nors\n");
 			*last_type = token_boolean;
 		break;
 		case token_op_ge:
 			testCmpOps(operation->lOperandType, last_type);
 			generateName(&tmpName1);
 			generateName(&tmpName2);
-			fprintf(output, "pops lf@%s\n", tmpName1);
-			fprintf(output, "pops lf@%s\n", tmpName2);
-			fprintf(output, "pushs lf@%s\n", tmpName2);
-			fprintf(output, "pushs lf@%s\n", tmpName1);
-			fprintf(output, "gts\n");
-			fprintf(output, "pushs lf@%s\n", tmpName2);
-			fprintf(output, "pushs lf@%s\n", tmpName1);
-			fprintf(output, "eqs\nors\n");
+			fprintf(output_code, "pops lf@%s\n", tmpName1);
+			fprintf(output_code, "pops lf@%s\n", tmpName2);
+			fprintf(output_code, "pushs lf@%s\n", tmpName2);
+			fprintf(output_code, "pushs lf@%s\n", tmpName1);
+			fprintf(output_code, "gts\n");
+			fprintf(output_code, "pushs lf@%s\n", tmpName2);
+			fprintf(output_code, "pushs lf@%s\n", tmpName1);
+			fprintf(output_code, "eqs\nors\n");
 			*last_type = token_boolean;
 		break;
 		case token_op_ne:
 			testCmpOps(operation->lOperandType, last_type);
 			generateName(&tmpName1);
 			generateName(&tmpName2);
-			fprintf(output, "pops lf@%s\n", tmpName1);
-			fprintf(output, "pops lf@%s\n", tmpName2);
-			fprintf(output, "pushs lf@%s\n", tmpName2);
-			fprintf(output, "pushs lf@%s\n", tmpName1);
-			fprintf(output, "lts\n");
-			fprintf(output, "pushs lf@%s\n", tmpName2);
-			fprintf(output, "pushs lf@%s\n", tmpName1);
-			fprintf(output, "gts\nors\n");
+			fprintf(output_code, "pops lf@%s\n", tmpName1);
+			fprintf(output_code, "pops lf@%s\n", tmpName2);
+			fprintf(output_code, "pushs lf@%s\n", tmpName2);
+			fprintf(output_code, "pushs lf@%s\n", tmpName1);
+			fprintf(output_code, "lts\n");
+			fprintf(output_code, "pushs lf@%s\n", tmpName2);
+			fprintf(output_code, "pushs lf@%s\n", tmpName1);
+			fprintf(output_code, "gts\nors\n");
 			*last_type = token_boolean;
 		break;
 		case token_op_gt:
 			testCmpOps(operation->lOperandType, last_type);
-			fprintf(output, "gts\n");	
+			fprintf(output_code, "gts\n");	
 			*last_type = token_boolean;	
 		break;
 		case token_lbrace:
@@ -472,35 +474,35 @@ tStack execOp (tStack **s, int *numOp, int *last_type)
  * \param functions Symbol table list containig metadata about functions
  * \param funcname Name of function to be called
  */
-void ntCallExpr(node_val_t *funcMeta, char *funcName, tSymbolTable *localVars)
+void NT_CallExpr(Metadata_t *funcMeta, char *funcName, SymbolTable_t *localVars)
 {
-	get_next_token(input, &active_token);
-	match(active_token.type, token_lbrace);
-	fprintf(output, "createframe\n");
-	tArglist *arg = funcMeta->args;
+	get_next_token(source_code, active_token);
+	match(token_lbrace);
+	fprintf(output_code, "createframe\n");
+	Parameter_t *arg = funcMeta->parameters;
 	// read check types and convert arguments for calling function
-	while (active_token.type != token_rbrace)
+	while (active_token->type != token_rbrace)
 	{
 		if (!arg)	// no bracket but still expected argument
 		{
 			raise_error(SEM_ERROR, "Too many arguments for function\n");
 			return;
 		}
-		fprintf(output, "defvar tf@%s\n", arg->name);
-		if (active_token.type == token_identifier)
+		fprintf(output_code, "defvar tf@%s\n", arg->name);
+		if (active_token->type == token_identifier)
 		{
-			char *id = active_token.value.c;
-			node_val_t *tmpMeta;
-			if ((tmpMeta = STL_search(localVars, id)))
+			char *id = active_token->value.c;
+			Metadata_t *tmpMeta;
+			if ((tmpMeta = stl_search(localVars, id)))
 			{
 				if (tmpMeta->type == funcMeta->type)
 				{
-					fprintf(output, "move tf@%s lf@%s\n", arg->name, id);
+					fprintf(output_code, "move tf@%s lf@%s\n", arg->name, id);
 				}
 				else
 				{
-					char *name = convert(tmpMeta->type, arg->type, active_token.value, "lf");
-					fprintf(output, "move tf@%s lf@%s\n", arg->name, name);
+					char *name = convert(tmpMeta->type, arg->type, active_token->value, "lf");
+					fprintf(output_code, "move tf@%s lf@%s\n", arg->name, name);
 					free(name);
 				}
 				
@@ -513,22 +515,22 @@ void ntCallExpr(node_val_t *funcMeta, char *funcName, tSymbolTable *localVars)
 		}
 		// tvalToKeyword returns corresponding keyword to literal for example token_val_integer -> token_integer
 		// it is used because types are in structures stored as keyword for example token_integer
-		else if (TvalToKeyword(active_token.type) == arg->type)
+		else if (TvalToKeyword(active_token->type) == arg->type)
 		{
-			fprintf(output, "move tf@%s ", arg->name);
+			fprintf(output_code, "move tf@%s ", arg->name);
 			printTokenVal();
 		}
 		else
 		{
-			char *name = convert(TvalToKeyword(active_token.type), arg->type, active_token.value, NULL);
-			fprintf(output, "move tf@%s lf@%s\n", arg->name, name);
+			char *name = convert(TvalToKeyword(active_token->type), arg->type, active_token->value, NULL);
+			fprintf(output_code, "move tf@%s lf@%s\n", arg->name, name);
 			free(name);
 		}
 		arg = arg->next;
-		get_next_token(input, &active_token);
-		if (active_token.type != token_comma)
+		get_next_token(source_code, active_token);
+		if (active_token->type != token_comma)
 			break;
-		get_next_token(input, &active_token);
+		get_next_token(source_code, active_token);
 	}
 
 	if (arg)
@@ -536,7 +538,7 @@ void ntCallExpr(node_val_t *funcMeta, char *funcName, tSymbolTable *localVars)
 		raise_error(SEM_ERROR, "Too few arguments for function\n");
 		return;
 	}
-	fprintf(output, "pushframe\ncall %s\n", funcName);
+	fprintf(output_code, "pushframe\ncall %s\n", funcName);
 }
 
 /*
@@ -545,7 +547,7 @@ void ntCallExpr(node_val_t *funcMeta, char *funcName, tSymbolTable *localVars)
  * \param functions Symboltable list of functions
  * \param type Expected expression type
  */
-void ntExpr(int type, tSymbolTable *localVars)
+void NT_Expr(int type, SymbolTable_t *localVars)
 {
 	tStack *s;
 	sInit(&s);
@@ -554,14 +556,14 @@ void ntExpr(int type, tSymbolTable *localVars)
 	insert.type = STACK_STOPPER;
 	sPush(&s, &insert);
 	int numOp = 0, last_type = 0;
-	node_val_t *var;
-	while (active_token.type != token_eol)
+	Metadata_t *var;
+	while (active_token->type != token_eol)
 	{
-		switch (active_token.type)
+		switch (active_token->type)
 		{
 		case token_op_add:
 		case token_op_sub:
-			insert.type = active_token.type;
+			insert.type = active_token->type;
          insert.priority = 3;
          insert.lOperandType = last_type;
 			while (s && s->priority && s->priority <= insert.priority)
@@ -571,7 +573,7 @@ void ntExpr(int type, tSymbolTable *localVars)
 			break;
 		case token_op_div:
 		case token_op_mul:
-			insert.type = active_token.type;
+			insert.type = active_token->type;
 			insert.priority = 1;
          insert.lOperandType = last_type;
 			while (s && s->priority && s->priority <= insert.priority)
@@ -581,7 +583,7 @@ void ntExpr(int type, tSymbolTable *localVars)
 
 			break;
 		case token_op_mod:
-			insert.type = active_token.type;
+			insert.type = active_token->type;
 			insert.priority = 2;
          insert.lOperandType = last_type;
 			while (s && s->priority && s->priority <= insert.priority)
@@ -601,7 +603,7 @@ void ntExpr(int type, tSymbolTable *localVars)
 				return;
 			}
 			insert.lOperandType = last_type;
-			insert.type = active_token.type;
+			insert.type = active_token->type;
 			insert.priority = 4;
 			while (s && s->priority && s->priority <= insert.priority)
 				if (execOp(&s, &numOp, &last_type).priority == STACK_STOPPER)
@@ -609,7 +611,7 @@ void ntExpr(int type, tSymbolTable *localVars)
 			sPush(&s, &insert);
 			break;
 		case token_lbrace:
-			insert.type = active_token.type;
+			insert.type = active_token->type;
 			insert.priority = 6;
 			sPush(&s, &insert);
 			break;
@@ -623,17 +625,17 @@ void ntExpr(int type, tSymbolTable *localVars)
 			break;
 		case token_identifier:
          numOp++;
-			if ((var = STL_search(localVars, active_token.value.c)))
+			if ((var = stl_search(localVars, active_token->value.c)))
 			{
             	last_type = var->type;
-				fprintf(output, "pushs lf@%s\n", active_token.value.c);
+				fprintf(output_code, "pushs lf@%s\n", active_token->value.c);
 			}
-			else if ((var = STL_search(functions, active_token.value.c)))
+			else if ((var = stl_search(functions, active_token->value.c)))
 			{
             	last_type = var->type;
-				ntCallExpr(var, active_token.value.c, localVars);
-				fprintf(output, "pushs tf@return\n");
-				fprintf(output, "popframe\n");
+				NT_CallExpr(var, active_token->value.c, localVars);
+				fprintf(output_code, "pushs tf@return\n");
+				fprintf(output_code, "popframe\n");
 			}
 
 			break;
@@ -641,18 +643,18 @@ void ntExpr(int type, tSymbolTable *localVars)
 		case token_val_double:
 		case token_val_string:
          numOp++;
-			last_type = TvalToKeyword(active_token.type);
-			fprintf(output, "pushs ");
+			last_type = TvalToKeyword(active_token->type);
+			fprintf(output_code, "pushs ");
 			printTokenVal();
 			break;
 		default:
-			if (istype(active_token.type))
+			if (istype(active_token->type))
 				raise_error(TYPE_ERROR, "Wrong type in expression\n");
 			else
 				raise_error(SYNTAX_ERROR, "Wrong expression syntax expected EOL\n");
 			return;
 		}
-		get_next_token(input, &active_token);
+		get_next_token(source_code, active_token);
 	}
 	while (s && s->priority < STACK_STOPPER)
 	{
