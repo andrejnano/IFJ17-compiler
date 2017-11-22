@@ -3,7 +3,6 @@
     | PROJEKT IFJ17  |
     + -------------- +
     Implementace prekladace imperativního jazyka IFJ17.
-
     Autori:
         xmarko15 Peter Marko
         xmechl00 Stanislav Mechl
@@ -15,19 +14,7 @@
 #define PARSER_H
 
 #include <stdbool.h>
-
-/******************************************************************************
-    TOKEN MATCH 
-    - checks if active_token is the expected token in the syntax
-        > returns TRUE if the token is valid
-        > returns FALSE if the tokens is not valid
-    - moves to the next token
-    - for checking a set of predefined conditions based of LL(1) grammar
- *****************************************************************************/
-
-    bool match(token_type expected_token_type);
-
-
+#include "symtable.h"
 /******************************************************************************
     MAIN STARTING POINT
     - calls the first non-terminal and checks for the required EOL token

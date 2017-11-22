@@ -34,18 +34,17 @@
 /******************************************************************************
     MAIN FUNCTION of the IFJ17 COMPILER
     - checks arguments
-    - setups environment / source code file / input,output buffer/ symtable,...
+    - setups environment / source code file / source_code,output_code buffer/ symtable,...
     - start parser (syntax analyzer)
     - returns SUCESS or ERROR CODE
     - cleanup, close file, etc..
 
-    @TODO how to output instruction code after compiling ???
+    @TODO how to output_code instruction code after compiling ???
  *****************************************************************************/
 
     int main(int argc, char* argv[])
     {
-        
-        // check arguments, input file @TODO make sepparate function for argument parsing
+        // check arguments, source_code file @TODO make sepparate function for argument parsing
         if (argc != 3)
             return E_INTERNAL;
 
@@ -57,7 +56,6 @@
 
         // save the source name
         source_file_name = argv[1];
-
         parse(); // uses globals source_code & output_code
 
         //cleanup();

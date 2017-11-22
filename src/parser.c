@@ -1,8 +1,8 @@
 
 /******************************************************************************
  *    PARSER / SYNTAX ANALYZER
- *   input -> stream of Token_t* ( token pointers )
- *  output -> vector/list of Intruction_t* ( generated instruction pointers)
+ *   source_code -> stream of Token_t* ( token pointers )
+ *  output_code -> vector/list of Intruction_t* ( generated instruction pointers)
  *
  *  @TODO add instruction data structure and operations + vector of intructions
  *
@@ -18,15 +18,20 @@
     #include "token.h"
     #include "scanner.h"
     #include "parser.h"
-    #include "symtable.h"
 
-    // current token from input
+    // current token from source_code
 
-    Token_t* active_token = NULL;
+    Token_t* active_token;
     SymbolTable_t *functions;
     SymbolTable_t *variables;
+<<<<<<< HEAD
+    int compiler_error;
+
+    FILE* source_code, *output_code;
+=======
 
     extern int compiler_error;
+>>>>>>> origin/new-parser
 
     // source and output stream
     extern FILE *source_code;
@@ -47,7 +52,7 @@
             exit(7);
 
         //@TODO Instruction List init
-        //InstructionList_t InstList; // Instruction list for output code
+        //InstructionList_t InstList; // Instruction list for output_code code
         //IL_Init(&InstList);
 
         // init the symtable lists
@@ -86,7 +91,7 @@
 
 /******************************************************************************
     FUNCTIONS FOR EVERY NON-TERMINAL
-    - check if token on input is the expected one
+    - check if token on source_code is the expected one
     - or calls another non-terminal function
  *****************************************************************************/
 
@@ -805,7 +810,7 @@
         //     break; // keyword 'Return'
         // case token_input:
         //     NT_InputStmt();
-        //     break; // keyword 'Input'
+        //     break; // keyword 'source_code'
         // case token_print:
         //     NT_PrintStmt();
         //     break; // keyword 'Print'
@@ -1102,7 +1107,7 @@
 //     void NT_InputStmt()
 //     {
 //         if (match(token_input) == false)
-//             raise_error(E_SYNTAX, "Keyword 'Input' expected.");
+//             raise_error(E_SYNTAX, "Keyword 'source_code' expected.");
 
 //         if (active_token->type == token_identifier)
 //         {
@@ -1112,7 +1117,7 @@
 //         }
 
 //         if (match(token_identifier) == false)
-//             raise_error(E_SYNTAX, "Identifier is expected right after 'Input' keyword.");
+//             raise_error(E_SYNTAX, "Identifier is expected right after 'source_code' keyword.");
 //     }
 
 // /*****************************************************************************/

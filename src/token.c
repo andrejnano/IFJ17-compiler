@@ -482,3 +482,11 @@ const char *debug_token_name(Token_t *token)
         return "token_eof";
     }
 }
+
+bool istype(int type)
+{
+	if (type != token_integer && type != token_double &&
+		type != token_boolean && type != token_string) 
+		return false;
+	return true;
+}

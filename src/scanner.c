@@ -23,7 +23,7 @@ bool dStrInit(string_t *s)
 {
 
     // Assert !NULL
-    assert(s);
+    assert (s);
 
     // Allocates first bytes of memory
     s->str = (char *)malloc(sizeof(char) * DYNSTRING_INIT_LEN);
@@ -124,9 +124,9 @@ bool dStrOptimize(string_t *s)
 }
 
 // Static global variables
-static string_t value;             // Token value
-static unsigned int line;          // Line counter
-static bool end_of_file = true;    // Identifies end of file
+static string_t value; // Token value
+static unsigned int line; // Line counter
+static bool end_of_file = true; // Identifies end of file
 static bool new_line_start = true; // Identify empty line
 
 /**
@@ -422,7 +422,7 @@ bool get_next_token(FILE *file, Token_t *token)
 
     // Cycle
     int strEcsValue; // Escape character value
-    int c = '\0';    // Character being read from the source
+    int c = '\0'; // Character being read from the source
 
     // Reads source file
     while (!end_of_file)
@@ -437,8 +437,7 @@ bool get_next_token(FILE *file, Token_t *token)
             // Add final new line
             c = '\n';
             // Finish the output
-            if (state == EMPTY || state == COMMENT_MULTI)
-                end_of_file = true;
+            if (state == EMPTY || state == COMMENT_MULTI) end_of_file = true;
         }
 
         // Line count update
@@ -463,21 +462,18 @@ bool get_next_token(FILE *file, Token_t *token)
         case EMPTY:
 
             // Update empty line check - line is not empty
-            if (c != '\n' && c != 13 && c != '\'')
-                new_line_start = false;
+            if (c != '\n' && c != 13 && c != '\'') new_line_start = false;
 
             // Identifier beginning
             if ((c >= 'a' && c <= 'z') || c == '_')
             {
-                if (!dStrAddChar(&value, c))
-                    return_eof_false(token);
+                if (!dStrAddChar(&value, c)) return_eof_false(token);
                 state = ID;
             }
             // Number beginning
             else if (c >= '0' && c <= '9')
             {
-                if (!dStrAddChar(&value, c))
-                    return_eof_false(token);
+                if (!dStrAddChar(&value, c)) return_eof_false(token);
                 state = NUMBER;
             }
             // Single char switch
@@ -485,50 +481,21 @@ bool get_next_token(FILE *file, Token_t *token)
             {
                 switch (c)
                 {
-                case '/':
-                    state = DIV_SIGN;
-                    break; // Might be comment or div
-                case '!':
-                    state = EXC_MARK;
-                    break; // String beginning
-                case '\'':
-                    state = COMMENT_SINGLE;
-                    break; // Single line comm.
-                case '<':
-                    state = OPER_LESS;
-                    break; // Might be <= or <> or <
-                case '>':
-                    state = OPER_GREAT;
-                    break; // Might be >= or >
-                case '*':
-                    token->type = token_op_mul;
-                    return true;
-                case '\\':
-                    token->type = token_op_mod;
-                    return true;
-                case '+':
-                    token->type = token_op_add;
-                    return true;
-                case '-':
-                    token->type = token_op_sub;
-                    return true;
-                case '=':
-                    token->type = token_op_eq;
-                    return true;
-                case ',':
-                    token->type = token_comma;
-                    return true;
-                case '(':
-                    token->type = token_lbrace;
-                    return true;
-                case ')':
-                    token->type = token_rbrace;
-                    return true;
-                case ';':
-                    token->type = token_semicolon;
-                    return true;
-                case '\n':
-                    line++;
+                case '/': state = DIV_SIGN; break; // Might be comment or div
+                case '!': state = EXC_MARK; break; // String beginning
+                case '\'': state = COMMENT_SINGLE; break; // Single line comm.
+                case '<': state = OPER_LESS; break; // Might be <= or <> or <
+                case '>': state = OPER_GREAT; break; // Might be >= or >
+                case '*': token->type = token_op_mul; return true;
+                case '\\': token->type = token_op_mod; return true;
+                case '+': token->type = token_op_add; return true;
+                case '-': token->type = token_op_sub; return true;
+                case '=': token->type = token_op_eq; return true;
+                case ',': token->type = token_comma; return true;
+                case '(': token->type = token_lbrace; return true;
+                case ')': token->type = token_rbrace; return true;
+                case ';': token->type = token_semicolon; return true;
+                case '\n': line++;
                     // Return only one EOL per group of EOL's
                     if (!new_line_start)
                     {
@@ -537,8 +504,7 @@ bool get_next_token(FILE *file, Token_t *token)
                         return true;
                     }
                     // Skip repeating empty line
-                case 13:
-                    continue; // Windows CRLF compatibility
+                case 13: continue; // Windows CRLF compatibility
                 default:
                     // Unknown character
                     raise_error(E_LEX, "Unknown character @line:%u", line);
@@ -607,8 +573,7 @@ bool get_next_token(FILE *file, Token_t *token)
             if ((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '_')
             {
                 // Identifier continues
-                if (!dStrAddChar(&value, c))
-                    return_eof_false(token);
+                if (!dStrAddChar(&value, c)) return_eof_false(token);
             }
             else
             {
@@ -629,15 +594,13 @@ bool get_next_token(FILE *file, Token_t *token)
                 token->type = token_identifier;
 
                 // Fix identifier length
-                if (!dStrOptimize(&value))
-                    return_eof_false(token);
+                if (!dStrOptimize(&value)) return_eof_false(token);
 
                 // Pass string away
                 token->value.c = value.str;
 
                 // Get new string
-                if (!dStrInit(&value))
-                {
+                if (!dStrInit(&value)) {
                     // Take string away
                     value.str = token->value.c;
                     token->value.c = NULL;
@@ -652,28 +615,25 @@ bool get_next_token(FILE *file, Token_t *token)
             if (c >= '0' && c <= '9')
             {
                 // Number continues
-                if (!dStrAddChar(&value, c))
-                    return_eof_false(token);
+                if (!dStrAddChar(&value, c)) return_eof_false(token);
             }
             else if (c == '.')
             {
                 // Becomes decimal number
-                if (!dStrAddChar(&value, c))
-                    return_eof_false(token);
+                if (!dStrAddChar(&value, c)) return_eof_false(token);
                 state = DECIMAL;
             }
             else if (c == 'e')
             {
                 // Becomes double with exponent
-                if (!dStrAddChar(&value, c))
-                    return_eof_false(token);
+                if (!dStrAddChar(&value, c)) return_eof_false(token);
                 state = DOUBLE_EXP;
             }
             else
             {
                 // Returns integer token
                 ungetc(c, file);
-                int val = (int)strtol(value.str, NULL, 10);
+                int val = (int) strtol(value.str, NULL, 10);
                 token->type = token_val_integer;
                 token->value.i = val;
                 return true;
@@ -683,21 +643,19 @@ bool get_next_token(FILE *file, Token_t *token)
             if (c >= '0' && c <= '9')
             {
                 // Decimal continues
-                if (!dStrAddChar(&value, c))
-                    return_eof_false(token);
+                if (!dStrAddChar(&value, c)) return_eof_false(token);
             }
             else if (c == 'e')
             {
                 // Becomes double with exponent
-                if (!dStrAddChar(&value, c))
-                    return_eof_false(token);
+                if (!dStrAddChar(&value, c)) return_eof_false(token);
                 state = DOUBLE_EXP;
             }
             else
             {
                 // Returns double token
                 ungetc(c, file);
-                double val = (double)strtod(value.str, NULL);
+                double val = (double) strtod(value.str, NULL);
                 token->type = token_val_double;
                 token->value.d = val;
                 return true;
@@ -707,24 +665,21 @@ bool get_next_token(FILE *file, Token_t *token)
             if (c >= '0' && c <= '9')
             {
                 // Becomes full double
-                if (!dStrAddChar(&value, c))
-                    return_eof_false(token);
+                if (!dStrAddChar(&value, c)) return_eof_false(token);
                 state = DOUBLE;
             }
             else if (c == '+' || c == '-')
             {
                 // Becomes double with exponent sign
-                if (!dStrAddChar(&value, c))
-                    return_eof_false(token);
+                if (!dStrAddChar(&value, c)) return_eof_false(token);
                 state = DOUBLE_EXP_SIGN;
             }
             else
             {
                 // Returns double token (broken double 123e) appends '0'
                 ungetc(c, file);
-                if (!dStrAddChar(&value, '0'))
-                    return_eof_false(token);
-                double val = (double)strtod(value.str, NULL);
+                if (!dStrAddChar(&value, '0')) return_eof_false(token);
+                double val = (double) strtod(value.str, NULL);
                 token->type = token_val_double;
                 token->value.d = val;
                 return true;
@@ -734,17 +689,15 @@ bool get_next_token(FILE *file, Token_t *token)
             if (c >= '0' && c <= '9')
             {
                 // Becomes full double
-                if (!dStrAddChar(&value, c))
-                    return_eof_false(token);
+                if (!dStrAddChar(&value, c)) return_eof_false(token);
                 state = DOUBLE;
             }
             else
             {
                 // Returns double token (broken double 123e+) appends '0'
                 ungetc(c, file);
-                if (!dStrAddChar(&value, '0'))
-                    return_eof_false(token);
-                double val = (double)strtod(value.str, NULL);
+                if (!dStrAddChar(&value, '0')) return_eof_false(token);
+                double val = (double) strtod(value.str, NULL);
                 token->type = token_val_double;
                 token->value.d = val;
                 return true;
@@ -754,14 +707,13 @@ bool get_next_token(FILE *file, Token_t *token)
             if (c >= '0' && c <= '9')
             {
                 // Continues to be double
-                if (!dStrAddChar(&value, c))
-                    return_eof_false(token);
+                if (!dStrAddChar(&value, c)) return_eof_false(token);
             }
             else
             {
                 // Returns double token
                 ungetc(c, file);
-                double val = (double)strtod(value.str, NULL);
+                double val = (double) strtod(value.str, NULL);
                 token->type = token_val_double;
                 token->value.d = val;
                 return true;
@@ -791,38 +743,26 @@ bool get_next_token(FILE *file, Token_t *token)
             else if (c == ' ')
             {
                 // Space character
-                if (!dStrAddChar(&value, '\\'))
-                    return_eof_false(token);
-                if (!dStrAddChar(&value, '0'))
-                    return_eof_false(token);
-                if (!dStrAddChar(&value, '3'))
-                    return_eof_false(token);
-                if (!dStrAddChar(&value, '2'))
-                    return_eof_false(token);
+                if (!dStrAddChar(&value, '\\')) return_eof_false(token);
+                if (!dStrAddChar(&value, '0')) return_eof_false(token);
+                if (!dStrAddChar(&value, '3')) return_eof_false(token);
+                if (!dStrAddChar(&value, '2')) return_eof_false(token);
             }
             else if (c == '\t')
             {
                 // Tabulator character
-                if (!dStrAddChar(&value, '\\'))
-                    return_eof_false(token);
-                if (!dStrAddChar(&value, '0'))
-                    return_eof_false(token);
-                if (!dStrAddChar(&value, '0'))
-                    return_eof_false(token);
-                if (!dStrAddChar(&value, '9'))
-                    return_eof_false(token);
+                if (!dStrAddChar(&value, '\\')) return_eof_false(token);
+                if (!dStrAddChar(&value, '0')) return_eof_false(token);
+                if (!dStrAddChar(&value, '0')) return_eof_false(token);
+                if (!dStrAddChar(&value, '9')) return_eof_false(token);
             }
             else if (c == '#')
             {
                 // Hash sign character
-                if (!dStrAddChar(&value, '\\'))
-                    return_eof_false(token);
-                if (!dStrAddChar(&value, '0'))
-                    return_eof_false(token);
-                if (!dStrAddChar(&value, '3'))
-                    return_eof_false(token);
-                if (!dStrAddChar(&value, '5'))
-                    return_eof_false(token);
+                if (!dStrAddChar(&value, '\\')) return_eof_false(token);
+                if (!dStrAddChar(&value, '0')) return_eof_false(token);
+                if (!dStrAddChar(&value, '3')) return_eof_false(token);
+                if (!dStrAddChar(&value, '5')) return_eof_false(token);
             }
             else if (c == '"')
             {
@@ -832,8 +772,7 @@ bool get_next_token(FILE *file, Token_t *token)
             else if (c > 32)
             {
                 // Regular printable character
-                if (!dStrAddChar(&value, c))
-                    return_eof_false(token);
+                if (!dStrAddChar(&value, c)) return_eof_false(token);
             }
             else
             {
@@ -854,15 +793,13 @@ bool get_next_token(FILE *file, Token_t *token)
                 token->type = token_val_string;
 
                 // Fix string length
-                if (!dStrOptimize(&value))
-                    return_eof_false(token);
+                if (!dStrOptimize(&value)) return_eof_false(token);
 
                 // Pass string away
                 token->value.c = value.str;
 
                 // Get new string
-                if (!dStrInit(&value))
-                {
+                if (!dStrInit(&value)) {
                     // Take string away
                     value.str = token->value.c;
                     token->value.c = NULL;
@@ -883,47 +820,33 @@ bool get_next_token(FILE *file, Token_t *token)
             else if (c == 'n')
             {
                 // Adds new line and continues as a string
-                if (!dStrAddChar(&value, '\\'))
-                    return_eof_false(token);
-                if (!dStrAddChar(&value, '0'))
-                    return_eof_false(token);
-                if (!dStrAddChar(&value, '1'))
-                    return_eof_false(token);
-                if (!dStrAddChar(&value, '0'))
-                    return_eof_false(token);
+                if (!dStrAddChar(&value, '\\')) return_eof_false(token);
+                if (!dStrAddChar(&value, '0')) return_eof_false(token);
+                if (!dStrAddChar(&value, '1')) return_eof_false(token);
+                if (!dStrAddChar(&value, '0')) return_eof_false(token);
                 state = STRING;
             }
             else if (c == 't')
             {
                 // Adds tabulator and continues as a string
-                if (!dStrAddChar(&value, '\\'))
-                    return_eof_false(token);
-                if (!dStrAddChar(&value, '0'))
-                    return_eof_false(token);
-                if (!dStrAddChar(&value, '0'))
-                    return_eof_false(token);
-                if (!dStrAddChar(&value, '9'))
-                    return_eof_false(token);
+                if (!dStrAddChar(&value, '\\')) return_eof_false(token);
+                if (!dStrAddChar(&value, '0')) return_eof_false(token);
+                if (!dStrAddChar(&value, '0')) return_eof_false(token);
+                if (!dStrAddChar(&value, '9')) return_eof_false(token);
                 state = STRING;
             }
-            else if (c == '\\')
-            {
+            else if (c == '\\') {
                 // Adds backslash and continues as a string
-                if (!dStrAddChar(&value, '\\'))
-                    return_eof_false(token);
-                if (!dStrAddChar(&value, '0'))
-                    return_eof_false(token);
-                if (!dStrAddChar(&value, '9'))
-                    return_eof_false(token);
-                if (!dStrAddChar(&value, '2'))
-                    return_eof_false(token);
+                if (!dStrAddChar(&value, '\\')) return_eof_false(token);
+                if (!dStrAddChar(&value, '0')) return_eof_false(token);
+                if (!dStrAddChar(&value, '9')) return_eof_false(token);
+                if (!dStrAddChar(&value, '2')) return_eof_false(token);
                 state = STRING;
             }
             else if (c == '"')
             {
                 // Adds quotation mark and continues as a string
-                if (!dStrAddChar(&value, '"'))
-                    return_eof_false(token);
+                if (!dStrAddChar(&value, '"')) return_eof_false(token);
                 state = STRING;
             }
             else
@@ -964,45 +887,35 @@ bool get_next_token(FILE *file, Token_t *token)
                 if (strEcsValue < 33)
                 {
                     // Add escape sequence
-                    if (!dStrAddChar(&value, '\\'))
-                        return_eof_false(token);
-                    if (!dStrAddChar(&value, '0'))
-                        return_eof_false(token);
-                    if (!dStrAddChar(&value, '0' + strEcsValue / 10))
-                        return_eof_false(token);
-                    if (!dStrAddChar(&value, '0' + strEcsValue % 10))
-                        return_eof_false(token);
+                    if (!dStrAddChar(&value, '\\')) return_eof_false(token);
+                    if (!dStrAddChar(&value, '0')) return_eof_false(token);
+                    if (!dStrAddChar(&value, '0'+strEcsValue/10)) return_eof_false(token);
+                    if (!dStrAddChar(&value, '0'+strEcsValue%10)) return_eof_false(token);
                 }
                 else if (strEcsValue == 35)
                 {
                     // Add hash sign
-                    if (!dStrAddChar(&value, '\\'))
-                        return_eof_false(token);
-                    if (!dStrAddChar(&value, '0'))
-                        return_eof_false(token);
-                    if (!dStrAddChar(&value, '3'))
-                        return_eof_false(token);
-                    if (!dStrAddChar(&value, '5'))
-                        return_eof_false(token);
+                    if (!dStrAddChar(&value, '\\')) return_eof_false(token);
+                    if (!dStrAddChar(&value, '0')) return_eof_false(token);
+                    if (!dStrAddChar(&value, '3')) return_eof_false(token);
+                    if (!dStrAddChar(&value, '5')) return_eof_false(token);
                 }
                 else if (strEcsValue == 92)
                 {
                     // Add backslash
-                    if (!dStrAddChar(&value, '\\'))
-                        return_eof_false(token);
-                    if (!dStrAddChar(&value, '0'))
-                        return_eof_false(token);
-                    if (!dStrAddChar(&value, '9'))
-                        return_eof_false(token);
-                    if (!dStrAddChar(&value, '2'))
-                        return_eof_false(token);
+                    if (!dStrAddChar(&value, '\\')) return_eof_false(token);
+                    if (!dStrAddChar(&value, '0')) return_eof_false(token);
+                    if (!dStrAddChar(&value, '9')) return_eof_false(token);
+                    if (!dStrAddChar(&value, '2')) return_eof_false(token);
                 }
                 else
                 {
                     // Add printable character
-                    if (!dStrAddChar(&value, strEcsValue))
-                        return_eof_false(token);
+                    if (!dStrAddChar(&value, strEcsValue)) return_eof_false(token);
                 }
+
+                // Continue as string
+                state = STRING;
 
                 // Continue as string
                 state = STRING;

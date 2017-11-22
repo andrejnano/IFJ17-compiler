@@ -99,6 +99,7 @@
         int i;
         } token_value;
 
+
         // Data structure for token
         // To access its atributes use token_pointer->type
         // tokens with value such as integer, double and string have also their values
@@ -110,6 +111,7 @@
             token_value value; // Only if token type is valid with value
             unsigned int line; // On which line is the token located
         } Token_t;
+        extern Token_t* active_token;
 
         bool is_datatype(int type);
         /*
@@ -122,6 +124,22 @@
 
 
     const char* debug_token_name(Token_t *token);
-    
 
+
+extern int compiler_error;
+extern FILE* source_code, *output_code;
+    bool istype(int type);
+    void printTokenType(FILE *output_file, int type);
+
+/******************************************************************************
+    TOKEN MATCH 
+    - checks if active_token is the expected token in the syntax
+        > returns TRUE if the token is valid
+        > returns FALSE if the tokens is not valid
+    - moves to the next token
+    - for checking a set of predefined conditions based of LL(1) grammar
+ *****************************************************************************/
+
+    bool match(token_type expected_token_type);
+    void printTokenVal(void);
 #endif

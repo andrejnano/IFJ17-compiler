@@ -3,7 +3,6 @@
     | PROJEKT IFJ17  |
     + -------------- +
     Implementace prekladace imperativního jazyka IFJ17.
-
     Autori:
         xmarko15 Peter Marko
         xmechl00 Stanislav Mechl
