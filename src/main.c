@@ -51,7 +51,7 @@
         if (! (source_code = fopen(argv[1], "r")))
             return E_INTERNAL;
 
-        if (!(output_code = fopen(argv[2], "rw")))
+        if (!(output_code = fopen(argv[2], "w")))
             return E_INTERNAL;
 
         // save the source name
