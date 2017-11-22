@@ -3,19 +3,7 @@
 #include "scanner.h"
 #include "token.h"
 #include "errors.h"
-
-void raise_error(int error_code, const char *error_message);
- /*
-  * \brief Reads token from input and dispose current token
-  */
-  void get_token_free()
-  {
-     if (active_token)
-     {
-        free(active_token);
-     }
-     active_token = get_next_token(input);
-  }
+#include "errorcodes.h"
   
    /*
     * \brief Checks if token type is int, double, bool, string
@@ -215,19 +203,19 @@ void raise_error(int error_code, const char *error_message);
     */
   void printTokenVal(void)
   {
-     switch (active_token->type)
+     switch (active_token.type)
      {
         case token_val_double:
-           fprintf(output, "float@%lf\n", active_token->value.d);
+           fprintf(output, "float@%lf\n", active_token.value.d);
            break;
         case token_val_integer:
-           fprintf(output, "int@%d\n", active_token->value.i);
+           fprintf(output, "int@%d\n", active_token.value.i);
            break;
         case token_val_string:
-           fprintf(output, "string@%s\n", active_token->value.c);
+           fprintf(output, "string@%s\n", active_token.value.c);
            break;
         default:
-           fprintf(stderr, "Error at line %d cannot print this type\n", active_token->line);
+           fprintf(stderr, "Error at line %d cannot print this type\n", active_token.line);
          return;
      }
   }
@@ -258,12 +246,11 @@ void raise_error(int error_code, const char *error_message);
         // if no EOF token found yet, proceed normally
   
         // is the active_token the expected one ?
-        if (active_token->type == expected_token_type) 
+        if (active_token.type == expected_token_type) 
         {
-           free(active_token);
-           active_token = get_next_token(input);
+           get_next_token(input, &active_token);
   
-           if (active_token->type == token_eof) // eof check
+           if (active_token.type == token_eof) // eof check
               eof_token_found = true;
   
            
@@ -273,10 +260,9 @@ void raise_error(int error_code, const char *error_message);
         {
            raise_error(SYNTAX_ERROR, " expected ");
            printTokenType(stderr, expected_token_type);
-           free(active_token);
-           active_token = get_next_token(input);
+           get_next_token(input, &active_token);
   
-           if (active_token->type == token_eof) // eof check
+           if (active_token.type == token_eof) // eof check
               eof_token_found = true;
   
            return false;

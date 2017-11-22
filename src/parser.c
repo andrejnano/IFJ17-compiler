@@ -3,8 +3,7 @@
 #include "symtable.h"
 #include "errors.h"
 #include "expression.h"
-#include "errorcodes.h"
-Token_t *active_token = NULL;
+Token_t active_token;
 FILE *input = NULL, *output = NULL;
 int counterVar = 1;
 tSymbolTable *functions, *vars;
@@ -20,50 +19,50 @@ void ntCompoundStmt(tSymbolTable *localVars)
 	node_val_t newVal; // for inserting of new variable into symtable
 	node_val_t *tmpMeta; // variable metadata for detecting of redefinition..
 
-	switch (active_token->type)
+	switch (active_token.type)
 	{
 	case token_dim:
-		get_token_free();
-		if (STL_search(localVars, active_token->value.c))
+		get_next_token(input, &active_token);
+		if (STL_search(localVars, active_token.value.c))
 		{
 			raise_error(SEM_ERROR, "Redefinition of var %s\n");
 			return;
 		}
-		if (active_token->type != token_identifier)
+		if (active_token.type != token_identifier)
 		{
 			raise_error(SYNTAX_ERROR, "Expected identifier\n");
 			return;
 		}
-		char *varName = active_token->value.c;
-		get_token_free();
-		if (active_token->type != token_as)
+		char *varName = active_token.value.c;
+		get_next_token(input, &active_token);
+		if (active_token.type != token_as)
 		{
 			raise_error(SYNTAX_ERROR, "Expected 'as'\n");
 			return;
 		}
-		get_token_free();
-		if (!istype(active_token->type))
+		get_next_token(input, &active_token);
+		if (!istype(active_token.type))
 		{
 			raise_error(SYNTAX_ERROR, "Expected type\n");
 			return;
 		}
 		newVal.args = NULL;
-		newVal.type = active_token->type;
+		newVal.type = active_token.type;
 		newVal.dec = true;
 		fprintf(output, "defvar lf@%s\n", varName);
 		zeroVarInit(varName);
 		STL_insert_top(localVars, varName, &newVal);
-		get_token_free();
+		get_next_token(input, &active_token);
 	break;
 	case token_identifier:
 		// callfunc assign
-		id = active_token->value.c;
+		id = active_token.value.c;
 		if ((tmpMeta = STL_search(localVars, id)))
 		{
-			get_token_free();
-			if (active_token->type == token_op_eq) //assigment
+			get_next_token(input, &active_token);
+			if (active_token.type == token_op_eq) //assigment
 			{
-				get_token_free();
+				get_next_token(input, &active_token);
 				ntExpr(tmpMeta->type, localVars);
 				fprintf(output, "pops lf@%s\n", id);
 				tmpMeta->dec = false;
@@ -91,8 +90,8 @@ void ntCompoundStmt(tSymbolTable *localVars)
 	default:
 		break;
 	}
-	if (active_token->type == token_eol) {
-		get_token_free();
+	if (active_token.type == token_eol) {
+		get_next_token(input, &active_token);
 		ntCompoundStmt(localVars);
 	}
 }
@@ -105,10 +104,10 @@ void ntCompoundStmt(tSymbolTable *localVars)
 void ntHead()
 {
 	char *funcName = NULL;
-	switch (active_token->type)
+	switch (active_token.type)
 	{
 	case  token_declare:
-		get_token_free();
+		get_next_token(input, &active_token);
 		ntFunc(1, &funcName);
 		ntHead();
 		break;
@@ -118,9 +117,9 @@ void ntHead()
 		tSymbolTable *localVars = argsToSymtable(funcName, functions);
 		ntCompoundStmt(localVars);
 		STL_clean_up(&localVars);
-		match(active_token->type, token_end);
-		match(active_token->type, token_function);
-		match(active_token->type, token_eol);
+		match(active_token.type, token_end);
+		match(active_token.type, token_function);
+		match(active_token.type, token_eol);
 		ntHead();
 		break;
 	default:
@@ -137,7 +136,8 @@ int parse(FILE *in, FILE *out)
 {
 	input = in;
 	output = out;
-	if ((active_token  = get_next_token(input)) == NULL)
+	get_next_token(input, &active_token);
+	if (active_token.type == token_eof)
 		return LEX_ERROR; // nastala chyba jiz pri nacteni prvniho lexemu
 	fprintf(output, ".IFJcode17\njump $main\n");
 	STL_init(&functions);
