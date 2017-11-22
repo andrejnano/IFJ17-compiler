@@ -24,14 +24,14 @@
     Token_t* active_token;
     SymbolTable_t *functions;
     SymbolTable_t *variables;
-<<<<<<< HEAD
+//<<<<<<< HEAD
     int compiler_error;
 
     FILE* source_code, *output_code;
-=======
+//=======
 
     extern int compiler_error;
->>>>>>> origin/new-parser
+//>>>>>>> origin/new-parser
 
     // source and output stream
     extern FILE *source_code;
@@ -1222,10 +1222,10 @@
 
 // /*****************************************************************************/
 
-    void NT_Expr()
+/*    void NT_Expr()
     {
        printf("\n**MAGIC**\n");
        match(token_val_integer);
        printf("was here");
-    }
+    }*/
 
