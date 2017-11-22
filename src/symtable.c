@@ -5,6 +5,7 @@
 #include "token.h"
 #include "errors.h"
 
+void raise_error(int error_code, const char *error_message);
 
 #define DEF_NODE_STACK_SIZE 20
 void STL_init(tSymbolTable **tree) {

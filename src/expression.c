@@ -1,6 +1,31 @@
 #include "expression.h"
 #include "symtable.h"
 #include "errors.h"
+
+void raise_error(int error_code, const char *error_message);
+
+/*
+ * \brief Function for converting token literal value to token
+ * keword value, for example token_val_double to token_double;
+ */
+int TvalToKeyword(int val)
+{
+	switch (val)
+	{
+		case token_val_double:
+			return token_double;
+		case token_val_integer:
+			return token_integer;
+		case token_val_string:
+			return token_string;
+		// case token_val_boolean:
+		// 	return token_boolean;
+		default:
+			return -1;
+	}
+	return 0;
+}
+
 /*
 * \brief Generates new unused name
 */
@@ -206,41 +231,158 @@ void ntFunc(bool dec, char **funcName)
 }
 
 /*
+ * \brief Converting values stored at stack from type T1 to last_type
+ * \param old_type Type of second value in stack
+ * \param last type type of last inserted value in stack
+ * \param by prierity convert to type with more priority
+ *  if 0 convert from old type to new type
+ */
+void converts(int old_type, int *last_type, bool byPriority)
+{
+	if (old_type == *last_type)
+		return;
+	char *temp1 = "tmp";
+	generateName(&temp1);
+	fprintf(output, "pops lf@%s\n", temp1);
+	if (istype(old_type) && istype(old_type))
+	{
+		if (old_type == token_double && *last_type == token_integer)
+		{
+			if (byPriority)
+			{
+				char *temp2 = "tmp";
+				generateName(&temp2);
+				fprintf(output, "pops lf@%s\n", temp2);
+				fprintf(output, "int2float lf@%s lf@%s\n", temp2, temp2);
+				fprintf(output, "pushs lf@%s\n", temp2);
+				*last_type = token_double;
+			}
+			else
+			{
+				fprintf(output, "float2r2eint lf@%s lf@%s\n", temp1, temp1);
+				*last_type = token_integer;
+			}
+		}
+		else if (*last_type == token_double && old_type == token_integer)
+		{
+			fprintf(output, "int2float lf@%s lf@%s\n", temp1, temp1);
+			*last_type = token_double;
+		}
+		else
+		{
+			raise_error(TYPE_ERROR, "Wrong type for conversion\n");
+			return;
+		}
+	}
+	else
+	{
+		raise_error(SYNTAX_ERROR, "Wrong expression syntax\n");
+		return;
+	}
+	fprintf(output, "pushs lf@%s\n", temp1);
+}
+
+/*
+ * \brief Test if types are valid for comparision
+ */
+void testCmpOps(int OP1, int *OP2)
+{
+	if (!istype(OP1) || !istype(*OP2))
+	{
+		raise_error(SYNTAX_ERROR, "Unexpected token\n");
+		return;
+	}
+	if (OP1 == *OP2)
+	{
+		return;
+	}
+	else if (*OP2 == token_integer && OP1 == token_double)
+	{
+		char *temp1 = "tmp";
+		generateName(&temp1);
+		fprintf(output, "pops lf@%s\n", temp1);
+		fprintf(output, "int2float lf@%s lf@%s\n", temp1, temp1);
+		fprintf(output, "pushs lf@%s\n", temp1);
+		*OP2 = token_double;
+	}
+	else if (OP1 == token_integer && *OP2 == token_double)
+	{
+		char *temp1 = "tmp";
+		char *temp2 = "tmp";
+		generateName(&temp1);
+		fprintf(output, "pops lf@%s\n", temp1);
+		generateName(&temp2);
+		fprintf(output, "pops lf@%s\n", temp2);
+		fprintf(output, "int2float lf@%s lf@%s\n", temp2, temp2);
+		fprintf(output, "pushs lf@%s\n", temp2);
+		fprintf(output, "pushs lf@%s\n", temp1);
+		*OP2 = token_double;
+	}
+	else
+	{
+		raise_error(TYPE_ERROR, "Wrong type for comparison\n");
+	}
+}
+/*
  * \brief Function for executing operation from top of stack
  * \param s Stack of operations
  * \param numOp Number of operators in stack
  * \return Executed operation, in case of error operation
  * with priority STACK_STOPPER
  */
-tStack execOp (tStack **s, int *numOp)
+tStack execOp (tStack **s, int *numOp, int *last_type)
 {
 	tStack tmp;
 	tmp.priority = STACK_STOPPER;
-	if (*numOp < 2)
+	
+	tStack *operation = sPop(s);
+	if (*numOp < 2 && operation->type != token_lbrace)
 	{
 		raise_error(SYNTAX_ERROR, "Wrong syntax of expression\n");
 		tmp.priority = STACK_STOPPER;
 		tmp.type = STACK_STOPPER;
 		return tmp;
 	}
-	tStack *operation = sPop(s);
 	char *tmpName1 = "tmpName";
 	char *tmpName2 = "tmpName";
 	switch (operation->type)
 	{
 		case token_op_add:
+			if (*last_type == token_string)
+			{
+				generateName(&tmpName1);
+				generateName(&tmpName2);
+				fprintf(output, "pops lf@%s\n", tmpName1);
+				fprintf(output, "pops lf@%s\n", tmpName2);
+				fprintf(output, "concat lf@%s lf@%s lf@%s\n", tmpName1, tmpName2, tmpName1);
+				fprintf(output, "pushs lf@%s\n", tmpName1);
+				break;
+			}
+			converts(operation->lOperandType, last_type, 1);
 			fprintf(output,"adds\n");
 		break;
 		case token_op_sub:
+			converts(operation->lOperandType, last_type, 1);
+			if (*last_type == token_string)
+				raise_error(SEM_ERROR, "Invalid operation for strings\n");
 			fprintf(output,"subs\n");
 		break;  
 		case token_op_mul:
+			converts(operation->lOperandType, last_type, 1);
+			if (*last_type == token_string)
+				raise_error(SEM_ERROR, "Invalid operation for strings\n");
 			fprintf(output,"muls\n");
 		break;  
 		case token_op_div:
+			converts(operation->lOperandType, last_type, 1);
+			if (*last_type == token_string)
+				raise_error(SEM_ERROR, "Invalid operation for strings\n");
 			fprintf(output,"divs\n");
 		break;  
 		case token_op_mod:
+			converts(operation->lOperandType, last_type, 1);
+			if (*last_type == token_string)
+				raise_error(SEM_ERROR, "Invalid operation for strings\n");
 			generateName(&tmpName1);
 			generateName(&tmpName2);
 			fprintf(output, "pops lf@%s\n", tmpName1);
@@ -257,12 +399,17 @@ tStack execOp (tStack **s, int *numOp)
 			fprintf(output,"divs\n");
 		break;
 		case token_op_eq:
+			testCmpOps(operation->lOperandType, last_type);
 			fprintf(output, "eqs\n");
+			*last_type = token_boolean;
 		break;
 		case token_op_lt:
+			testCmpOps(operation->lOperandType, last_type);
 			fprintf(output, "lts\npushs");
+			*last_type = token_boolean;
 		break;
 		case token_op_le:
+			testCmpOps(operation->lOperandType, last_type);
 			generateName(&tmpName1);
 			generateName(&tmpName2);
 			fprintf(output, "pops lf@%s\n", tmpName1);
@@ -273,8 +420,10 @@ tStack execOp (tStack **s, int *numOp)
 			fprintf(output, "pushs lf@%s\n", tmpName2);
 			fprintf(output, "pushs lf@%s\n", tmpName1);
 			fprintf(output, "eqs\nors\n");
+			*last_type = token_boolean;
 		break;
 		case token_op_ge:
+			testCmpOps(operation->lOperandType, last_type);
 			generateName(&tmpName1);
 			generateName(&tmpName2);
 			fprintf(output, "pops lf@%s\n", tmpName1);
@@ -285,8 +434,10 @@ tStack execOp (tStack **s, int *numOp)
 			fprintf(output, "pushs lf@%s\n", tmpName2);
 			fprintf(output, "pushs lf@%s\n", tmpName1);
 			fprintf(output, "eqs\nors\n");
+			*last_type = token_boolean;
 		break;
 		case token_op_ne:
+			testCmpOps(operation->lOperandType, last_type);
 			generateName(&tmpName1);
 			generateName(&tmpName2);
 			fprintf(output, "pops lf@%s\n", tmpName1);
@@ -297,9 +448,12 @@ tStack execOp (tStack **s, int *numOp)
 			fprintf(output, "pushs lf@%s\n", tmpName2);
 			fprintf(output, "pushs lf@%s\n", tmpName1);
 			fprintf(output, "gts\nors\n");
+			*last_type = token_boolean;
 		break;
 		case token_op_gt:
-			fprintf(output, "gts\n");		
+			testCmpOps(operation->lOperandType, last_type);
+			fprintf(output, "gts\n");	
+			*last_type = token_boolean;	
 		break;
 		case token_lbrace:
 			free(sPop(s));
@@ -309,28 +463,6 @@ tStack execOp (tStack **s, int *numOp)
 	free(operation);
 	(*numOp) -= 1;
 	return tmp;
-}
-
-/*
- * \brief Function for converting token literal value to token
- * keword value, for example token_val_double to token_double;
- */
-int TvalToKeyword(int val)
-{
-	switch (val)
-	{
-		case token_val_double:
-			return token_double;
-		case token_val_integer:
-			return token_integer;
-		case token_val_string:
-			return token_string;
-		// case token_val_boolean:
-		// 	return token_boolean;
-		default:
-			return -1;
-	}
-	return 0;
 }
 
 /*
@@ -420,21 +552,19 @@ void ntExpr(int type, tSymbolTable *localVars)
 	insert.priority = STACK_STOPPER;
 	insert.type = STACK_STOPPER;
 	sPush(&s, &insert);
-	char *name = NULL;
-	int numOp = 0;
+	int numOp = 0, last_type = 0;
 	node_val_t *var;
 	while (active_token->type != token_eol)
 	{
-		name = active_token->value.c;
 		switch (active_token->type)
 		{
 		case token_op_add:
 		case token_op_sub:
 			insert.type = active_token->type;
-			insert.priority = 3;
-			if (s)
+         insert.priority = 3;
+         insert.lOperandType = last_type;
 			while (s && s->priority && s->priority <= insert.priority)
-				if (execOp(&s, &numOp).priority == STACK_STOPPER)
+				if (execOp(&s, &numOp, &last_type).priority == STACK_STOPPER)
 					return;
 			sPush(&s, &insert);
 			break;
@@ -442,9 +572,9 @@ void ntExpr(int type, tSymbolTable *localVars)
 		case token_op_mul:
 			insert.type = active_token->type;
 			insert.priority = 1;
-			if (s)
+         insert.lOperandType = last_type;
 			while (s && s->priority && s->priority <= insert.priority)
-				if (execOp(&s, &numOp).priority == STACK_STOPPER)
+				if (execOp(&s, &numOp, &last_type).priority == STACK_STOPPER)
 					return;
 			sPush(&s, &insert);
 
@@ -452,8 +582,9 @@ void ntExpr(int type, tSymbolTable *localVars)
 		case token_op_mod:
 			insert.type = active_token->type;
 			insert.priority = 2;
+         insert.lOperandType = last_type;
 			while (s && s->priority && s->priority <= insert.priority)
-				if (execOp(&s, &numOp).priority == STACK_STOPPER)
+				if (execOp(&s, &numOp, &last_type).priority == STACK_STOPPER)
 					return;
 			sPush(&s, &insert);
 			break;
@@ -468,10 +599,11 @@ void ntExpr(int type, tSymbolTable *localVars)
 				raise_error(TYPE_ERROR, "Error at line %d : Expected boolean\n");
 				return;
 			}
+			insert.lOperandType = last_type;
 			insert.type = active_token->type;
 			insert.priority = 4;
 			while (s && s->priority && s->priority <= insert.priority)
-				if (execOp(&s, &numOp).priority == STACK_STOPPER)
+				if (execOp(&s, &numOp, &last_type).priority == STACK_STOPPER)
 					return;
 			sPush(&s, &insert);
 			break;
@@ -481,75 +613,37 @@ void ntExpr(int type, tSymbolTable *localVars)
 			sPush(&s, &insert);
 			break;
 		case token_rbrace:
-			if (execOp(&s, &numOp).priority == STACK_STOPPER)
-				return;
-			while (s->type != token_lbrace)
+			while (s && s->type != token_lbrace)
 			{
-				if (execOp(&s, &numOp).priority == STACK_STOPPER)
+				if (execOp(&s, &numOp, &last_type).priority == STACK_STOPPER)
 					return;
 			}
 			free(sPop(&s));
 			break;
 		case token_identifier:
-			numOp++;
+         numOp++;
 			if ((var = STL_search(localVars, active_token->value.c)))
 			{
-				// if (type != var->type && type != token_boolean)
-				// {
-				// 	name = convert(type, var->type, active_token->value, "lf");
-				// 	fprintf(output, "pushs lf@%s\n", name);
-				// 	free(name);
-				// }
-				// else
-					fprintf(output, "pushs lf@%s\n", active_token->value.c);
+            	last_type = var->type;
+				fprintf(output, "pushs lf@%s\n", active_token->value.c);
 			}
 			else if ((var = STL_search(functions, active_token->value.c)))
 			{
+            	last_type = var->type;
 				ntCallExpr(var, active_token->value.c, localVars);
-				if (type != var->type)
-				{
-					token_value tmpVal = active_token->value;
-					tmpVal.c = "return";
-					name = convert(var->type, type, tmpVal, "tf");
-					fprintf(output, "pushs lf@%s\n", name);
-					free(name);
-				}
-				else
-					fprintf(output, "pushs tf@return\n");
+				fprintf(output, "pushs tf@return\n");
 				fprintf(output, "popframe\n");
 			}
 
 			break;
 		case token_val_integer:
 		case token_val_double:
-			numOp++;
-			// if (TvalToKeyword(active_token->type) != type  && type != token_boolean)
-			// {
-			// 	name = convert(TvalToKeyword(active_token->type), type, active_token->value, NULL);
-			// 	fprintf(output, "pushs lf@%s\n", name);
-			// 	free(name);
-			// }
-			// else
-			// {
-				fprintf(output, "pushs ");
-				printTokenVal();
-			// }
-			break;
 		case token_val_string:
-			name = active_token->value.c;
-			get_token_free();
-			if (type != token_string)
-				raise_error(TYPE_ERROR, "Wrong type in expression\n");
-			else if (active_token->type == token_eol)
-			{
-				fprintf(output, "pushs string@%s\n", name);
-				free(name);
-			}
-			else if (istype(active_token->type))
-				raise_error(TYPE_ERROR, "Wrong type in expression\n");
-			else
-				raise_error(SYNTAX_ERROR, "Wrong string initialisation syntax expected EOL\n");
-			return;
+         numOp++;
+			last_type = TvalToKeyword(active_token->type);
+			fprintf(output, "pushs ");
+			printTokenVal();
+			break;
 		default:
 			if (istype(active_token->type))
 				raise_error(TYPE_ERROR, "Wrong type in expression\n");
@@ -559,9 +653,9 @@ void ntExpr(int type, tSymbolTable *localVars)
 		}
 		get_token_free();
 	}
-	while (s->priority < STACK_STOPPER)
+	while (s && s->priority < STACK_STOPPER)
 	{
-		if (execOp(&s, &numOp).priority == STACK_STOPPER)
+		if (execOp(&s, &numOp, &last_type).priority == STACK_STOPPER)
 			return;
 	}
 	if (numOp != 1)
@@ -569,5 +663,7 @@ void ntExpr(int type, tSymbolTable *localVars)
 		raise_error(SYNTAX_ERROR, "Wrong expression syntax\n");
 		return;
 	}
+	if (type != last_type)
+		converts(last_type, &type, 0);
 	free(sPop(&s));
 }

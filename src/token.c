@@ -3,6 +3,8 @@
 #include "scanner.h"
 #include "token.h"
 #include "errors.h"
+
+void raise_error(int error_code, const char *error_message);
  /*
   * \brief Reads token from input and dispose current token
   */

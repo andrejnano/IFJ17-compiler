@@ -7,7 +7,7 @@
 
 typedef struct sStack {
    int type;
-   int op1p;
+   int lOperandType;
    int priority;
    struct sStack *next;
 } tStack;
