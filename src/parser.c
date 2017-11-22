@@ -24,37 +24,42 @@
     Token_t* active_token;
     SymbolTable_t *functions;
     SymbolTable_t *variables;
+<<<<<<< HEAD
     int compiler_error;
 
     FILE* source_code, *output_code;
+=======
 
+    extern int compiler_error;
+>>>>>>> origin/new-parser
+
+    // source and output stream
+    extern FILE *source_code;
+    extern FILE *output_code;
 
 /******************************************************************************
  *****************************************************************************/
 
     /*
 	* @brief Main parsing function
-	* @param source_code Source file in IFJ17 language
-	* @param output_code Destination file in IFJcode17 language
 	*/
     void parse()
     {
-
+        // allocate and initialize new token on heap
         active_token = create_empty_token();
+
         if (!active_token)
             exit(7);
-
-        scanner_init();
 
         //@TODO Instruction List init
         //InstructionList_t InstList; // Instruction list for output_code code
         //IL_Init(&InstList);
 
+        // init the symtable lists
         stl_init(&functions);
-        stl_push(&functions);
-
         stl_init(&variables);
-        stl_push(&variables);
+
+        scanner_init();
 
         // first token reading
         if (get_next_token(source_code, active_token) == false)
@@ -66,15 +71,21 @@
         {
             // EVERYTHING IS OK HERE :)
             #ifdef DEBUG
-            printf("\n\t--- START---\n\n");
+                printf("\n\t--- START---\n\n");
             #endif
-            // root nonterminal
-            NT_Program();
+
+            stl_push(&functions); // initialize functions symtable
+
+            NT_Program(); // root nonterminal
         }
+
         free(active_token);
+        
         scanner_free();
-        stl_clean_all(&functions);
+
+        // clean and close the symtable lists
         stl_clean_all(&variables);
+        stl_clean_all(&functions);
     }
 
 
@@ -82,16 +93,10 @@
     FUNCTIONS FOR EVERY NON-TERMINAL
     - check if token on source_code is the expected one
     - or calls another non-terminal function
-    - @TODO somehow set error flag if syntax is not valid, however dont stop
-            the program from running, display errors at the end.
-    - @TODO if the nonterminal has a local scope, then create new symbol table
-            instance and semantically check from this table.
-            (otherwise use global table)
  *****************************************************************************/
 
     void NT_Program()
     {
-        
         NT_Head();
         NT_Scope();
 
@@ -129,6 +134,16 @@
 
 /*****************************************************************************/
 
+    /**
+     * @brief nonterminal function for Function Declaration
+     * 
+     *  1) Function was already declared -> raise ERROR & quit
+     *  2) Function was already defined  -> raise ERROR & quit
+     *  3) Function was neither defined nor declared
+     *      -> create new symtable item and declare
+     * 
+     */
+    
     void NT_FunctionDec()
     {
 
@@ -137,24 +152,6 @@
         if (match(token_function) == false)
             raise_error(E_SYNTAX, "'Function' keyword expected at this point.");
        
-        /*
-            Function Declaration
-            3 scenarios can occur
-
-            1) Function was already declared
-            2) Function was already defined
-            3) Function was neither defined nor declared
-
-            in case 1) raise ERROR & quit
-                        if ( is_declared == TRUE ) 
-    
-            in case 2) raise ERROR & quit
-                        if ( is_defined == TRUE )
-
-            in case 3) create new symtable item and declare
-                        if ( no item exists ) ...  is_declared = TRUE;
-
-        */
 
         // declare a new symtable item.
         Metadata_t  new_function_metadata;
@@ -241,16 +238,28 @@
                         if ( param_list_append(&function_parameters, new_parameter) )
                             continue;
                         else
+                        {
+                            declaration_error = true;
                             free(new_parameter);
+                        }
+                            
                     }
                     else if (active_token->type == token_rbrace)
                     {
-                        param_list_append(&function_parameters, new_parameter);
-                        break;
+                        if(param_list_append(&function_parameters, new_parameter))
+                            break;
+                        else
+                        {
+                            declaration_error = true;
+                            free(new_parameter);
+                            break;
+                        }
+                            
                     }
                     else
                     {
-                        // some unexpected token
+                        declaration_error = true;
+                        free(new_parameter);
                         break;
                     }
 
@@ -281,14 +290,13 @@
                     match(token_blank); // @TODO len sa posunut, zaruceny fail sice,..
                 }
 
-
                 // FINALLY add to symtable if there are no error during declaration
                 if (!declaration_error) //&& !compiler_error)
                 {
                     stl_insert_top(functions, new_function_name, &new_function_metadata);
-                    free(new_function_name);
-                    return;
                 }
+                free(new_function_name);
+                return;
             }
         }
          // if identifier was not found, but we dont want to ruin syntax of the whole statement
@@ -606,7 +614,19 @@
                 //  GENERATE CODE FROM CompoundStmt
                 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-                NT_CompoundStmt();
+                    // -----------------
+                    // NEW LOCAL SCOPE
+                    // -----------------
+
+                    stl_push(&variables);
+
+                        NT_CompoundStmt();
+
+                    stl_pop(&variables);
+
+                    // ------------------
+                    // END OF LOCAL SCOPE
+                    // ------------------
 
                 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
                 // END OF CODE GENERATING
@@ -657,7 +677,19 @@
         if (match(token_eol) == false)
             raise_error(E_SYNTAX, "EOL expected at this point.");
 
-        NT_CompoundStmt();
+        // -----------------
+        // NEW LOCAL SCOPE / DO NOT GENERATE CODE / JUST SYNTAX CHECK
+        // -----------------
+
+        stl_push(&variables);
+
+            NT_CompoundStmt();
+
+        stl_pop(&variables);
+
+        // ------------------
+        // END OF LOCAL SCOPE
+        // ------------------
 
         if (match(token_end) == false)
             raise_error(E_SYNTAX, "'End' keyword was expected at this point.");
@@ -721,7 +753,12 @@
 /*****************************************************************************/
 
     void NT_Scope()
-    {
+    {   
+
+        while(active_token->type == token_eol)
+        {
+            match(token_eol);
+        }
 
         if (match(token_scope) == false) // keyword 'Scope'
             raise_error(E_SYNTAX, "Expected 'Scope' keyword not found.");
@@ -732,17 +769,18 @@
         // -----------------
         // NEW LOCAL SCOPE
         // -----------------
+        
+        stl_push(&variables);
 
-        // create new symtable
-        // assign symtable pointer to this local table, or make a linked list
-        // of tables, change the pointer of the first to this local
+            NT_CompoundStmt();
 
-        NT_CompoundStmt();
+        stl_pop(&variables);
 
         // ------------------
         // END OF LOCAL SCOPE
         // ------------------
 
+        
         if (match(token_end) == false) // keyword 'End'
             raise_error(E_SYNTAX, "Expected 'End' keyword not found.");
 
@@ -757,6 +795,7 @@
     void NT_CompoundStmt()
     {   
         printf("\n--inside CompoundStmt --\n\n");
+        
 
         switch (active_token->type)
         {
@@ -778,9 +817,9 @@
         // case token_if:
         //     NT_IfStmt();
         //     break; // keyword 'If'
-        // case token_do:
-        //     NT_WhileStmt();
-        //     break; // keyword 'Do'
+        case token_do:
+            NT_WhileStmt();
+            break; // keyword 'Do'
         default:
             return; // epsilon rule
         }
@@ -897,9 +936,8 @@
             if (variable_name)
             {
 
-                printf("\nGENERATE CODE & ASSIGN VALUE to variable %s", variable_name);
                 //NT_Expr();
-
+                // pop
 
                 free(variable_name);
                 return;
@@ -958,83 +996,97 @@
 
 // /*****************************************************************************/
 
-    // void NT_IfStmt()
-    // {
+    void NT_IfStmt()
+    {
 
-    //     if (match(token_if) == false)
-    //         raise_error(E_SYNTAX, "Keyword 'If' expected.");
+        if (match(token_if) == false)
+            raise_error(E_SYNTAX, "Keyword 'If' expected.");
 
-    //     NT_Expr();
 
-    //     if (match(token_then) == false)
-    //         raise_error(E_SYNTAX, "Keyword 'Then' expected.");
+        NT_Expr();
 
-    //     if (match(token_eol) == false)
-    //         raise_error(E_SYNTAX, "EOL expected at this point.");
+        if (match(token_then) == false)
+            raise_error(E_SYNTAX, "Keyword 'Then' expected.");
 
-    //     // -----------------
-    //     // NEW LOCAL SCOPE
-    //     // -----------------
+        if (match(token_eol) == false)
+            raise_error(E_SYNTAX, "EOL expected at this point.");
 
-    //     NT_CompoundStmt();
+        // -----------------
+        // NEW LOCAL SCOPE
+        // -----------------
 
-    //     // ------------------
-    //     // END OF LOCAL SCOPE
-    //     // ------------------
+        stl_push(&variables);
 
-    //     if (match(token_else) == false)
-    //         raise_error(E_SYNTAX, "Keyword 'Else' expected.");
+            NT_CompoundStmt();
 
-    //     if (match(token_eol) == false)
-    //         raise_error(E_SYNTAX, "EOL expected at this point.");
+        stl_pop(&variables);
 
-    //     // -----------------
-    //     // NEW LOCAL SCOPE
-    //     // -----------------
+        // ------------------
+        // END OF LOCAL SCOPE
+        // ------------------
 
-    //     NT_CompoundStmt();
+        if (match(token_else) == false)
+            raise_error(E_SYNTAX, "Keyword 'Else' expected.");
 
-    //     // ------------------
-    //     // END OF LOCAL SCOPE
-    //     // ------------------
+        if (match(token_eol) == false)
+            raise_error(E_SYNTAX, "EOL expected at this point.");
 
-    //     if (match(token_end) == false)
-    //         raise_error(E_SYNTAX, "Keyword 'End' expected.");
-    
-    //     if (match(token_if) == false)
-    //         raise_error(E_SYNTAX, "Keyword 'If' expected.");
-    // }
+        // -----------------
+        // NEW LOCAL SCOPE
+        // -----------------
+
+        stl_push(&variables);
+
+            NT_CompoundStmt();
+
+        stl_pop(&variables);
+
+        // ------------------
+        // END OF LOCAL SCOPE
+        // ------------------
+
+        if (match(token_end) == false)
+            raise_error(E_SYNTAX, "Keyword 'End' expected.");
+
+        if (match(token_if) == false)
+            raise_error(E_SYNTAX, "Keyword 'If' expected.");
+    }
 
 
 // /*****************************************************************************/
 
-//     void NT_WhileStmt()
-//     {
-//         if (match(token_do) == false)
-//             raise_error(E_SYNTAX, "Keyword 'Do' expected.");
+    void NT_WhileStmt()
+    {
+        if (match(token_do) == false)
+            raise_error(E_SYNTAX, "Keyword 'Do' expected.");
 
-//         if (match(token_while) == false)
-//             raise_error(E_SYNTAX, "Keyword 'While' expected.");
+        if (match(token_while) == false)
+            raise_error(E_SYNTAX, "Keyword 'While' expected.");
 
-//         NT_Expr();
+        NT_Expr();
 
-//         if (match(token_eol) == false)
-//             raise_error(E_SYNTAX, "EOL expected.");
+        if (match(token_eol) == false)
+            raise_error(E_SYNTAX, "EOL expected.");
 
-//         // -----------------
-//         // NEW LOCAL SCOPE
-//         // -----------------
+        // -----------------
+        // NEW LOCAL SCOPE
+        // -----------------
 
-//         NT_CompoundStmt();
 
-//         // ------------------
-//         // END OF LOCAL SCOPE
-//         // ------------------
+        stl_push(&variables);
 
-//         if (match(token_loop) == false)
-//             raise_error(E_SYNTAX, "Keyword 'Loop' expected");
+            NT_CompoundStmt();
 
-//     }
+        stl_pop(&variables);
+
+        // ------------------
+        // END OF LOCAL SCOPE
+        // ------------------
+
+        if (match(token_loop) == false)
+            raise_error(E_SYNTAX, "Keyword 'Loop' expected");
+
+    }
 
 
 // /*****************************************************************************/
@@ -1103,7 +1155,6 @@
 //         // if the term list is empty end right brace is the next token..
 //         if (active_token->type == token_rbrace) 
 //             return;
-        
 //         switch (active_token->type)
 //         {
 //             case token_integer: 
@@ -1171,8 +1222,10 @@
 
 // /*****************************************************************************/
 
-//     void NT_Expr()
-//     {
-//         // MAGIC HAPPENS HERE.. 
-//     }
+    void NT_Expr()
+    {
+       printf("\n**MAGIC**\n");
+       match(token_val_integer);
+       printf("was here");
+    }
 

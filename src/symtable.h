@@ -6,13 +6,6 @@
     #include <stdbool.h>
     #include "token.h"
 
-    enum val_type
-    {
-        TYPE_INT = token_integer,
-        TYPE_STRING = token_string,
-        TYPE_BOOLEAN = token_boolean,
-        TYPE_DOUBLE = token_double,
-    };
 
     typedef struct Parameter
     {
@@ -118,7 +111,7 @@
      * @param tree First symboltable in the list pointer
      * @return true on success false on fail
      */
-        bool stl_pop(SymbolTable_t **tree);
+    bool stl_pop(SymbolTable_t **tree);
 
     /**
      * @brief Disposes whole list of symboltables
