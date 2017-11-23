@@ -39,6 +39,8 @@ typedef struct instruction {
 t_inst *first_inst;
 t_inst *last_inst;
 
+char* i2s(int val);
+char* d2s(double val);
 void add_inst(char *inst_type, t_const first_type, char *first,
               t_const second_type, char *second, t_const third_type, char *third);
 void generate_code(FILE* output_file);

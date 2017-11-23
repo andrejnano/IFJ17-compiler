@@ -18,6 +18,30 @@
 #include "instructions.h"
 
 /**
+ * Converts integer value to string, returns pointer to string
+ */
+char* i2s(int val)
+{
+  char* str;
+  int len = snprintf(NULL, 0, "%i", val);
+  str = malloc(sizeof(char) * (len+1));
+  sprintf(str, "%i", val);
+  return str;
+}
+
+/**
+ * Converts double value to string, returns pointer to string
+ */
+char* d2s(double val)
+{
+  char* str;
+  int len = snprintf(NULL, 0, "%g", val);
+  str = malloc(sizeof(char) * (len+1));
+  sprintf(str, "%g", val);
+  return str;
+}
+
+/**
  * Add new instruction at bottom of list
  * @param type - instruction as string, for example "MOVE" or "DEFVAR"
  * @param first, second, third - pointers to symbols
