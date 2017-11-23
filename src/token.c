@@ -3,6 +3,7 @@
 #include "scanner.h"
 #include "token.h"
 #include "errorcodes.h"
+#include "instructions.h"
 
 
 extern FILE* source_code;
@@ -223,13 +224,16 @@ void printTokenVal(void)
     switch (active_token->type)
     {
     case token_val_double:
-        fprintf(output_code, "float@%lf\n", active_token->value.d);
+	add_op_to_last_inst(i_fl, d2s(active_token->value.d));
+        //fprintf(output_code, "float@%lf\n", active_token->value.d);
         break;
     case token_val_integer:
-        fprintf(output_code, "int@%d\n", active_token->value.i);
+	add_op_to_last_inst(i_int, i2s(active_token->value.i));
+        //fprintf(output_code, "int@%d\n", active_token->value.i);
         break;
     case token_val_string:
-        fprintf(output_code, "string@%s\n", active_token->value.c);
+	add_op_to_last_inst(i_str, active_token->value.c);
+        //fprintf(output_code, "string@%s\n", active_token->value.c);
         break;
     default:
         fprintf(stderr, "Error at line %d cannot print this type\n", active_token->line);
