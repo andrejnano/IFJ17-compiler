@@ -51,8 +51,10 @@ void raise_error(int error_code, const char *msg, ...)
     va_end(args);
     fputs("\n", stderr);
 
-    // Append end of line
+    // if the code is 0 (not changed yet)
+    if (!compiler_error)
     {
         // if error is already set, do not change it !!!!
+        compiler_error = error_code;
     }
 }
