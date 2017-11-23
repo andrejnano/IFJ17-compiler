@@ -58,3 +58,5 @@ stdout
 *.bas
 
 *.json
+
+log/*

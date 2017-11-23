@@ -1002,17 +1002,11 @@
             
             if (variable_name)
             {
-<<<<<<< HEAD
-
-                NT_Expr(var_meta->type);
-                fprintf(output_code, "pops lf@%s\n", variable_name);
-=======
                 //INST
-                NT_Expr(var_meta->type ,variables);
+                NT_Expr(var_meta->type);
         	      add_inst("POPS", i_lf, variable_name, i_null,NULL,i_null,NULL);
                 free(variable_name);
                 return;
->>>>>>> master
             }
             else 
             {
@@ -1078,12 +1072,7 @@
             raise_error(E_SYNTAX, "Keyword 'If' expected.");
 
 
-<<<<<<< HEAD
         NT_Expr(token_boolean);
-
-        if (!match(token_then))
-=======
-        NT_Expr(token_boolean, variables);
         
         //INST
         next_tmp_name("els");
@@ -1094,7 +1083,6 @@
         add_inst("JUMPIFEQ", i_null, else_label, i_bool, "false", i_gf, tmp_name);
 
         if (match(token_then) == false)
->>>>>>> master
             raise_error(E_SYNTAX, "Keyword 'Then' expected.");
 
         
@@ -1166,15 +1154,11 @@
         strcmp(while_label, tmp_name);
         add_inst("LABEL", i_null, while_label, i_null,NULL,i_null,NULL);
 
-<<<<<<< HEAD
         NT_Expr(token_boolean);
-=======
-        NT_Expr(token_boolean, variables);
       
         next_tmp_name("pop");
         add_inst("POPS", i_gf, tmp_name, i_null,NULL,i_null,NULL);
         add_inst("JUMPIFEQ", i_end, while_label, i_bool, "false", i_gf, tmp_name);      
->>>>>>> master
 
         if (match(token_eol) == false)
             raise_error(E_SYNTAX, "EOL expected.");
@@ -1214,7 +1198,7 @@
 
             // function return datatype gets updated each time 
             // new function is added to symtable
-            NT_Expr(function_return_datatype, variables);
+            NT_Expr(function_return_datatype);
             // generate instructions
             add_inst("POPS", i_lf, "%retval", i_null,NULL,i_null,NULL);
             add_inst("POPFRAME", i_null,NULL,i_null,NULL,i_null,NULL);
