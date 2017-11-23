@@ -103,7 +103,7 @@ char *convert(int inType, int outType, token_value val, char *frame)
 			add_inst("FLOAT2R2EINT", i_lf, tmpVar, i_fl , d2s(val.d), i_null,NULL);
 			//fprintf(output_code, "float2r2eint lf@%s float@%g\n", tmpVar, val.d);
 		else
-/**/			add_inst("FLOAT2R2EINT", i_lf, tmpVar, i_lf , val.c, i_null,NULL);
+/**/			add_inst("FLOAT2R2EINT*", i_lf, tmpVar, i_lf , val.c, i_null,NULL);
 			//fprintf(output_code, "float2r2eint lf@%s %s@%s\n", tmpVar, frame, val.c);
 	break;
 	case  token_double:
@@ -117,7 +117,7 @@ char *convert(int inType, int outType, token_value val, char *frame)
 			add_inst("INT2FLOAT", i_lf, tmpVar, i_int , i2s(val.i), i_null,NULL);
 			//fprintf(output_code, "int2float lf@%s int@%d\n", tmpVar, val.i);
 		else
-/**/			add_inst("FLOAT2R2EINT", i_lf, tmpVar, i_lf , val.c, i_null,NULL);
+/**/			add_inst("FLOAT2R2EINT*", i_lf, tmpVar, i_lf , val.c, i_null,NULL);
 			//fprintf(output_code, "int2float lf@%s %s@%s\n", tmpVar, frame, val.c);
 	break;
 	default:
@@ -437,7 +437,7 @@ tStack execOp (tStack **s, int *numOp, int *last_type)
 		case token_op_lt:
 			testCmpOps(operation->lOperandType, last_type);
 			add_inst("LTS", i_null,NULL,i_null,NULL,i_null,NULL);
-/**/			add_inst("PUSHS", i_null,NULL,i_null,NULL,i_null,NULL);
+/**/			add_inst("PUSHS*", i_null,NULL,i_null,NULL,i_null,NULL);
 			//fprintf(output_code, "lts\npushs");
 			*last_type = token_boolean;
 		break;
@@ -579,7 +579,7 @@ void NT_CallExpr(Metadata_t *funcMeta, char *funcName, SymbolTable_t *localVars)
 		// it is used because types are in structures stored as keyword for example token_integer
 		else if (TvalToKeyword(active_token->type) == arg->type)
 		{
-/**/			add_inst("MOVE", i_tf, arg->name, i_null, NULL, i_null,NULL);
+/**/			add_inst("MOVE*", i_tf, arg->name, i_null, NULL, i_null,NULL);
 			//fprintf(output_code, "move tf@%s ", arg->name);
 			printTokenVal();
 		}
@@ -717,7 +717,7 @@ void NT_Expr(int type, SymbolTable_t *localVars)
 		case token_val_string:
          numOp++;
 			last_type = TvalToKeyword(active_token->type);
-/**/                    add_inst("PUSHS", i_null,NULL,i_null,NULL,i_null,NULL); 
+/**/                    add_inst("PUSHS*", i_null,NULL,i_null,NULL,i_null,NULL); 
 			//fprintf(output_code, "pushs ");
 			//printTokenVal();
 			break;

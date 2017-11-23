@@ -105,13 +105,13 @@ void print_const_type(FILE* output_file, t_const type)
     case i_null:
       return;  
     case i_gf:
-      fprintf(output_file, "GF@");
+      fprintf(output_file, "gf@");
       return;
     case i_lf:
-      fprintf(output_file, "LF@");
+      fprintf(output_file, "lf@");
       return;
     case i_tf:
-      fprintf(output_file, "TF@");
+      fprintf(output_file, "tf@");
       return;
     case i_int:
       fprintf(output_file, "int@");
@@ -139,18 +139,21 @@ void generate_code(FILE* output_file)
     fprintf(output_file, "%s", actual->inst_type);
     if(actual->first)
     {
+      fprintf(output_file, " ");
       print_const_type(output_file, actual->first_type);
-      fprintf(output_file, " %s",actual->first); 
+      fprintf(output_file, "%s",actual->first); 
     }
     if(actual->second)
     {
+      fprintf(output_file, " ");
       print_const_type(output_file, actual->third_type);
-      fprintf(output_file, " %s",actual->second); 
+      fprintf(output_file, "%s",actual->second); 
     }
     if(actual->third)
     {
+      fprintf(output_file, " ");
       print_const_type(output_file, actual->third_type);
-      fprintf(output_file, " %s",actual->third); 
+      fprintf(output_file, "%s",actual->third); 
     }
     fprintf(output_file, "\n");
     actual = actual->next;

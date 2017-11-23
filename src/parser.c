@@ -997,7 +997,8 @@
                     raise_error(E_SYNTAX, "Assignment operator '=' expected.");
                 NT_Expr(variable->type, variables);
 
-                fprintf(output_code, "pops lf@%s\n", name);
+		add_inst("POPS", i_lf, name, i_null,NULL,i_null,NULL);
+                //fprintf(output_code, "pops lf@%s\n", name);
                 return;
             }
             else
