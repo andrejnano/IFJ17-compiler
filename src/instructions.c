@@ -42,6 +42,30 @@ char* d2s(double val)
 }
 
 /**
+ * converts frame written in string to instruction type 
+ */
+t_const fr2in(char *frame)
+{
+  if(frame == NULL)
+  {
+    return i_str;
+  }
+  else if(strcmp(frame,"lf") == 0)
+  {
+    return i_lf;
+  }
+  else if(strcmp(frame,"gf") == 0)
+  {
+    return i_gf;
+  }
+  else if(strcmp(frame,"tf") == 0)
+  {
+    return i_tf;
+  }
+  return i_null;
+}
+
+/**
  * Add new instruction at bottom of list
  * @param type - instruction as string, for example "MOVE" or "DEFVAR"
  * @param first, second, third - pointers to symbols
@@ -98,6 +122,31 @@ void add_inst(char *inst_type, t_const first_type, char *first,
   }
 }
 
+/**
+ * Add new operand to last instruction
+ */
+void add_op_to_last_inst(t_const type, char *value)
+{
+  if(last_inst->first == NULL)
+  {
+    last_inst->first_type = type;
+    last_inst->first = malloc(strlen(value)*sizeof(char));
+    strcpy(last_inst->first, value);
+  }
+  else if(last_inst->second == NULL)
+  {
+    last_inst->second_type = type;
+    last_inst->second = malloc(strlen(value)*sizeof(char));
+    strcpy(last_inst->second, value);
+  }
+  else if(last_inst->third == NULL)
+  {
+    last_inst->third_type = type;
+    last_inst->third = malloc(strlen(value)*sizeof(char));
+    strcpy(last_inst->third, value);
+  }
+}
+
 void print_const_type(FILE* output_file, t_const type)
 {
   switch(type)
@@ -105,13 +154,13 @@ void print_const_type(FILE* output_file, t_const type)
     case i_null:
       return;  
     case i_gf:
-      fprintf(output_file, "GF@");
+      fprintf(output_file, "gf@");
       return;
     case i_lf:
-      fprintf(output_file, "LF@");
+      fprintf(output_file, "lf@");
       return;
     case i_tf:
-      fprintf(output_file, "TF@");
+      fprintf(output_file, "tf@");
       return;
     case i_int:
       fprintf(output_file, "int@");
@@ -125,8 +174,11 @@ void print_const_type(FILE* output_file, t_const type)
     case i_bool:
       fprintf(output_file, "bool@");
       return;
+    case i_end:
+      fprintf(output_file, "end*");
+      return;
     default:
-      fprintf(output_file, "*ERR*@");
+      fprintf(output_file, "-ERR-@");
       return;
   }
 }
@@ -139,18 +191,21 @@ void generate_code(FILE* output_file)
     fprintf(output_file, "%s", actual->inst_type);
     if(actual->first)
     {
+      fprintf(output_file, " ");
       print_const_type(output_file, actual->first_type);
-      fprintf(output_file, " %s",actual->first); 
+      fprintf(output_file, "%s",actual->first); 
     }
     if(actual->second)
     {
+      fprintf(output_file, " ");
       print_const_type(output_file, actual->third_type);
-      fprintf(output_file, " %s",actual->second); 
+      fprintf(output_file, "%s",actual->second); 
     }
     if(actual->third)
     {
+      fprintf(output_file, " ");
       print_const_type(output_file, actual->third_type);
-      fprintf(output_file, " %s",actual->third); 
+      fprintf(output_file, "%s",actual->third); 
     }
     fprintf(output_file, "\n");
     actual = actual->next;

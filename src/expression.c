@@ -3,6 +3,7 @@
 #include "errors.h"
 #include "token.h"
 #include "parser.h"
+#include "instructions.h"
 
 
 
@@ -43,7 +44,8 @@ void generateName(char **var)
 	char *before = *var;
 	*var = (char *)malloc(sizeof(*var) + 10);
 	sprintf(*var,"$%s%u", before, count);
-	fprintf(output_code, "defvar lf@%s\n", *var);
+        add_inst("DEFVAR", i_lf, *var ,i_null,NULL,i_null,NULL);
+	//fprintf(output_code, "defvar lf@%s\n", *var);
 	count++;
 }
 
@@ -98,9 +100,11 @@ char *convert(int inType, int outType, token_value val, char *frame)
 		}
 		generateName(&tmpVar);
 		if (!frame)
-			fprintf(output_code, "float2r2eint lf@%s float@%g\n", tmpVar, val.d);
+			add_inst("FLOAT2R2EINT", i_lf, tmpVar, i_fl , d2s(val.d), i_null,NULL);
+			//fprintf(output_code, "float2r2eint lf@%s float@%g\n", tmpVar, val.d);
 		else
-			fprintf(output_code, "float2r2eint lf@%s %s@%s\n", tmpVar, frame, val.c);
+			add_inst("FLOAT2R2EINT", i_lf, tmpVar, fr2in(frame), val.c, i_null,NULL);
+			//fprintf(output_code, "float2r2eint lf@%s %s@%s\n", tmpVar, frame, val.c);
 	break;
 	case  token_double:
 		if (inType != token_integer)
@@ -110,9 +114,11 @@ char *convert(int inType, int outType, token_value val, char *frame)
 		}
 		generateName(&tmpVar);
 		if (!frame)
-			fprintf(output_code, "int2float lf@%s int@%d\n", tmpVar, val.i);
+			add_inst("INT2FLOAT", i_lf, tmpVar, i_int , i2s(val.i), i_null,NULL);
+			//fprintf(output_code, "int2float lf@%s int@%d\n", tmpVar, val.i);
 		else
-			fprintf(output_code, "int2float lf@%s %s@%s\n", tmpVar, frame, val.c);
+			add_inst("FLOAT2R2EINT", i_lf, tmpVar, fr2in(frame) , val.c, i_null,NULL);
+			//fprintf(output_code, "int2float lf@%s %s@%s\n", tmpVar, frame, val.c);
 	break;
 	default:
 		if (istype(active_token->type))
@@ -130,16 +136,20 @@ void zeroVarInit(char *varName) {
 	switch (active_token->type)
 	{
 		case token_integer:
-			fprintf(output_code, "move lf@%s int@0\n", varName);
+			add_inst("MOVE", i_lf, varName, i_int , "0", i_null,NULL);
+			//fprintf(output_code, "move lf@%s int@0\n", varName);
 			break;
 		case token_double:
-			fprintf(output_code, "move lf@%s float@0.0\n", varName);
+			add_inst("MOVE", i_lf, varName, i_fl , "0.0", i_null,NULL);
+			//fprintf(output_code, "move lf@%s float@0.0\n", varName);
 			break;
 		case token_string:
-			fprintf(output_code, "move lf@%s string@\n", varName);
+			add_inst("MOVE", i_lf, varName, i_str , "", i_null,NULL);
+			//fprintf(output_code, "move lf@%s string@\n", varName);
 			break;
 		case token_boolean:
-			fprintf(output_code, "move lf@%s bool@false\n", varName);
+			add_inst("MOVE", i_lf, varName, i_bool , "false", i_null,NULL);
+			//fprintf(output_code, "move lf@%s bool@false\n", varName);
 			break;
 		default :
 			raise_error(SYNTAX_ERROR, "Expecet type int, double ...\n");
@@ -231,7 +241,8 @@ void NT_Func(bool dec, char **funcName)
 	get_next_token(source_code, active_token);
 	match(token_eol);
 	if (!dec)
-		fprintf(output_code, "label %s\n", *funcName);
+		add_inst("LABEL", i_null, *funcName, i_null,NULL,i_null,NULL);
+		//fprintf(output_code, "label %s\n", *funcName);
 }
 
 /*
@@ -253,20 +264,25 @@ void converts(int old_type, int *last_type, bool byPriority)
 			{
 				char *temp = "tmp";
 				generateName(&temp);
-				fprintf(output_code, "pops lf@%s\n", temp);
-				fprintf(output_code, "int2floats\n");
-				fprintf(output_code, "pushs lf@%s\n", temp);
+			        add_inst("POPS", i_lf, temp, i_null,NULL,i_null,NULL);
+			        add_inst("INT2FLOATS", i_null,NULL,i_null,NULL,i_null,NULL);
+			        add_inst("PUSHS", i_lf, temp, i_null,NULL,i_null,NULL);
+				//fprintf(output_code, "pops lf@%s\n", temp);
+				//fprintf(output_code, "int2floats\n");
+				//fprintf(output_code, "pushs lf@%s\n", temp);
 				*last_type = token_double;
 			}
 			else
 			{
-				fprintf(output_code, "float2r2eints\n");
+			        add_inst("FLOAT2R2EINTS", i_null,NULL,i_null,NULL,i_null,NULL);
+				//fprintf(output_code, "float2r2eints\n");
 				*last_type = token_integer;
 			}
 		}
 		else if (*last_type == token_double && old_type == token_integer)
 		{
-			fprintf(output_code, "int2floats\n");
+			add_inst("INT2FLOATS", i_null,NULL,i_null,NULL,i_null,NULL);
+			//fprintf(output_code, "int2floats\n");
 			*last_type = token_double;
 		}
 		else
@@ -298,16 +314,20 @@ void testCmpOps(int OP1, int *OP2)
 	}
 	else if (*OP2 == token_integer && OP1 == token_double)
 	{
-		fprintf(output_code, "int2floats\n");
+		add_inst("INT2FLOATS", i_null,NULL,i_null,NULL,i_null,NULL);
+		//fprintf(output_code, "int2floats\n");
 		*OP2 = token_double;
 	}
 	else if (OP1 == token_integer && *OP2 == token_double)
 	{
 		char *temp1 = "tmp";
 		generateName(&temp1);
-		fprintf(output_code, "pops lf@%s\n", temp1);
-		fprintf(output_code, "int2floats\n");
-		fprintf(output_code, "pushs lf@%s\n", temp1);
+		add_inst("POPS", i_lf, temp1, i_null,NULL,i_null,NULL);
+		add_inst("INT2FLOATS", i_null,NULL,i_null,NULL,i_null,NULL);
+		add_inst("PUSHS", i_lf, temp1, i_null,NULL,i_null,NULL);
+		//fprintf(output_code, "pops lf@%s\n", temp1);
+		//fprintf(output_code, "int2floats\n");
+		//fprintf(output_code, "pushs lf@%s\n", temp1);
 		*OP2 = token_double;
 	}
 	else
@@ -344,32 +364,40 @@ tStack execOp (tStack **s, int *numOp, int *last_type)
 			{
 				generateName(&tmpName1);
 				generateName(&tmpName2);
-				fprintf(output_code, "pops lf@%s\n", tmpName1);
-				fprintf(output_code, "pops lf@%s\n", tmpName2);
-				fprintf(output_code, "concat lf@%s lf@%s lf@%s\n", tmpName1, tmpName2, tmpName1);
-				fprintf(output_code, "pushs lf@%s\n", tmpName1);
+				add_inst("POPS", i_lf, tmpName1, i_null,NULL,i_null,NULL);
+				add_inst("POPS", i_lf, tmpName2, i_null,NULL,i_null,NULL);
+				add_inst("CONCAT", i_lf, tmpName1, i_lf, tmpName2, i_lf, tmpName1);
+				add_inst("PUSHS", i_lf, tmpName1, i_null,NULL,i_null,NULL);
+				//fprintf(output_code, "pops lf@%s\n", tmpName1);
+				//fprintf(output_code, "pops lf@%s\n", tmpName2);
+				//fprintf(output_code, "concat lf@%s lf@%s lf@%s\n", tmpName1, tmpName2, tmpName1);
+				//fprintf(output_code, "pushs lf@%s\n", tmpName1);
 				break;
 			}
 			converts(operation->lOperandType, last_type, 1);
-			fprintf(output_code,"adds\n");
+			add_inst("ADDS", i_null,NULL,i_null,NULL,i_null,NULL);
+			//fprintf(output_code,"adds\n");
 		break;
 		case token_op_sub:
 			converts(operation->lOperandType, last_type, 1);
 			if (*last_type == token_string)
 				raise_error(SEM_ERROR, "Invalid operation for strings\n");
-			fprintf(output_code,"subs\n");
+			add_inst("SUBS", i_null,NULL,i_null,NULL,i_null,NULL);
+			//fprintf(output_code,"subs\n");
 		break;  
 		case token_op_mul:
 			converts(operation->lOperandType, last_type, 1);
 			if (*last_type == token_string)
 				raise_error(SEM_ERROR, "Invalid operation for strings\n");
-			fprintf(output_code,"muls\n");
+			add_inst("MULS", i_null,NULL,i_null,NULL,i_null,NULL);
+			//fprintf(output_code,"muls\n");
 		break;  
 		case token_op_div:
 			converts(operation->lOperandType, last_type, 1);
 			if (*last_type == token_string)
 				raise_error(SEM_ERROR, "Invalid operation for strings\n");
-			fprintf(output_code,"divs\n");
+			add_inst("DIVS", i_null,NULL,i_null,NULL,i_null,NULL);
+			//fprintf(output_code,"divs\n");
 		break;  
 		case token_op_mod:
 			converts(operation->lOperandType, last_type, 1);
@@ -377,74 +405,115 @@ tStack execOp (tStack **s, int *numOp, int *last_type)
 				raise_error(SEM_ERROR, "Invalid operation for strings\n");
 			generateName(&tmpName1);
 			generateName(&tmpName2);
-			fprintf(output_code, "pops lf@%s\n", tmpName1);
-			fprintf(output_code, "pops lf@%s\n", tmpName2);
-			fprintf(output_code, "pushs lf@%s\n", tmpName2);
-			fprintf(output_code, "pushs lf@%s\n", tmpName2);
-			fprintf(output_code, "pushs lf@%s\n", tmpName1);
-			fprintf(output_code, "divs\n");
-			fprintf(output_code, "pushs lf@%s\n", tmpName1);
-			fprintf(output_code, "muls\n");
-			fprintf(output_code, "subs\n");
+			add_inst("POPS", i_lf, tmpName1, i_null,NULL,i_null,NULL);
+			add_inst("POPS", i_lf, tmpName2, i_null,NULL,i_null,NULL);
+			add_inst("PUSHS", i_lf, tmpName2, i_null,NULL,i_null,NULL);
+			add_inst("PUSHS", i_lf, tmpName2, i_null,NULL,i_null,NULL);
+			add_inst("PUSHS", i_lf, tmpName1, i_null,NULL,i_null,NULL);
+			add_inst("DIVS", i_null,NULL,i_null,NULL,i_null,NULL);
+			add_inst("PUSHS", i_lf, tmpName1, i_null,NULL,i_null,NULL);
+			add_inst("MULS", i_null,NULL,i_null,NULL,i_null,NULL);
+			add_inst("SUBS", i_null,NULL,i_null,NULL,i_null,NULL);
+			//fprintf(output_code, "pops lf@%s\n", tmpName1);
+			//fprintf(output_code, "pops lf@%s\n", tmpName2);
+			//fprintf(output_code, "pushs lf@%s\n", tmpName2);
+			//fprintf(output_code, "pushs lf@%s\n", tmpName2);
+			//fprintf(output_code, "pushs lf@%s\n", tmpName1);
+			//fprintf(output_code, "divs\n");
+			//fprintf(output_code, "pushs lf@%s\n", tmpName1);
+			//fprintf(output_code, "muls\n");
+			//fprintf(output_code, "subs\n");
 			free(tmpName1);
 			free(tmpName2);
-			fprintf(output_code,"divs\n");
+			add_inst("DIVS", i_null,NULL,i_null,NULL,i_null,NULL);
+			//fprintf(output_code,"divs\n");
 		break;
 		case token_op_eq:
 			testCmpOps(operation->lOperandType, last_type);
-			fprintf(output_code, "eqs\n");
+			add_inst("EQS", i_null,NULL,i_null,NULL,i_null,NULL);
+			//fprintf(output_code, "eqs\n");
 			*last_type = token_boolean;
 		break;
 		case token_op_lt:
 			testCmpOps(operation->lOperandType, last_type);
-			fprintf(output_code, "lts\npushs");
+			add_inst("LTS", i_null,NULL,i_null,NULL,i_null,NULL);
+			//add_inst("PUSHS*", i_null,NULL,i_null,NULL,i_null,NULL);
+			//fprintf(output_code, "lts\npushs");
 			*last_type = token_boolean;
 		break;
 		case token_op_le:
 			testCmpOps(operation->lOperandType, last_type);
 			generateName(&tmpName1);
 			generateName(&tmpName2);
-			fprintf(output_code, "pops lf@%s\n", tmpName1);
-			fprintf(output_code, "pops lf@%s\n", tmpName2);
-			fprintf(output_code, "pushs lf@%s\n", tmpName2);
-			fprintf(output_code, "pushs lf@%s\n", tmpName1);
-			fprintf(output_code, "lts\n");
-			fprintf(output_code, "pushs lf@%s\n", tmpName2);
-			fprintf(output_code, "pushs lf@%s\n", tmpName1);
-			fprintf(output_code, "eqs\nors\n");
+			add_inst("POPS", i_lf, tmpName1, i_null,NULL,i_null,NULL);
+			add_inst("POPS", i_lf, tmpName2, i_null,NULL,i_null,NULL);
+			add_inst("PUSHS", i_lf, tmpName2, i_null,NULL,i_null,NULL);
+			add_inst("PUSHS", i_lf, tmpName1, i_null,NULL,i_null,NULL);
+			add_inst("LTS", i_null,NULL,i_null,NULL,i_null,NULL);
+			add_inst("PUSHS", i_lf, tmpName2, i_null,NULL,i_null,NULL);
+			add_inst("PUSHS", i_lf, tmpName1, i_null,NULL,i_null,NULL);
+			add_inst("EQS", i_null,NULL,i_null,NULL,i_null,NULL);
+			add_inst("ORS", i_null,NULL,i_null,NULL,i_null,NULL);
+			//fprintf(output_code, "pops lf@%s\n", tmpName1);
+			//fprintf(output_code, "pops lf@%s\n", tmpName2);
+			//fprintf(output_code, "pushs lf@%s\n", tmpName2);
+			//fprintf(output_code, "pushs lf@%s\n", tmpName1);
+			//fprintf(output_code, "lts\n");
+			//fprintf(output_code, "pushs lf@%s\n", tmpName2);
+			//fprintf(output_code, "pushs lf@%s\n", tmpName1);
+			//fprintf(output_code, "eqs\nors\n");
 			*last_type = token_boolean;
 		break;
 		case token_op_ge:
 			testCmpOps(operation->lOperandType, last_type);
 			generateName(&tmpName1);
 			generateName(&tmpName2);
-			fprintf(output_code, "pops lf@%s\n", tmpName1);
-			fprintf(output_code, "pops lf@%s\n", tmpName2);
-			fprintf(output_code, "pushs lf@%s\n", tmpName2);
-			fprintf(output_code, "pushs lf@%s\n", tmpName1);
-			fprintf(output_code, "gts\n");
-			fprintf(output_code, "pushs lf@%s\n", tmpName2);
-			fprintf(output_code, "pushs lf@%s\n", tmpName1);
-			fprintf(output_code, "eqs\nors\n");
+			add_inst("POPS", i_lf, tmpName1, i_null,NULL,i_null,NULL);
+			add_inst("POPS", i_lf, tmpName2, i_null,NULL,i_null,NULL);
+			add_inst("PUSHS", i_lf, tmpName2, i_null,NULL,i_null,NULL);
+			add_inst("PUSHS", i_lf, tmpName1, i_null,NULL,i_null,NULL);
+			add_inst("GTS", i_null,NULL,i_null,NULL,i_null,NULL);
+			add_inst("PUSHS", i_lf, tmpName2, i_null,NULL,i_null,NULL);
+			add_inst("PUSHS", i_lf, tmpName1, i_null,NULL,i_null,NULL);
+			add_inst("EQS", i_null,NULL,i_null,NULL,i_null,NULL);
+			add_inst("ORS", i_null,NULL,i_null,NULL,i_null,NULL);
+			//fprintf(output_code, "pops lf@%s\n", tmpName1);
+			//fprintf(output_code, "pops lf@%s\n", tmpName2);
+			//fprintf(output_code, "pushs lf@%s\n", tmpName2);
+			//fprintf(output_code, "pushs lf@%s\n", tmpName1);
+			//fprintf(output_code, "gts\n");
+			//fprintf(output_code, "pushs lf@%s\n", tmpName2);
+			//fprintf(output_code, "pushs lf@%s\n", tmpName1);
+			//fprintf(output_code, "eqs\nors\n");
 			*last_type = token_boolean;
 		break;
 		case token_op_ne:
 			testCmpOps(operation->lOperandType, last_type);
 			generateName(&tmpName1);
 			generateName(&tmpName2);
-			fprintf(output_code, "pops lf@%s\n", tmpName1);
-			fprintf(output_code, "pops lf@%s\n", tmpName2);
-			fprintf(output_code, "pushs lf@%s\n", tmpName2);
-			fprintf(output_code, "pushs lf@%s\n", tmpName1);
-			fprintf(output_code, "lts\n");
-			fprintf(output_code, "pushs lf@%s\n", tmpName2);
-			fprintf(output_code, "pushs lf@%s\n", tmpName1);
-			fprintf(output_code, "gts\nors\n");
+			add_inst("POPS", i_lf, tmpName1, i_null,NULL,i_null,NULL);
+			add_inst("POPS", i_lf, tmpName2, i_null,NULL,i_null,NULL);
+			add_inst("PUSHS", i_lf, tmpName2, i_null,NULL,i_null,NULL);
+			add_inst("PUSHS", i_lf, tmpName1, i_null,NULL,i_null,NULL);
+			add_inst("LTS", i_null,NULL,i_null,NULL,i_null,NULL);
+			add_inst("PUSHS", i_lf, tmpName2, i_null,NULL,i_null,NULL);
+			add_inst("PUSHS", i_lf, tmpName1, i_null,NULL,i_null,NULL);
+			add_inst("GTS", i_null,NULL,i_null,NULL,i_null,NULL);
+			add_inst("ORS", i_null,NULL,i_null,NULL,i_null,NULL);
+			//fprintf(output_code, "pops lf@%s\n", tmpName1);
+			//fprintf(output_code, "pops lf@%s\n", tmpName2);
+			//fprintf(output_code, "pushs lf@%s\n", tmpName2);
+			//fprintf(output_code, "pushs lf@%s\n", tmpName1);
+			//fprintf(output_code, "lts\n");
+			//fprintf(output_code, "pushs lf@%s\n", tmpName2);
+			//fprintf(output_code, "pushs lf@%s\n", tmpName1);
+			//fprintf(output_code, "gts\nors\n");
 			*last_type = token_boolean;
 		break;
 		case token_op_gt:
 			testCmpOps(operation->lOperandType, last_type);
-			fprintf(output_code, "gts\n");	
+			add_inst("GTS", i_null,NULL,i_null,NULL,i_null,NULL);
+			//fprintf(output_code, "gts\n");	
 			*last_type = token_boolean;	
 		break;
 		case token_lbrace:
@@ -467,7 +536,8 @@ void NT_CallExpr(Metadata_t *funcMeta, char *funcName, SymbolTable_t *localVars)
 {
 	get_next_token(source_code, active_token);
 	match(token_lbrace);
-	fprintf(output_code, "createframe\n");
+	add_inst("CREATEFRAME", i_null,NULL,i_null,NULL,i_null,NULL);
+	//fprintf(output_code, "createframe\n");
 	Parameter_t *arg = funcMeta->parameters;
 	// read check types and convert arguments for calling function
 	while (active_token->type != token_rbrace)
@@ -477,7 +547,8 @@ void NT_CallExpr(Metadata_t *funcMeta, char *funcName, SymbolTable_t *localVars)
 			raise_error(SEM_ERROR, "Too many arguments for function\n");
 			return;
 		}
-		fprintf(output_code, "defvar tf@%s\n", arg->name);
+		add_inst("DEFVAR", i_tf, arg->name, i_null,NULL,i_null,NULL);
+		//fprintf(output_code, "defvar tf@%s\n", arg->name);
 		if (active_token->type == token_identifier)
 		{
 			char *id = active_token->value.c;
@@ -486,12 +557,14 @@ void NT_CallExpr(Metadata_t *funcMeta, char *funcName, SymbolTable_t *localVars)
 			{
 				if (tmpMeta->type == funcMeta->type)
 				{
-					fprintf(output_code, "move tf@%s lf@%s\n", arg->name, id);
+					add_inst("MOVE", i_tf, arg->name, i_lf, id, i_null,NULL);
+					//fprintf(output_code, "move tf@%s lf@%s\n", arg->name, id);
 				}
 				else
 				{
 					char *name = convert(tmpMeta->type, arg->type, active_token->value, "lf");
-					fprintf(output_code, "move tf@%s lf@%s\n", arg->name, name);
+					add_inst("MOVE", i_tf, arg->name, i_lf, name, i_null,NULL);
+					//fprintf(output_code, "move tf@%s lf@%s\n", arg->name, name);
 					free(name);
 				}
 				
@@ -506,13 +579,15 @@ void NT_CallExpr(Metadata_t *funcMeta, char *funcName, SymbolTable_t *localVars)
 		// it is used because types are in structures stored as keyword for example token_integer
 		else if (TvalToKeyword(active_token->type) == arg->type)
 		{
-			fprintf(output_code, "move tf@%s ", arg->name);
+			add_inst("MOVE", i_tf, arg->name, i_null, NULL, i_null,NULL);
+			//fprintf(output_code, "move tf@%s ", arg->name);
 			printTokenVal();
 		}
 		else
 		{
 			char *name = convert(TvalToKeyword(active_token->type), arg->type, active_token->value, NULL);
-			fprintf(output_code, "move tf@%s lf@%s\n", arg->name, name);
+			add_inst("MOVE", i_tf, arg->name, i_lf, name, i_null,NULL);
+			//fprintf(output_code, "move tf@%s lf@%s\n", arg->name, name);
 			free(name);
 		}
 		arg = arg->next;
@@ -527,7 +602,9 @@ void NT_CallExpr(Metadata_t *funcMeta, char *funcName, SymbolTable_t *localVars)
 		raise_error(SEM_ERROR, "Too few arguments for function\n");
 		return;
 	}
-	fprintf(output_code, "pushframe\ncall %s\n", funcName);
+	add_inst("PUSHFRAME", i_null,NULL,i_null,NULL,i_null,NULL);
+	add_inst("CALL", i_null, funcName, i_null,NULL,i_null,NULL);
+	//fprintf(output_code, "pushframe\ncall %s\n", funcName);
 }
 
 /*
@@ -617,14 +694,17 @@ void NT_Expr(int type, SymbolTable_t *localVars)
 			if ((var = stl_search(localVars, active_token->value.c)))
 			{
             	last_type = var->type;
-				fprintf(output_code, "pushs lf@%s\n", active_token->value.c);
+                                add_inst("PUSHS", i_lf, active_token->value.c, i_null,NULL,i_null,NULL);
+				//fprintf(output_code, "pushs lf@%s\n", active_token->value.c);
 			}
 			else if ((var = stl_search(functions, active_token->value.c)))
 			{
             	last_type = var->type;
 				NT_CallExpr(var, active_token->value.c, localVars);
-				fprintf(output_code, "pushs tf@return\n");
-				fprintf(output_code, "popframe\n");
+                                add_inst("PUSHS", i_tf, "return", i_null,NULL,i_null,NULL);
+                                add_inst("POPFRAME", i_null,NULL,i_null,NULL,i_null,NULL);
+				//fprintf(output_code, "pushs tf@return\n");
+				//fprintf(output_code, "popframe\n");
 			}
 			else
 			{
@@ -637,7 +717,8 @@ void NT_Expr(int type, SymbolTable_t *localVars)
 		case token_val_string:
          numOp++;
 			last_type = TvalToKeyword(active_token->type);
-			fprintf(output_code, "pushs ");
+                        add_inst("PUSHS", i_null,NULL,i_null,NULL,i_null,NULL); 
+			//fprintf(output_code, "pushs ");
 			printTokenVal();
 			break;
 		default:
