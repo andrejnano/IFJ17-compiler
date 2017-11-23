@@ -104,7 +104,9 @@
             raise_error(E_SYNTAX, "EOL expected at this point.");
 
         if (match(token_eof) == false)  // end of file
-            raise_error(E_SYNTAX, "EOF expected after End Scope, not found.");
+				raise_error(E_SYNTAX, "EOF expected after End Scope, not found.");
+			if (active_token->type == token_identifier && active_token->value.c)
+				free(active_token->value.c);
     }
 
 
@@ -208,9 +210,10 @@
                         break;
 
                     // create new Parameter
-                    Parameter_t *new_parameter = (Parameter_t *) malloc(sizeof(Parameter_t));
-                    new_parameter->name = active_token->value.c;
-                    new_parameter->next = NULL;
+                    Parameter_t new_parameter;
+						  new_parameter.name = (char *)malloc(strlen(active_token->value.c) + 1);
+						  strcpy(new_parameter.name, active_token->value.c);
+                    new_parameter.next = NULL;
 
                     match(token_identifier);
 
@@ -220,7 +223,7 @@
                     // check if the token is one of the datatypes
                     if (is_datatype(active_token->type))
                     {
-                        new_parameter->type = active_token->type;
+                        new_parameter.type = active_token->type;
                         match(active_token->type);
                     }
                     else
@@ -235,23 +238,21 @@
                         match(token_comma);
                        
                         // append current parameter and continue with next one
-                        if ( param_list_append(&function_parameters, new_parameter) )
+                        if ( param_list_append(&function_parameters, &new_parameter) )
                             continue;
                         else
                         {
                             declaration_error = true;
-                            free(new_parameter);
                         }
                             
                     }
                     else if (active_token->type == token_rbrace)
                     {
-                        if(param_list_append(&function_parameters, new_parameter))
+                        if(param_list_append(&function_parameters, &new_parameter))
                             break;
                         else
                         {
                             declaration_error = true;
-                            free(new_parameter);
                             break;
                         }
                             
@@ -259,7 +260,6 @@
                     else
                     {
                         declaration_error = true;
-                        free(new_parameter);
                         break;
                     }
 
@@ -335,14 +335,14 @@
         /*
             1) Function was already defined
             2) Function was already declared
-            3) Function was neither defined nor declared
-
+				3) Function was neither defined nor declared
+				
             in case 1) raise ERROR & quit
                         if ( is_defined == TRUE ) ... 
     
             in case 2) check if the parameters match the declaration, then push the body
-                        if ( is_declared == TRUE ) ...  is_defined = TRUE;
-
+								if ( is_declared == TRUE ) ...  is_defined = TRUE;
+								
             in case 3) declare and define a new symtable item.
                         if ( no item exists ) ...  is_declared = TRUE ; is_defined = TRUE;
         */
@@ -393,9 +393,10 @@
                             break;
 
                         // create new Parameter
-                        Parameter_t *new_parameter = (Parameter_t *)malloc(sizeof(Parameter_t));
-                        new_parameter->name = active_token->value.c;
-                        new_parameter->next = NULL;
+                        Parameter_t new_parameter;
+                        new_parameter.name = (char *)malloc(sizeof(char) * strlen(active_token->value.c) + 1);
+								strcpy(new_parameter.name, active_token->value.c);
+                        new_parameter.next = NULL;
 
                         match(token_identifier);
 
@@ -405,7 +406,7 @@
                         // check if the token is one of the datatypes
                         if (is_datatype(active_token->type))
                         {
-                            new_parameter->type = active_token->type;
+                            new_parameter.type = active_token->type;
                             match(active_token->type);
                         }
                         else
@@ -419,14 +420,12 @@
                             match(token_comma);
 
                             // append current parameter and continue with next one
-                            if (param_list_append(&function_parameters, new_parameter))
+                            if (param_list_append(&function_parameters, &new_parameter))
                                 continue;
-                            else
-                                free(new_parameter);
                         }
                         else if (active_token->type == token_rbrace)
                         {
-                            param_list_append(&function_parameters, new_parameter);
+                            param_list_append(&function_parameters, &new_parameter);
                             break;
                         }
                         else
@@ -502,7 +501,7 @@
 
                     if (match(token_function) == false)
                         raise_error(E_SYNTAX, "'Function' keyword expected at this point.");
-
+						  param_list_dispose(function_parameters);
                     return; // !IMPORTANT
 
                 } // end of 'else if (function_metadata->is_declared)'
@@ -537,9 +536,10 @@
                         break;
 
                     // create new Parameter
-                    Parameter_t *new_parameter = (Parameter_t *)malloc(sizeof(Parameter_t));
-                    new_parameter->name = active_token->value.c;
-                    new_parameter->next = NULL;
+                    Parameter_t new_parameter;
+						  new_parameter.name = (char *)malloc(sizeof(char) * strlen(active_token->value.c) + 1);
+						  strcpy(new_parameter.name, active_token->value.c);
+                    new_parameter.next = NULL;
 
                     match(token_identifier);
 
@@ -549,7 +549,7 @@
                     // check if the token is one of the datatypes
                     if (is_datatype(active_token->type))
                     {
-                        new_parameter->type = active_token->type;
+                        new_parameter.type = active_token->type;
                         match(active_token->type);
                     }
                     else
@@ -563,14 +563,12 @@
                         match(token_comma);
 
                         // append current parameter and continue with next one
-                        if (param_list_append(&function_parameters, new_parameter))
+                        if (param_list_append(&function_parameters, &new_parameter))
                             continue;
-                        else
-                            free(new_parameter);
                     }
                     else if (active_token->type == token_rbrace)
                     {
-                        param_list_append(&function_parameters, new_parameter);
+                        param_list_append(&function_parameters, &new_parameter);
                         break;
                     }
                     else
@@ -643,9 +641,11 @@
                 if (!definition_error) //&& !compiler_error)
                 {
                     stl_insert_top(functions, new_function_name, &new_function_metadata);
-                    free(new_function_name);
+						  free(new_function_name);
+						  param_list_dispose(function_parameters);
                     return;
-                }
+					 }
+					 param_list_dispose(function_parameters);
             }
         } // end of IF identifier
         
@@ -973,10 +973,8 @@
 
             if (variable)
             {
-                // -------
-                // somehow assign value to this variable
-                // & generate code
-                // -------
+					 NT_Expr();
+					 fprintf(output_code, "pops lf@%s\n", active_token->value.c);
             }
             else
             {

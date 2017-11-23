@@ -244,31 +244,28 @@ void converts(int old_type, int *last_type, bool byPriority)
 {
 	if (old_type == *last_type)
 		return;
-	char *temp1 = "tmp";
-	generateName(&temp1);
-	fprintf(output_code, "pops lf@%s\n", temp1);
 	if (istype(old_type) && istype(old_type))
 	{
 		if (old_type == token_double && *last_type == token_integer)
 		{
 			if (byPriority)
 			{
-				char *temp2 = "tmp";
-				generateName(&temp2);
-				fprintf(output_code, "pops lf@%s\n", temp2);
-				fprintf(output_code, "int2float lf@%s lf@%s\n", temp2, temp2);
-				fprintf(output_code, "pushs lf@%s\n", temp2);
+				char *temp = "tmp";
+				generateName(&temp);
+				fprintf(output_code, "pops lf@%s\n", temp);
+				fprintf(output_code, "int2floats\n");
+				fprintf(output_code, "pushs lf@%s\n", temp);
 				*last_type = token_double;
 			}
 			else
 			{
-				fprintf(output_code, "float2r2eint lf@%s lf@%s\n", temp1, temp1);
+				fprintf(output_code, "float2r2eints\n");
 				*last_type = token_integer;
 			}
 		}
 		else if (*last_type == token_double && old_type == token_integer)
 		{
-			fprintf(output_code, "int2float lf@%s lf@%s\n", temp1, temp1);
+			fprintf(output_code, "int2floats\n");
 			*last_type = token_double;
 		}
 		else
@@ -282,7 +279,6 @@ void converts(int old_type, int *last_type, bool byPriority)
 		raise_error(SYNTAX_ERROR, "Wrong expression syntax\n");
 		return;
 	}
-	fprintf(output_code, "pushs lf@%s\n", temp1);
 }
 
 /*
@@ -301,23 +297,15 @@ void testCmpOps(int OP1, int *OP2)
 	}
 	else if (*OP2 == token_integer && OP1 == token_double)
 	{
-		char *temp1 = "tmp";
-		generateName(&temp1);
-		fprintf(output_code, "pops lf@%s\n", temp1);
-		fprintf(output_code, "int2float lf@%s lf@%s\n", temp1, temp1);
-		fprintf(output_code, "pushs lf@%s\n", temp1);
+		fprintf(output_code, "int2floats\n");
 		*OP2 = token_double;
 	}
 	else if (OP1 == token_integer && *OP2 == token_double)
 	{
 		char *temp1 = "tmp";
-		char *temp2 = "tmp";
 		generateName(&temp1);
 		fprintf(output_code, "pops lf@%s\n", temp1);
-		generateName(&temp2);
-		fprintf(output_code, "pops lf@%s\n", temp2);
-		fprintf(output_code, "int2float lf@%s lf@%s\n", temp2, temp2);
-		fprintf(output_code, "pushs lf@%s\n", temp2);
+		fprintf(output_code, "int2floats\n");
 		fprintf(output_code, "pushs lf@%s\n", temp1);
 		*OP2 = token_double;
 	}

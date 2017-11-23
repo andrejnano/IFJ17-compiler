@@ -45,15 +45,15 @@
     int main(int argc, char* argv[])
     {
         // check arguments, source_code file @TODO make sepparate function for argument parsing
-        if (argc != 3)
-            return E_INTERNAL;
+        // if (argc != 3)
+        //     return E_INTERNAL;
 
         if (! (source_code = fopen(argv[1], "r")))
             return E_INTERNAL;
 
-        if (!(output_code = fopen(argv[2], "w")))
-            return E_INTERNAL;
-
+        // if (!(output_code = fopen(argv[2], "w")))
+        //     return E_INTERNAL;
+        output_code = stdout;
         // save the source name
         source_file_name = argv[1];
         parse(); // uses globals source_code & output_code

@@ -338,7 +338,8 @@ bool match(token_type expected_token_type)
 const char *debug_token_name(Token_t *token)
 {
     token_type type = token->type;
-
+    if (!token)
+        return NULL;
     switch (type)
     {
     // Data types

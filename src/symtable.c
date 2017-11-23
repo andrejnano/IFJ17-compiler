@@ -258,10 +258,13 @@ bool param_list_append(Parameter_t **parameter_list, Parameter_t *new_parameter)
 {
     Parameter_t *prev_parameter = NULL;
     Parameter_t *current_parameter = (*parameter_list);
-
+    if (!new_parameter)
+        return false;
+    Parameter_t *tmp = (Parameter_t*) malloc(sizeof(Parameter_t));
+    memcpy(tmp, new_parameter, sizeof(Parameter_t));
     if (current_parameter == NULL)
     {
-        (*parameter_list) = new_parameter;
+        (*parameter_list) = tmp;
         return true;
     }
 
@@ -269,7 +272,7 @@ bool param_list_append(Parameter_t **parameter_list, Parameter_t *new_parameter)
     {
 
         // if there are 2 same parameters
-        if ( strcmp(current_parameter->name, new_parameter->name) == 0 )
+        if ( strcmp(current_parameter->name, tmp->name) == 0 )
         {
             raise_error(E_SEM_OTHER, "Same named parameters in function declaration\n");
             return false;
@@ -279,7 +282,7 @@ bool param_list_append(Parameter_t **parameter_list, Parameter_t *new_parameter)
         current_parameter = current_parameter->next;
     }
     
-    prev_parameter->next = new_parameter;
+    prev_parameter->next = tmp;
 
     return true;
 }
