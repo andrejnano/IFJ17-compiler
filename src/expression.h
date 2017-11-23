@@ -20,7 +20,7 @@ tStack *sPop(tStack **s);
 void generateName(char **var);
 void zeroVarInit(char *varName);
 void NT_Func(bool dec, char **funcName);
-void NT_CallExpr(Metadata_t *funcMeta, char *funcName, SymbolTable_t *localVars);
-void NT_Expr(int type, SymbolTable_t *localVars);
+void NT_CallExpr(Metadata_t *funcMeta, char *funcName);
+void NT_Expr(int type);
 char *convert(int inType, int outType, token_value val, char *frame);
 #endif

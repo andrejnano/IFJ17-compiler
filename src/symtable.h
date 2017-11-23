@@ -120,5 +120,6 @@
     void stl_clean_all(SymbolTable_t **tree);
 
 extern SymbolTable_t *functions;
+extern SymbolTable_t *variables;
 
 #endif

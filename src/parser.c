@@ -963,7 +963,7 @@
             if (variable_name)
             {
 
-                NT_Expr(var_meta->type ,variables);
+                NT_Expr(var_meta->type);
                 fprintf(output_code, "pops lf@%s\n", variable_name);
             }
             else 
@@ -1002,7 +1002,7 @@
 
                 if (match(token_op_eq) == false)
                     raise_error(E_SYNTAX, "Assignment operator '=' expected.");
-                NT_Expr(variable->type, variables);
+                NT_Expr(variable->type);
 
                 fprintf(output_code, "pops lf@%s\n", name);
                 return;
@@ -1030,7 +1030,7 @@
             raise_error(E_SYNTAX, "Keyword 'If' expected.");
 
 
-        NT_Expr(token_boolean, variables);
+        NT_Expr(token_boolean);
 
         if (!match(token_then))
             raise_error(E_SYNTAX, "Keyword 'Then' expected.");
@@ -1091,7 +1091,7 @@
         if (match(token_while) == false)
             raise_error(E_SYNTAX, "Keyword 'While' expected.");
 
-        NT_Expr(token_boolean, variables);
+        NT_Expr(token_boolean);
 
         if (active_token->type != token_eol)
             raise_error(E_SYNTAX, "EOL expected.");

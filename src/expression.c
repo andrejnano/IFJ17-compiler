@@ -460,10 +460,9 @@ tStack execOp (tStack **s, int *numOp, int *last_type)
 /*
  * \brief Function for generating code for function call
  * \param vars Symbol table list containig metadata about variables
- * \param functions Symbol table list containig metadata about functions
  * \param funcname Name of function to be called
  */
-void NT_CallExpr(Metadata_t *funcMeta, char *funcName, SymbolTable_t *localVars)
+void NT_CallExpr(Metadata_t *funcMeta, char *funcName)
 {
 	get_next_token(source_code, active_token);
 	match(token_lbrace);
@@ -482,7 +481,7 @@ void NT_CallExpr(Metadata_t *funcMeta, char *funcName, SymbolTable_t *localVars)
 		{
 			char *id = active_token->value.c;
 			Metadata_t *tmpMeta;
-			if ((tmpMeta = stl_search(localVars, id)))
+			if ((tmpMeta = stl_search(variables, id)))
 			{
 				if (tmpMeta->type == funcMeta->type)
 				{
@@ -532,11 +531,9 @@ void NT_CallExpr(Metadata_t *funcMeta, char *funcName, SymbolTable_t *localVars)
 
 /*
  * \brief Function for generating code for expression evaluation
- * \param vars Symboltable list of variables
- * \param functions Symboltable list of functions
  * \param type Expected expression type
  */
-void NT_Expr(int type, SymbolTable_t *localVars)
+void NT_Expr(int type)
 {
 	tStack *s;
 	sInit(&s);
@@ -546,6 +543,7 @@ void NT_Expr(int type, SymbolTable_t *localVars)
 	sPush(&s, &insert);
 	int numOp = 0, last_type = 0;
 	Metadata_t *var;
+	int i = 0;
 	while (active_token->type != token_eol)
 	{
 		switch (active_token->type)
@@ -614,7 +612,7 @@ void NT_Expr(int type, SymbolTable_t *localVars)
 			break;
 		case token_identifier:
          numOp++;
-			if ((var = stl_search(localVars, active_token->value.c)))
+			if ((var = stl_search(variables, active_token->value.c)))
 			{
             	last_type = var->type;
 				fprintf(output_code, "pushs lf@%s\n", active_token->value.c);
@@ -622,7 +620,7 @@ void NT_Expr(int type, SymbolTable_t *localVars)
 			else if ((var = stl_search(functions, active_token->value.c)))
 			{
             	last_type = var->type;
-				NT_CallExpr(var, active_token->value.c, localVars);
+				NT_CallExpr(var, active_token->value.c);
 				fprintf(output_code, "pushs tf@return\n");
 				fprintf(output_code, "popframe\n");
 			}
@@ -643,6 +641,8 @@ void NT_Expr(int type, SymbolTable_t *localVars)
 		default:
 			if (istype(active_token->type))
 				raise_error(TYPE_ERROR, "Wrong type in expression\n");
+			if (!i)
+				raise_error(SYNTAX_ERROR, "Wrong syntax of expression\n");
 			while (s && s->priority < STACK_STOPPER)
 			{
 				if (execOp(&s, &numOp, &last_type).priority == STACK_STOPPER)
@@ -659,6 +659,7 @@ void NT_Expr(int type, SymbolTable_t *localVars)
 			return;
 		}
 		get_next_token(source_code, active_token);
+		i++;
 	}
 	while (s && s->priority < STACK_STOPPER)
 	{
