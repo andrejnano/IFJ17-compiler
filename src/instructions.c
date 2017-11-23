@@ -42,6 +42,30 @@ char* d2s(double val)
 }
 
 /**
+ * converts frame written in string to instruction type 
+ */
+t_const fr2in(char *frame)
+{
+  if(frame == NULL)
+  {
+    return i_str;
+  }
+  else if(strcmp(frame,"lf") == 0)
+  {
+    return i_lf;
+  }
+  else if(strcmp(frame,"gf") == 0)
+  {
+    return i_gf;
+  }
+  else if(strcmp(frame,"tf") == 0)
+  {
+    return i_tf;
+  }
+  return i_null;
+}
+
+/**
  * Add new instruction at bottom of list
  * @param type - instruction as string, for example "MOVE" or "DEFVAR"
  * @param first, second, third - pointers to symbols
@@ -95,6 +119,31 @@ void add_inst(char *inst_type, t_const first_type, char *first,
   {
     first_inst = i;
     last_inst = i;
+  }
+}
+
+/**
+ * Add new operand to last instruction
+ */
+void add_op_to_last_inst(t_const type, char *value)
+{
+  if(last_inst->first == NULL)
+  {
+    last_inst->first_type = type;
+    last_inst->first = malloc(strlen(value)*sizeof(char));
+    strcpy(last_inst->first, value);
+  }
+  else if(last_inst->second == NULL)
+  {
+    last_inst->second_type = type;
+    last_inst->second = malloc(strlen(value)*sizeof(char));
+    strcpy(last_inst->second, value);
+  }
+  else if(last_inst->third == NULL)
+  {
+    last_inst->third_type = type;
+    last_inst->third = malloc(strlen(value)*sizeof(char));
+    strcpy(last_inst->third, value);
   }
 }
 
