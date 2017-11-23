@@ -46,10 +46,10 @@ void raise_error(int error_code, const char *msg, ...)
         fprintf(stderr, "This error code --> ERROR[%d] is not defined by this program. \n It's message is : \n\t", error_code);
         break;
     }
-
     // Print error message
     vfprintf(stderr, msg, args);
     va_end(args);
+    fputs("\n", stderr);
 
     // Append end of line
     {
