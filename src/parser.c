@@ -24,14 +24,12 @@
     Token_t* active_token;
     SymbolTable_t *functions;
     SymbolTable_t *variables;
-//<<<<<<< HEAD
+
     int compiler_error;
 
     FILE* source_code, *output_code;
-//=======
 
     extern int compiler_error;
-//>>>>>>> origin/new-parser
 
     // source and output stream
     extern FILE *source_code;
@@ -482,18 +480,35 @@
 
                     if (!definition_error)
                     {
-                        // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-                        //  GENERATE CODE FROM CompoundStmt
-                        // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+                        // -----------------
+                        // NEW LOCAL SCOPE
+                        // -----------------
+
+                        stl_push(&variables);
+
                         NT_CompoundStmt();
-                        // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-                        // END OF CODE GENERATING
-                        // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+                        stl_pop(&variables);
+
+                        // ------------------
+                        // END OF LOCAL SCOPE
+                        // ------------------
                     }
                     else
                     {
-                        // without code generating
+                        // -----------------
+                        // NEW LOCAL SCOPE
+                        // -----------------
+
+                        stl_push(&variables);
+
                         NT_CompoundStmt();
+
+                        stl_pop(&variables);
+
+                        // ------------------
+                        // END OF LOCAL SCOPE
+                        // ------------------
                     }
                         
                     if (match(token_end) == false)
@@ -794,7 +809,6 @@
 
     void NT_CompoundStmt()
     {   
-        printf("\n--inside CompoundStmt --\n\n");
         
         switch (active_token->type)
         {
@@ -970,10 +984,17 @@
 
             variable = stl_search(variables, active_token->value.c);
 
-            if (variable)
+            if (variable != NULL)
             {
-					 NT_Expr();
-					 fprintf(output_code, "pops lf@%s\n", active_token->value.c);
+                match(token_identifier);
+
+                if (match(token_op_eq) == false)
+                    raise_error(E_SYNTAX, "Assignment operator '=' expected.");
+
+                NT_Expr();
+
+                fprintf(output_code, "pops lf@%s\n", active_token->value.c);
+                return;
             }
             else
             {
@@ -988,7 +1009,7 @@
         if (match(token_op_eq) == false)
             raise_error(E_SYNTAX, "Assignment operator '=' expected.");
 
-        //NT_Expr();
+        NT_Expr();
     }
 
 // /*****************************************************************************/

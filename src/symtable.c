@@ -182,25 +182,32 @@ Metadata_t *stl_search(SymbolTable_t *tree, char *key)
         return NULL;
     }
 
-    
-    Item_t *current_item = tree->top;
+    Item_t *current_item;
     int key_difference;
 
-    while (current_item != NULL)
+    while (tree != NULL) 
     {
-        key_difference = strcmp(key, current_item->key);
-        if (key_difference == 0)
+        current_item = tree->top;
+        
+        while (current_item != NULL)
         {
-            return current_item->metadata;
+            key_difference = strcmp(key, current_item->key);
+            
+            if (key_difference == 0)
+            {
+                return current_item->metadata;
+            }
+            else if (key_difference > 0)
+            {
+                current_item = current_item->right_ptr;
+            }
+            else
+            {
+                current_item = current_item->left_ptr;
+            }
         }
-        else if (key_difference > 0)
-        {
-            current_item = current_item->right_ptr;
-        }
-        else
-        {
-            current_item = current_item->left_ptr;
-        }
+
+        tree = tree->next;
     }
 
     return NULL;
