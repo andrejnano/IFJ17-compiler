@@ -43,6 +43,7 @@ t_inst *last_inst;
 char* i2s(int val);
 char* d2s(double val);
 t_const fr2in(char *frame);
+char* i2type(int val);
 void add_inst(char *inst_type, t_const first_type, char *first,
               t_const second_type, char *second, t_const third_type, char *third);
 void add_op_to_last_inst(t_const type, char *value);

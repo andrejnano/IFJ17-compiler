@@ -16,6 +16,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "instructions.h"
+#include "token.h"
 
 /**
  * Converts integer value to string, returns pointer to string
@@ -38,6 +39,36 @@ char* d2s(double val)
   int len = snprintf(NULL, 0, "%g", val);
   str = malloc(sizeof(char) * (len+1));
   sprintf(str, "%g", val);
+  return str;
+}
+
+/**
+ * Converts int to data type string, returns pointer to string
+ */
+char* i2type(int val)
+{
+  char* str;
+  str = malloc(sizeof(char) * 6);
+  if(val == token_integer)
+  {
+    str = "int";
+  }
+  else if(val == token_double)
+  {
+    str = "float";
+  }
+  else if(val == token_boolean)
+  {
+    str = "bool";
+  }
+  else if(val == token_string)
+  {
+    str = "str";
+  }
+  else
+  {
+    str = "-ERR-";
+  }
   return str;
 }
 

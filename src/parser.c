@@ -1222,7 +1222,7 @@
             if (variable_metadata && variable_metadata->is_declared)
             {
 
-                add_inst("READ", i_lf, active_token->value.c, i_null, variable_metadata->type, i_null, NULL);
+                add_inst("READ", i_lf, active_token->value.c, i_null, i2type(variable_metadata->type), i_null, NULL);
             }
             else
             {
@@ -1259,10 +1259,10 @@
         {
             //NT_Expr( '??' ,variables);
             
-             next_tmp_cnt("pop"); //creates new variable name in tmp_cnt
-             add_inst("DEFVAR", i_gf , tmp_cnt , i_null,NULL,i_null,NULL);
-             add_inst("POPS", i_gf , tmp_cnt , i_null,NULL,i_null,NULL);
-             add_inst("WRITE", i_gf , tmp_cnt , i_null,NULL,i_null,NULL);
+             next_tmp_name("pop"); //creates new variable name in tmp_cnt
+             add_inst("DEFVAR", i_gf , tmp_name , i_null,NULL,i_null,NULL);
+             add_inst("POPS", i_gf , tmp_name , i_null,NULL,i_null,NULL);
+             add_inst("WRITE", i_gf , tmp_name , i_null,NULL,i_null,NULL);
 
             if (match(token_semicolon) == false)
                 raise_error(E_SYNTAX, "Semicolon ';' is missing. ");
