@@ -21,16 +21,19 @@
     #include "expression.h"
     #include "instructions.h"
 
-    // current token from source_code
 
+
+    // current token from scanner
     Token_t* active_token;
+
+    // symbol tables pointers
     SymbolTable_t *functions;
     SymbolTable_t *variables;
 
-    int compiler_error;
+    // function return type
+    int function_return_datatype = 0;
 
-    FILE* source_code, *output_code;
-
+    // compiler error status (or success)
     extern int compiler_error;
 
     // source and output stream
@@ -161,7 +164,7 @@
 		match(token_declare);
         
         if (match(token_function) == false)
-            raise_error(E_SYNTAX, "'Function' keyword expected at this point.");
+            raise_error(E_SYNTAX, "'Function'xpected at this point.");
        
 
         // declare a new symtable item.
@@ -404,7 +407,7 @@
                         // create new Parameter
                         Parameter_t new_parameter;
                         new_parameter.name = (char *)malloc(sizeof(char) * strlen(active_token->value.c) + 1);
-								strcpy(new_parameter.name, active_token->value.c);
+						strcpy(new_parameter.name, active_token->value.c);
                         new_parameter.next = NULL;
 
                         match(token_identifier);
@@ -427,8 +430,6 @@
                         if (active_token->type == token_comma)
                         {
                             match(token_comma);
-
-                            // append current parameter and continue with next one
                             if (param_list_append(&function_parameters, &new_parameter))
                                 continue;
                         }
@@ -465,6 +466,7 @@
                         if (active_token->type == function_metadata->type)
                         {
                             datatypes_equal = true;
+                            function_return_datatype = active_token->type; // prepare return type for function body
                         }
                         else
                         {
@@ -503,6 +505,18 @@
 
                         stl_push(&variables);
 
+                        while (function_parameters != NULL)
+                        {
+                            Metadata_t var_from_parameter;
+                            var_from_parameter.parameters = NULL;
+                            var_from_parameter.is_declared = true;
+                            var_from_parameter.is_defined = false;
+                            var_from_parameter.type = function_parameters->type;
+
+                            stl_insert_top(variables, function_parameters->name, &var_from_parameter);
+                            function_parameters = function_parameters->next;
+                        }
+
                         NT_CompoundStmt();
 
                         stl_pop(&variables);
@@ -527,7 +541,6 @@
                         // END OF LOCAL SCOPE
                         // ------------------
                     }
-                        
                     if (match(token_end) == false)
                         raise_error(E_SYNTAX, "'End' keyword was expected at this point.");
 
@@ -543,8 +556,8 @@
                     return; // !IMPORTANT
 
                 } // end of 'else if (function_metadata->is_declared)'
-            } // end of 'if (function_metadata)'
-            else
+            } // end of 'if (function_metadata)' 
+            else   // -> THERE IS NO SUCH FUNCTION IN SYMTABLE
             {
                 // create new instance
                 // create a new symtable item locally.
@@ -575,8 +588,8 @@
 
                     // create new Parameter
                     Parameter_t new_parameter;
-						  new_parameter.name = (char *)malloc(sizeof(char) * strlen(active_token->value.c) + 1);
-						  strcpy(new_parameter.name, active_token->value.c);
+                    new_parameter.name = (char *)malloc(sizeof(char) * strlen(active_token->value.c) + 1);
+                    strcpy(new_parameter.name, active_token->value.c);
                     new_parameter.next = NULL;
 
                     match(token_identifier);
@@ -599,8 +612,6 @@
                     if (active_token->type == token_comma)
                     {
                         match(token_comma);
-
-                        // append current parameter and continue with next one
                         if (param_list_append(&function_parameters, &new_parameter))
                             continue;
                     }
@@ -633,6 +644,7 @@
                 if (is_datatype(active_token->type))
                 {
                     new_function_metadata.type = active_token->type;
+                    function_return_datatype = active_token->type; // prepare return type for function body
                     match(active_token->type);
                 }
                 else
@@ -656,7 +668,19 @@
 
                     stl_push(&variables);
 
-                        NT_CompoundStmt();
+                    while (function_parameters != NULL)
+                    {
+                        Metadata_t var_from_parameter;
+                        var_from_parameter.parameters = NULL;
+                        var_from_parameter.is_declared = true;
+                        var_from_parameter.is_defined = false;
+                        var_from_parameter.type = function_parameters->type;
+
+                        stl_insert_top(variables, function_parameters->name, &var_from_parameter);
+                        function_parameters = function_parameters->next;
+                    }
+
+                    NT_CompoundStmt();
 
                     stl_pop(&variables);
 
@@ -679,11 +703,11 @@
                 if (!definition_error) //&& !compiler_error)
                 {
                     stl_insert_top(functions, new_function_name, &new_function_metadata);
-						  free(new_function_name);
-						  param_list_dispose(function_parameters);
+					free(new_function_name);
+					param_list_dispose(function_parameters);
                     return;
-					 }
-					 param_list_dispose(function_parameters);
+				}
+				param_list_dispose(function_parameters);
             }
         } // end of IF identifier
         
@@ -841,18 +865,18 @@
         case token_identifier:
             NT_AssignStmt();
             break; // identifier
-        // case token_return:
-        //     NT_ReturnStmt();
-        //     break; // keyword 'Return'
-        // case token_input:
-        //     NT_InputStmt();
-        //     break; // keyword 'source_code'
-        // case token_print:
-        //     NT_PrintStmt();
-        //     break; // keyword 'Print'
+        case token_return:
+            NT_ReturnStmt();
+            break; // keyword 'Return'
+        case token_input:
+            NT_InputStmt();
+            break; // keyword 'Input'
+        case token_print:
+            NT_PrintStmt();
+            break; // keyword 'Print'
         case token_if:
-                NT_IfStmt();
-                break; // keyword 'If'
+            NT_IfStmt();
+            break; // keyword 'If'
         case token_do:
             NT_WhileStmt();
             break; // keyword 'Do'
@@ -970,6 +994,7 @@
     {
         // gets the name of declared variable if everything is OK
         char* variable_name = NT_VarDec();
+        Metadata_t *var_meta = stl_search(variables, variable_name);
 
         if (active_token->type == token_op_eq)
         {
@@ -977,13 +1002,9 @@
             
             if (variable_name)
             {
-
-                //NT_Expr();
-
                 //INST
-        	add_inst("POPS", i_lf, variable_name, i_null,NULL,i_null,NULL);
-
-
+                NT_Expr(var_meta->type ,variables);
+        	      add_inst("POPS", i_lf, variable_name, i_null,NULL,i_null,NULL);
                 free(variable_name);
                 return;
             }
@@ -992,8 +1013,7 @@
                 // if there was error declaring the variable or 
                 // the variable was already declared
                 raise_error(E_SEM_DEF, "Cannot define a variable.");
-
-                    //NT_Expr();
+                //NT_Expr();
             }
         }
 
@@ -1025,7 +1045,7 @@
                     raise_error(E_SYNTAX, "Assignment operator '=' expected.");
                 NT_Expr(variable->type, variables);
 
-		add_inst("POPS", i_lf, name, i_null,NULL,i_null,NULL);
+		            add_inst("POPS", i_lf, name, i_null,NULL,i_null,NULL);
                 //fprintf(output_code, "pops lf@%s\n", name);
                 return;
             }
@@ -1053,8 +1073,8 @@
 
 
         NT_Expr(token_boolean, variables);
-
-       //INST
+        
+        //INST
         next_tmp_name("els");
         char* else_label = malloc(sizeof(char)*16);
         strcpy(else_label, tmp_name);
@@ -1065,6 +1085,7 @@
         if (match(token_then) == false)
             raise_error(E_SYNTAX, "Keyword 'Then' expected.");
 
+        
         if (match(token_eol) == false)
             raise_error(E_SYNTAX, "EOL expected at this point.");
 
@@ -1134,7 +1155,7 @@
         add_inst("LABEL", i_null, while_label, i_null,NULL,i_null,NULL);
 
         NT_Expr(token_boolean, variables);
-
+      
         next_tmp_name("pop");
         add_inst("POPS", i_gf, tmp_name, i_null,NULL,i_null,NULL);
         add_inst("JUMPIFEQ", i_end, while_label, i_bool, "false", i_gf, tmp_name);      
@@ -1170,72 +1191,85 @@
 
 // /*****************************************************************************/
 
-//     void NT_ReturnStmt()
-//     {
-//         if (match(token_return) == false)
-//             raise_error(E_SYNTAX, "Keyword 'Return' expected.");
+        void NT_ReturnStmt()
+        {
+            if (match(token_return) == false)
+                raise_error(E_SYNTAX, "Keyword 'Return' expected.");
 
-//         NT_Expr();
+            // function return datatype gets updated each time 
+            // new function is added to symtable
+            NT_Expr(function_return_datatype, variables);
+            // generate instructions
+            add_inst("POPS", i_lf, "%retval", i_null,NULL,i_null,NULL);
+            add_inst("POPFRAME", i_null,NULL,i_null,NULL,i_null,NULL);
+            add_inst("RETURN", i_null,NULL,i_null,NULL,i_null,NULL);
+        }
 
-//         // generate instructions
-//         add_inst("POPS", i_lf, "%retval", i_null,NULL,i_null,NULL);
-//         add_inst("POPFRAME", i_null,NULL,i_null,NULL,i_null,NULL);
-//         add_inst("RETURN", i_null,NULL,i_null,NULL,i_null,NULL);
-//     }
+
+/*****************************************************************************/
 
 
-// /*****************************************************************************/
+    void NT_InputStmt()
+    {
+        if (match(token_input) == false)
+            raise_error(E_SYNTAX, "Keyword 'source_code' expected.");
 
-//     void NT_InputStmt()
-//     {
-//         if (match(token_input) == false)
-//             raise_error(E_SYNTAX, "Keyword 'source_code' expected.");
+        if (active_token->type == token_identifier)
+        {
+            // check if identifier is declared
+            Metadata_t *variable_metadata = stl_search(variables, active_token->value.c);
+            
+            if (variable_metadata && variable_metadata->is_declared)
+            {
 
-//         if (active_token->type == token_identifier)
-//         {
-//             // check if identifier is declared
-//             // update the identifier
-//             // generate instruction
-//             add_inst("READ", frame , variable name , i_null, variable type ,i_null,NULL);
+                add_inst("READ", frame , active_tokne->value.c , i_null, variable_metadata->type ,i_null,NULL);
+            }
+            else
+            {
+                raise_error(E_SEM_OTHER, "Variable '",active_token->value.c,"' is not declared.");
+            }
+        }
 
-//         }
+        if (match(token_identifier) == false)
+            raise_error(E_SYNTAX, "Identifier is expected right after 'source_code' keyword.");
+    }
 
-//         if (match(token_identifier) == false)
-//             raise_error(E_SYNTAX, "Identifier is expected right after 'source_code' keyword.");
-//     }
+/*****************************************************************************/
 
-// /*****************************************************************************/
-
-//     void NT_PrintStmt()
-//     {
-//         if (match(token_print) == false)
-//             raise_error(E_SYNTAX, "Keyword 'Print' expected.");
+    void NT_PrintStmt()
+    {
+        if (match(token_print) == false)
+            raise_error(E_SYNTAX, "Keyword 'Print' expected.");
         
-//         NT_ExprList();
+        //NT_Expr();
 
-//         // for each expression generate a print call inst. with it
-//     }
+        if (match(token_semicolon) == false)
+            raise_error(E_SYNTAX, "Semicolon ';' is missing. ");
 
+        NT_ExprList();
 
-// /*****************************************************************************/
+    }
 
-//     void NT_ExprList()
-//     {
-//         NT_Expr(); // CANNOT BE EMPTY EXPRESSIONS, at least one.. !!
+/*****************************************************************************/
 
-//         //INST
-//         next_tmp_cnt("pop"); //creates new variable name in tmp_cnt
-//         add_inst("DEFVAR", i_gf , tmp_cnt , i_null,NULL,i_null,NULL);
-//         add_inst("POPS", i_gf , tmp_cnt , i_null,NULL,i_null,NULL);
-//         add_inst("WRITE", i_gf , tmp_cnt , i_null,NULL,i_null,NULL);
-
-//         if (match(token_semicolon) == false)
-//             raise_error(E_SYNTAX, "Semicolon ';' is missing. ");
+    void NT_ExprList()
+    {
         
-//         if (is_expression(active_token)) // somehow do this test... 
-//             NT_ExprList();
-//         // epsilon rule otherwise
-//     }
+        while(active_token->type != token_eol)
+        {
+            //NT_Expr( '??' ,variables);
+            
+             next_tmp_cnt("pop"); //creates new variable name in tmp_cnt
+             add_inst("DEFVAR", i_gf , tmp_cnt , i_null,NULL,i_null,NULL);
+             add_inst("POPS", i_gf , tmp_cnt , i_null,NULL,i_null,NULL);
+             add_inst("WRITE", i_gf , tmp_cnt , i_null,NULL,i_null,NULL);
+
+            if (match(token_semicolon) == false)
+                raise_error(E_SYNTAX, "Semicolon ';' is missing. ");
+        }
+
+        // epsilon rule otherwise
+    }
 
 
 // /*****************************************************************************/
@@ -1333,4 +1367,3 @@ void next_tmp_name(char *spec)
   sprintf(tmp_name, "%s$%d", spec, tmp_cnt);
   tmp_cnt++;
 }
-

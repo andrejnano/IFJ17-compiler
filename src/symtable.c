@@ -60,7 +60,6 @@ void stl_push(SymbolTable_t **tree)
  */
 bool stl_insert_top(SymbolTable_t *tree, char *key, Metadata_t *new_data)
 {
-
     if (!tree)
         return false;
 
@@ -192,7 +191,6 @@ Metadata_t *stl_search(SymbolTable_t *tree, char *key)
         while (current_item != NULL)
         {
             key_difference = strcmp(key, current_item->key);
-            printf("keys %s %s\n", key, current_item->key);
             if (key_difference == 0)
             {
                 return current_item->metadata;
@@ -295,12 +293,12 @@ bool param_list_append(Parameter_t **parameter_list, Parameter_t *new_parameter)
 }
 
 /*
- * \brief Generates symbol table from parameters of function
+ * \brief pushes local
  * \param funcName Name of the functio
  * \param functions Table of functions
  * \return Symboltable containing arguments of function
  */
-SymbolTable_t *param_to_symtable(char *func_name, SymbolTable_t *functions)
+SymbolTable_t *param_to_var(char *func_name, SymbolTable_t *functions)
 {
     SymbolTable_t *local_vars;
     stl_init(&local_vars); // @TODO Kde sa toto cisti ??? 
