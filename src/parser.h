@@ -58,6 +58,5 @@
     void NT_ExprList();
     void NT_NextExpr();
     void NT_CallExpr();
-    void NT_Expr();
 
 #endif

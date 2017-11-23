@@ -192,7 +192,7 @@ Metadata_t *stl_search(SymbolTable_t *tree, char *key)
         while (current_item != NULL)
         {
             key_difference = strcmp(key, current_item->key);
-            
+            printf("keys %s %s\n", key, current_item->key);
             if (key_difference == 0)
             {
                 return current_item->metadata;

@@ -18,6 +18,7 @@
     #include "token.h"
     #include "scanner.h"
     #include "parser.h"
+    #include "expression.h"
 
     // current token from source_code
 
@@ -981,7 +982,8 @@
 
         if (active_token->type == token_identifier)
         {
-
+            char name[strlen(active_token->value.c) + 1];
+            strcpy(name, active_token->value.c);
             variable = stl_search(variables, active_token->value.c);
 
             if (variable != NULL)
@@ -990,10 +992,9 @@
 
                 if (match(token_op_eq) == false)
                     raise_error(E_SYNTAX, "Assignment operator '=' expected.");
+                NT_Expr(variable->type, variables);
 
-                NT_Expr();
-
-                fprintf(output_code, "pops lf@%s\n", active_token->value.c);
+                fprintf(output_code, "pops lf@%s\n", name);
                 return;
             }
             else
@@ -1008,8 +1009,6 @@
 
         if (match(token_op_eq) == false)
             raise_error(E_SYNTAX, "Assignment operator '=' expected.");
-
-        NT_Expr();
     }
 
 // /*****************************************************************************/
@@ -1021,7 +1020,7 @@
             raise_error(E_SYNTAX, "Keyword 'If' expected.");
 
 
-        NT_Expr();
+        NT_Expr(token_boolean, variables);
 
         if (match(token_then) == false)
             raise_error(E_SYNTAX, "Keyword 'Then' expected.");
@@ -1081,7 +1080,7 @@
         if (match(token_while) == false)
             raise_error(E_SYNTAX, "Keyword 'While' expected.");
 
-        NT_Expr();
+        NT_Expr(token_boolean, variables);
 
         if (match(token_eol) == false)
             raise_error(E_SYNTAX, "EOL expected.");
