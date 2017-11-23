@@ -752,7 +752,7 @@ void NT_Expr(int type)
 		raise_error(SYNTAX_ERROR, "Wrong expression syntax\n");
 		return;
 	}
-	if (type != last_type)
+	if (type && type != last_type)
 		converts(last_type, &type, 0);
 	free(sPop(&s));
 }
