@@ -37,6 +37,10 @@
     extern FILE *source_code;
     extern FILE *output_code;
 
+    char *tmp_name; //uniqe variable name
+    int tmp_cnt;
+    void next_tmp_name();
+
 /******************************************************************************
  *****************************************************************************/
 
@@ -97,6 +101,9 @@
 
     void NT_Program()
     {
+        tmp_cnt = 0;//inicialization of temporary names generator
+        tmp_name = malloc(sizeof(char)*16);
+
         add_inst(".IFJcode17", i_null, NULL, i_null, NULL, i_null, NULL);
 
         NT_Head();
@@ -897,6 +904,11 @@
 
                 match(token_identifier);
 
+        	//INST
+        	printf("\ngenerate\n");
+        	add_inst("DEFVAR", i_lf, new_variable_name, i_null,NULL,i_null,NULL);
+
+
                 if (match(token_as) == false)
                     raise_error(E_SYNTAX, "Keyword 'As' expected and not found.");
 
@@ -947,6 +959,7 @@
             match(token_blank); // @TODO len sa posunut, zaruceny fail sice,..
         }
 
+
         return NULL;
     }
 
@@ -966,7 +979,10 @@
             {
 
                 //NT_Expr();
-                // pop
+
+                //INST
+        	add_inst("POPS", i_lf, variable_name, i_null,NULL,i_null,NULL);
+
 
                 free(variable_name);
                 return;
@@ -1038,6 +1054,14 @@
 
         NT_Expr(token_boolean, variables);
 
+       //INST
+        next_tmp_name("els");
+        char* else_label = malloc(sizeof(char)*16);
+        strcpy(else_label, tmp_name);
+        next_tmp_name("pop");
+        add_inst("POPS", i_gf, tmp_name, i_null,NULL,i_null,NULL);
+        add_inst("JUMPIFEQ", i_null, else_label, i_bool, "false", i_gf, tmp_name);
+
         if (match(token_then) == false)
             raise_error(E_SYNTAX, "Keyword 'Then' expected.");
 
@@ -1064,6 +1088,10 @@
         if (match(token_eol) == false)
             raise_error(E_SYNTAX, "EOL expected at this point.");
 
+        //INST
+        add_inst("JUMP", i_end, else_label, i_null,NULL,i_null,NULL);
+        add_inst("LABEL", i_null, else_label, i_null,NULL,i_null,NULL);
+
         // -----------------
         // NEW LOCAL SCOPE
         // -----------------
@@ -1083,6 +1111,9 @@
 
         if (match(token_if) == false)
             raise_error(E_SYNTAX, "Keyword 'If' expected.");
+
+        add_inst("LABEL", i_end, else_label, i_null,NULL,i_null,NULL);
+        free(else_label);
     }
 
 
@@ -1095,8 +1126,18 @@
 
         if (match(token_while) == false)
             raise_error(E_SYNTAX, "Keyword 'While' expected.");
+       
+        //INST
+        next_tmp_name("whl");
+        char* while_label = malloc(sizeof(char)*16);
+        strcmp(while_label, tmp_name);
+        add_inst("LABEL", i_null, while_label, i_null,NULL,i_null,NULL);
 
         NT_Expr(token_boolean, variables);
+
+        next_tmp_name("pop");
+        add_inst("POPS", i_gf, tmp_name, i_null,NULL,i_null,NULL);
+        add_inst("JUMPIFEQ", i_end, while_label, i_bool, "false", i_gf, tmp_name);      
 
         if (match(token_eol) == false)
             raise_error(E_SYNTAX, "EOL expected.");
@@ -1116,8 +1157,13 @@
         // END OF LOCAL SCOPE
         // ------------------
 
+        add_inst("JUMP", i_null, while_label, i_null,NULL,i_null,NULL);
+
         if (match(token_loop) == false)
             raise_error(E_SYNTAX, "Keyword 'Loop' expected");
+
+        add_inst("LABEL", i_end, while_label, i_null,NULL,i_null,NULL);
+        free(while_label);
 
     }
 
@@ -1132,6 +1178,9 @@
 //         NT_Expr();
 
 //         // generate instructions
+//         add_inst("POPS", i_lf, "%retval", i_null,NULL,i_null,NULL);
+//         add_inst("POPFRAME", i_null,NULL,i_null,NULL,i_null,NULL);
+//         add_inst("RETURN", i_null,NULL,i_null,NULL,i_null,NULL);
 //     }
 
 
@@ -1147,6 +1196,8 @@
 //             // check if identifier is declared
 //             // update the identifier
 //             // generate instruction
+//             add_inst("READ", frame , variable name , i_null, variable type ,i_null,NULL);
+
 //         }
 
 //         if (match(token_identifier) == false)
@@ -1170,7 +1221,13 @@
 
 //     void NT_ExprList()
 //     {
-//         NT_Expr(); // CANNOT BE EMPTY EXPRESSIONS, at least one.. !! 
+//         NT_Expr(); // CANNOT BE EMPTY EXPRESSIONS, at least one.. !!
+
+//         //INST
+//         next_tmp_cnt("pop"); //creates new variable name in tmp_cnt
+//         add_inst("DEFVAR", i_gf , tmp_cnt , i_null,NULL,i_null,NULL);
+//         add_inst("POPS", i_gf , tmp_cnt , i_null,NULL,i_null,NULL);
+//         add_inst("WRITE", i_gf , tmp_cnt , i_null,NULL,i_null,NULL);
 
 //         if (match(token_semicolon) == false)
 //             raise_error(E_SYNTAX, "Semicolon ';' is missing. ");
@@ -1245,10 +1302,16 @@
 //         if (match(token_lbrace) == false)
 //             raise_error(E_SYNTAX, "Left brace '(' expected.");
 
+//         //INST
+//         add_inst("CREATEFRAME", i_null,NULL,i_null,NULL,i_null,NULL);
+
 //         NT_TermList();
 
 //         if (match(token_rbrace) == false)
 //             raise_error(E_SYNTAX, "Right brace ')' expected.");
+
+//         //INST
+//         add_inst("CALL", i_null, function name , i_null,NULL,i_null,NULL);
         
 //     }
 
@@ -1261,4 +1324,13 @@
        match(token_val_integer);
        printf("was here");
     }*/
+
+/**
+ * generates new name in tmp_name
+ */
+void next_tmp_name(char *spec)
+{
+  sprintf(tmp_name, "%s$%d", spec, tmp_cnt);
+  tmp_cnt++;
+}
 

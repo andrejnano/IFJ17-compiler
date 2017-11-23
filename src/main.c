@@ -52,12 +52,13 @@
         if (! (source_code = fopen(argv[1], "r")))
             return E_INTERNAL;
 
-        if (!(output_code = fopen(argv[2], "w")))
-             return E_INTERNAL;
         //output_code = stdout;
         // save the source name
         source_file_name = argv[1];
         parse(); // uses globals source_code & output_code
+
+        if (!(output_code = fopen(argv[2], "w")))
+             return E_INTERNAL;
 
         generate_code(output_code);
 

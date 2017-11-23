@@ -221,7 +221,6 @@ void printTokenType(FILE *output_code, int type)
     */
 void printTokenVal(void)
 {
-    printf("\n\n\nJsem tu!!!!!!!!!!!!!!!!!!!!!!\n\n\n");
     switch (active_token->type)
     {
     case token_val_double:
