@@ -643,8 +643,19 @@ void NT_Expr(int type, SymbolTable_t *localVars)
 		default:
 			if (istype(active_token->type))
 				raise_error(TYPE_ERROR, "Wrong type in expression\n");
-			else
-				raise_error(SYNTAX_ERROR, "Wrong expression syntax expected EOL\n");
+			while (s && s->priority < STACK_STOPPER)
+			{
+				if (execOp(&s, &numOp, &last_type).priority == STACK_STOPPER)
+					return;
+			}
+			if (numOp != 1)
+			{
+				raise_error(SYNTAX_ERROR, "Wrong expression syntax\n");
+				return;
+			}
+			if (type != last_type)
+				converts(last_type, &type, 0);
+			free(sPop(&s));		
 			return;
 		}
 		get_next_token(source_code, active_token);

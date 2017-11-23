@@ -151,7 +151,7 @@
 		match(token_declare);
         
         if (match(token_function) == false)
-            raise_error(E_SYNTAX, "'Function' keyword expected at this point.");
+            raise_error(E_SYNTAX, "'Function'xpected at this point.");
        
 
         // declare a new symtable item.
@@ -353,7 +353,9 @@
         Metadata_t new_function_metadata;
         char *new_function_name = NULL;
         bool definition_error = false;
-
+        Metadata_t argument;
+        argument.is_declared = true;
+        argument.parameters = NULL;
 
         if (active_token->type == token_identifier)
         {
@@ -419,11 +421,15 @@
                             match(token_comma);
 
                             // append current parameter and continue with next one
+                            argument.type = new_parameter.type;
+                            stl_insert_top(variables, new_parameter.name, &argument);
                             if (param_list_append(&function_parameters, &new_parameter))
                                 continue;
                         }
                         else if (active_token->type == token_rbrace)
                         {
+                            argument.type = new_parameter.type;
+                            stl_insert_top(variables, new_parameter.name, &argument);
                             param_list_append(&function_parameters, &new_parameter);
                             break;
                         }
@@ -511,7 +517,6 @@
                         // END OF LOCAL SCOPE
                         // ------------------
                     }
-                        
                     if (match(token_end) == false)
                         raise_error(E_SYNTAX, "'End' keyword was expected at this point.");
 
@@ -579,11 +584,15 @@
                         match(token_comma);
 
                         // append current parameter and continue with next one
+                        argument.type = new_parameter.type;
+                        stl_insert_top(variables, new_parameter.name, &argument);
                         if (param_list_append(&function_parameters, &new_parameter))
                             continue;
                     }
                     else if (active_token->type == token_rbrace)
                     {
+                        argument.type = new_parameter.type;
+                        stl_insert_top(variables, new_parameter.name, &argument);
                         param_list_append(&function_parameters, &new_parameter);
                         break;
                     }
@@ -942,6 +951,7 @@
     {
         // gets the name of declared variable if everything is OK
         char* variable_name = NT_VarDec();
+        Metadata_t *var_meta = stl_search(variables, variable_name);
 
         if (active_token->type == token_op_eq)
         {
@@ -950,11 +960,8 @@
             if (variable_name)
             {
 
-                //NT_Expr();
-                // pop
-
-                free(variable_name);
-                return;
+                NT_Expr(var_meta->type ,variables);
+                fprintf(output_code, "pops lf@%s\n", variable_name);
             }
             else 
             {
@@ -1022,9 +1029,10 @@
 
         NT_Expr(token_boolean, variables);
 
-        if (match(token_then) == false)
+        if (!match(token_then))
             raise_error(E_SYNTAX, "Keyword 'Then' expected.");
 
+        printTokenType(stdout, active_token->type);
         if (match(token_eol) == false)
             raise_error(E_SYNTAX, "EOL expected at this point.");
 
@@ -1082,7 +1090,7 @@
 
         NT_Expr(token_boolean, variables);
 
-        if (match(token_eol) == false)
+        if (active_token->type != token_eol)
             raise_error(E_SYNTAX, "EOL expected.");
 
         // -----------------

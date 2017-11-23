@@ -60,7 +60,6 @@ void stl_push(SymbolTable_t **tree)
  */
 bool stl_insert_top(SymbolTable_t *tree, char *key, Metadata_t *new_data)
 {
-
     if (!tree)
         return false;
 
@@ -192,7 +191,6 @@ Metadata_t *stl_search(SymbolTable_t *tree, char *key)
         while (current_item != NULL)
         {
             key_difference = strcmp(key, current_item->key);
-            printf("keys %s %s\n", key, current_item->key);
             if (key_difference == 0)
             {
                 return current_item->metadata;
