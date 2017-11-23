@@ -796,7 +796,6 @@
     {   
         printf("\n--inside CompoundStmt --\n\n");
         
-
         switch (active_token->type)
         {
         case token_dim:
@@ -814,9 +813,9 @@
         // case token_print:
         //     NT_PrintStmt();
         //     break; // keyword 'Print'
-        // case token_if:
-        //     NT_IfStmt();
-        //     break; // keyword 'If'
+        case token_if:
+                NT_IfStmt();
+                break; // keyword 'If'
         case token_do:
             NT_WhileStmt();
             break; // keyword 'Do'

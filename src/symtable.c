@@ -158,11 +158,11 @@ bool stl_insert_top(SymbolTable_t *tree, char *key, Metadata_t *new_data)
         // for function
         if (tmp->parameters)
         {
-            printf(ANSI_COLOR_CYAN "\n\t+ New item in "ANSI_COLOR_RESET"FUNCTIONS"ANSI_COLOR_CYAN" symtable" ANSI_COLOR_RESET "\n\t\t [KEY] : " ANSI_COLOR_MAGENTA " '%s'" ANSI_COLOR_RESET "\n\t\t[TYPE] :  %s\n\n", tree->top->key, print_type(tmp->type));
+            printf(ANSI_COLOR_CYAN "\n\t+ New item in "ANSI_COLOR_RESET"FUNCTIONS"ANSI_COLOR_CYAN" symtable" ANSI_COLOR_RESET "\n\t\t [KEY] : " ANSI_COLOR_MAGENTA " '%s'" ANSI_COLOR_RESET "\n\t\t[TYPE] :  %s\n\n", current_item->key, print_type(tmp->type));
         }
         else // for variable
         {
-            printf(ANSI_COLOR_BLUE "\n\t+ New item in "ANSI_COLOR_RESET"VARIABLES"ANSI_COLOR_BLUE" symtable" ANSI_COLOR_RESET "\n\t\t [KEY] : " ANSI_COLOR_MAGENTA " '%s'" ANSI_COLOR_RESET "\n\t\t[TYPE] :  %s\n\n", tree->top->key, print_type(tmp->type));
+            printf(ANSI_COLOR_BLUE "\n\t+ New item in " ANSI_COLOR_RESET "VARIABLES" ANSI_COLOR_BLUE " symtable" ANSI_COLOR_RESET "\n\t\t [KEY] : " ANSI_COLOR_MAGENTA " '%s'" ANSI_COLOR_RESET "\n\t\t[TYPE] :  %s\n\n", current_item->key, print_type(tmp->type));
         }
 
     #endif
