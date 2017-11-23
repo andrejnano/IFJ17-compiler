@@ -1002,11 +1002,17 @@
             
             if (variable_name)
             {
+<<<<<<< HEAD
+
+                NT_Expr(var_meta->type);
+                fprintf(output_code, "pops lf@%s\n", variable_name);
+=======
                 //INST
                 NT_Expr(var_meta->type ,variables);
         	      add_inst("POPS", i_lf, variable_name, i_null,NULL,i_null,NULL);
                 free(variable_name);
                 return;
+>>>>>>> master
             }
             else 
             {
@@ -1043,7 +1049,7 @@
 
                 if (match(token_op_eq) == false)
                     raise_error(E_SYNTAX, "Assignment operator '=' expected.");
-                NT_Expr(variable->type, variables);
+                NT_Expr(variable->type);
 
 		            add_inst("POPS", i_lf, name, i_null,NULL,i_null,NULL);
                 //fprintf(output_code, "pops lf@%s\n", name);
@@ -1072,6 +1078,11 @@
             raise_error(E_SYNTAX, "Keyword 'If' expected.");
 
 
+<<<<<<< HEAD
+        NT_Expr(token_boolean);
+
+        if (!match(token_then))
+=======
         NT_Expr(token_boolean, variables);
         
         //INST
@@ -1083,6 +1094,7 @@
         add_inst("JUMPIFEQ", i_null, else_label, i_bool, "false", i_gf, tmp_name);
 
         if (match(token_then) == false)
+>>>>>>> master
             raise_error(E_SYNTAX, "Keyword 'Then' expected.");
 
         
@@ -1154,11 +1166,15 @@
         strcmp(while_label, tmp_name);
         add_inst("LABEL", i_null, while_label, i_null,NULL,i_null,NULL);
 
+<<<<<<< HEAD
+        NT_Expr(token_boolean);
+=======
         NT_Expr(token_boolean, variables);
       
         next_tmp_name("pop");
         add_inst("POPS", i_gf, tmp_name, i_null,NULL,i_null,NULL);
         add_inst("JUMPIFEQ", i_end, while_label, i_bool, "false", i_gf, tmp_name);      
+>>>>>>> master
 
         if (match(token_eol) == false)
             raise_error(E_SYNTAX, "EOL expected.");
