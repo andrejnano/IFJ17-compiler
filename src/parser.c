@@ -482,6 +482,12 @@
                         definition_error = true;
                     }
 
+                    //INST
+                    add_inst("LABEL", i_null, "myFunc", i_null,NULL,i_null,NULL);
+                    add_inst("PUSHFRAME", i_null,NULL,i_null,NULL,i_null,NULL);
+                    add_inst("DEFVAR", i_lf, "%retval", i_null,NULL,i_null,NULL);
+        
+
                     if (!definition_error)
                     {
                         // -----------------
@@ -521,6 +527,12 @@
                     if (match(token_function) == false)
                         raise_error(E_SYNTAX, "'Function' keyword expected at this point.");
 						  param_list_dispose(function_parameters);
+
+                    //INST
+                    add_inst("LABEL", i_end, "myFunc", i_null,NULL,i_null,NULL);
+                    add_inst("POPFRAME", i_null,NULL,i_null,NULL,i_null,NULL);
+                    add_inst("RETURN", i_null,NULL,i_null,NULL,i_null,NULL);
+
                     return; // !IMPORTANT
 
                 } // end of 'else if (function_metadata->is_declared)'

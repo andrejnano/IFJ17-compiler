@@ -174,8 +174,11 @@ void print_const_type(FILE* output_file, t_const type)
     case i_bool:
       fprintf(output_file, "bool@");
       return;
+    case i_end:
+      fprintf(output_file, "end*");
+      return;
     default:
-      fprintf(output_file, "*ERR*@");
+      fprintf(output_file, "-ERR-@");
       return;
   }
 }

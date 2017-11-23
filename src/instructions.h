@@ -22,7 +22,8 @@ typedef enum{
   i_int,  //integer constant
   i_fl,  //float constant
   i_str,  //string
-  i_bool //bool value
+  i_bool, //bool value
+  i_end //generates "end" before operand
 }t_const;
 
 typedef struct instruction {
