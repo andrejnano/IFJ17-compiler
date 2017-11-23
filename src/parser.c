@@ -19,6 +19,7 @@
     #include "scanner.h"
     #include "parser.h"
     #include "expression.h"
+    #include "instructions.h"
 
     // current token from source_code
 
@@ -96,6 +97,8 @@
 
     void NT_Program()
     {
+        add_inst(".IFJcode17", i_null, NULL, i_null, NULL, i_null, NULL);
+
         NT_Head();
         NT_Scope();
 
