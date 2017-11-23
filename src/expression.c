@@ -115,7 +115,8 @@ char *convert(int inType, int outType, token_value val, char *frame)
 			fprintf(output_code, "int2float lf@%s %s@%s\n", tmpVar, frame, val.c);
 	break;
 	default:
-		raise_error(TYPE_ERROR, "Wrong type for conversion\n");
+		if (istype(active_token->type))
+			raise_error(TYPE_ERROR, "Wrong type for conversion\n");
 		return NULL;
 	}
 	return tmpVar;
@@ -153,7 +154,7 @@ void zeroVarInit(char *varName) {
   */
 void NT_Func(bool dec, char **funcName)
 {
-	match(token_function);
+	match(token_function); 
 	// saving metadata about function which could be already declared for
 	// later comparison
 	Metadata_t *oldFuncMeta = stl_search(functions, active_token->value.c);
@@ -624,6 +625,10 @@ void NT_Expr(int type, SymbolTable_t *localVars)
 				NT_CallExpr(var, active_token->value.c, localVars);
 				fprintf(output_code, "pushs tf@return\n");
 				fprintf(output_code, "popframe\n");
+			}
+			else
+			{
+				raise_error(SEM_ERROR, "Unknown identifier\n");
 			}
 
 			break;
