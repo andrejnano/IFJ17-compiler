@@ -1222,7 +1222,7 @@
             if (variable_metadata && variable_metadata->is_declared)
             {
 
-                add_inst("READ", frame , active_tokne->value.c , i_null, variable_metadata->type ,i_null,NULL);
+                add_inst("READ", i_lf, active_token->value.c, i_null, variable_metadata->type, i_null, NULL);
             }
             else
             {
