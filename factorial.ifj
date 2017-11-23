@@ -12,3 +12,5 @@ Function factorial (n As Integer) As Integer
     End If
     Return result
 End Function
+Scope
+End Scope

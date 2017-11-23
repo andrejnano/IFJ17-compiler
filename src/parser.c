@@ -360,6 +360,7 @@
         char *new_function_name = NULL;
         bool definition_error = false;
 
+
         if (active_token->type == token_identifier)
         {
             // lookup the identifier in symtable...
@@ -848,15 +849,15 @@
         case token_return:
             NT_ReturnStmt();
             break; // keyword 'Return'
-        // case token_input:
-        //     NT_InputStmt();
-        //     break; // keyword 'source_code'
-        // case token_print:
-        //     NT_PrintStmt();
-        //     break; // keyword 'Print'
+        case token_input:
+            NT_InputStmt();
+            break; // keyword 'Input'
+        case token_print:
+            NT_PrintStmt();
+            break; // keyword 'Print'
         case token_if:
-                NT_IfStmt();
-                break; // keyword 'If'
+            NT_IfStmt();
+            break; // keyword 'If'
         case token_do:
             NT_WhileStmt();
             break; // keyword 'Do'
@@ -1137,13 +1138,16 @@
             if (match(token_return) == false)
                 raise_error(E_SYNTAX, "Keyword 'Return' expected.");
 
-            NT_Expr(function_return_datatype);
+
+            // function return datatype gets updated each time 
+            // new function is added to symtable
+            NT_Expr(function_return_datatype, variables);
 
             // generate instructions
         }
 
 
-// /*****************************************************************************/
+/*****************************************************************************/
 
     void NT_InputStmt()
     {
@@ -1159,6 +1163,7 @@
             {
                 //
                 // @TODO generate instruction
+                printf("going to Input ... \n");
                 //
             }
             else
@@ -1171,32 +1176,38 @@
             raise_error(E_SYNTAX, "Identifier is expected right after 'source_code' keyword.");
     }
 
-// /*****************************************************************************/
+/*****************************************************************************/
 
-//     void NT_PrintStmt()
-//     {
-//         if (match(token_print) == false)
-//             raise_error(E_SYNTAX, "Keyword 'Print' expected.");
+    void NT_PrintStmt()
+    {
+        if (match(token_print) == false)
+            raise_error(E_SYNTAX, "Keyword 'Print' expected.");
         
-//         NT_ExprList();
+        //NT_Expr();
 
-//         // for each expression generate a print call inst. with it
-//     }
+        if (match(token_semicolon) == false)
+            raise_error(E_SYNTAX, "Semicolon ';' is missing. ");
+
+        NT_ExprList();
+
+    }
 
 
-// /*****************************************************************************/
+/*****************************************************************************/
 
-//     void NT_ExprList()
-//     {
-//         NT_Expr(); // CANNOT BE EMPTY EXPRESSIONS, at least one.. !! 
-
-//         if (match(token_semicolon) == false)
-//             raise_error(E_SYNTAX, "Semicolon ';' is missing. ");
+    void NT_ExprList()
+    {
         
-//         if (is_expression(active_token)) // somehow do this test... 
-//             NT_ExprList();
-//         // epsilon rule otherwise
-//     }
+        while(active_token->type != token_eol)
+        {
+            //NT_Expr( '??' ,variables);
+
+            if (match(token_semicolon) == false)
+                raise_error(E_SYNTAX, "Semicolon ';' is missing. ");
+        }
+
+        // epsilon rule otherwise
+    }
 
 
 // /*****************************************************************************/
@@ -1250,33 +1261,3 @@
 
 
 // /*****************************************************************************/
-
-//     void NT_CallExpr()
-//     {
-
-//         if (active_token->type == token_identifier)
-//         {
-//             // do something
-//             match(token_identifier);
-//         }
-
-//         if (match(token_lbrace) == false)
-//             raise_error(E_SYNTAX, "Left brace '(' expected.");
-
-//         NT_TermList();
-
-//         if (match(token_rbrace) == false)
-//             raise_error(E_SYNTAX, "Right brace ')' expected.");
-        
-//     }
-
-
-// /*****************************************************************************/
-
-/*    void NT_Expr()
-    {
-       printf("\n**MAGIC**\n");
-       match(token_val_integer);
-       printf("was here");
-    }*/
-
