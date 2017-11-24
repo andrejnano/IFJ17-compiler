@@ -108,6 +108,7 @@
         tmp_name = malloc(sizeof(char)*16);
 
         add_inst(".IFJcode17", i_null, NULL, i_null, NULL, i_null, NULL);
+        add_inst("jump main", i_null, NULL, i_null, NULL, i_null, NULL);
 
         NT_Head();
         NT_Scope();
