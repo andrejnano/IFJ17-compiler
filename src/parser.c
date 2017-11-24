@@ -1151,7 +1151,7 @@
         //INST
         next_tmp_name("whl");
         char* while_label = malloc(sizeof(char)*16);
-        strcmp(while_label, tmp_name);
+        strcpy(while_label, tmp_name);
         add_inst("LABEL", i_null, while_label, i_null,NULL,i_null,NULL);
 
         NT_Expr(token_boolean, variables);
