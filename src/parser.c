@@ -953,7 +953,7 @@
                     new_variable_metadata.is_declared = 1;
 
                     zeroVarInit(new_variable_name);
-                    add_inst("POPS", i_lf, variable_name, i_null, NULL, i_null, NULL);
+                    add_inst("POPS", i_lf, new_variable_name, i_null, NULL, i_null, NULL);
 
                     match(active_token->type);
 
