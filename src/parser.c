@@ -825,7 +825,9 @@
 
         if (match(token_scope) == false) // keyword 'Scope'
             raise_error(E_SYNTAX, "Expected 'Scope' keyword not found.");
-        
+
+        add_inst("LABEL main", i_null, NULL, i_null, NULL, i_null, NULL);
+
         if (match(token_eol) == false)
             raise_error(E_SYNTAX, "EOL expected at this point.");
 
