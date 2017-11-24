@@ -934,7 +934,6 @@
                 match(token_identifier);
 
         	//INST
-        	printf("\ngenerate\n");
         	add_inst("DEFVAR", i_lf, new_variable_name, i_null,NULL,i_null,NULL);
 
 
