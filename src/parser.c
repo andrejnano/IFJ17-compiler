@@ -108,7 +108,9 @@
         tmp_name = malloc(sizeof(char)*16);
 
         add_inst(".IFJcode17", i_null, NULL, i_null, NULL, i_null, NULL);
-        add_inst("jump main", i_null, NULL, i_null, NULL, i_null, NULL);
+        add_inst("CREATEFRAME", i_null,"NULL",i_null,NULL,i_null,NULL);
+        add_inst("PUSHFRAME", i_null,"NULL",i_null,NULL,i_null,NULL);   
+        add_inst("JUMP", i_null, "MAIN", i_null, NULL, i_null, NULL);
 
         NT_Head();
         NT_Scope();
@@ -1082,6 +1084,7 @@
         char* else_label = malloc(sizeof(char)*16);
         strcpy(else_label, tmp_name);
         next_tmp_name("pop");
+        add_inst("DEFVAR", i_gf, tmp_name, i_null,NULL,i_null,NULL);       
         add_inst("POPS", i_gf, tmp_name, i_null,NULL,i_null,NULL);
         add_inst("JUMPIFEQ", i_null, else_label, i_bool, "false", i_gf, tmp_name);
 
@@ -1160,6 +1163,7 @@
         NT_Expr(token_boolean);
       
         next_tmp_name("pop");
+        add_inst("DEFVAR", i_gf, tmp_name, i_null,NULL,i_null,NULL);
         add_inst("POPS", i_gf, tmp_name, i_null,NULL,i_null,NULL);
         add_inst("JUMPIFEQ", i_end, while_label, i_bool, "false", i_gf, tmp_name);      
 
