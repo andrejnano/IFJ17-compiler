@@ -700,8 +700,8 @@ void NT_Expr(int type)
 			{
             	last_type = var->type;
 				NT_CallExpr(var, active_token->value.c);
-                                add_inst("PUSHS", i_tf, "return", i_null,NULL,i_null,NULL);
-                                add_inst("POPFRAME", i_null,NULL,i_null,NULL,i_null,NULL);
+				add_inst("POPFRAME", i_null,NULL,i_null,NULL,i_null,NULL);
+				add_inst("PUSHS", i_tf, "%retval", i_null,NULL,i_null,NULL);
 				//fprintf(output_code, "pushs tf@return\n");
 				//fprintf(output_code, "popframe\n");
 			}
