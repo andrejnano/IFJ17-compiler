@@ -49,27 +49,27 @@
         // if (argc != 3)
         //     return E_INTERNAL;
 
-         if (! (source_code = fopen(argv[1], "r")))
-             return E_INTERNAL;
+        //  if (! (source_code = fopen(argv[1], "r")))
+        //      return E_INTERNAL;
 
         //output_code = stdout;
         // save the source name
         source_file_name = argv[1];
         
 
-        //source_code = stdin;
-        //output_code = stdout;
+        source_code = stdin;
+        output_code = stdout;
 
         parse();
 
-         if (!(output_code = fopen(argv[2], "w")))
-              return E_INTERNAL;
+        //  if (!(output_code = fopen(argv[2], "w")))
+        //       return E_INTERNAL;
 
         generate_code(output_code);
 
         //cleanup();
-        fclose(source_code);
-        fclose(output_code);
+        // fclose(source_code);
+        // fclose(output_code);
 
         // DEBUG
         #ifdef DEBUG
@@ -77,5 +77,5 @@
             else                printf(" EXIT STATUS : " ANSI_COLOR_GREEN "SUCCESS | %d\n\n" ANSI_COLOR_RESET, compiler_error);
         #endif
 
-        return SUCCESS;
+        return compiler_error;
     }
