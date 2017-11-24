@@ -952,6 +952,9 @@
                     new_variable_metadata.is_defined = 0;
                     new_variable_metadata.is_declared = 1;
 
+                    zeroVarInit(new_variable_name);
+                    add_inst("POPS", i_lf, variable_name, i_null, NULL, i_null, NULL);
+
                     match(active_token->type);
 
                     if (stl_insert_top(variables, new_variable_name, &new_variable_metadata))
@@ -1019,16 +1022,6 @@
                 raise_error(E_SEM_DEF, "Cannot define a variable.");
                 //NT_Expr();
             }
-        }
-        else if (active_token->type == token_eol)
-        {
-
-            if(variable_name)
-            {
-                zeroVarInit(variable_name);
-                add_inst("POPS", i_lf, variable_name, i_null, NULL, i_null, NULL);
-            }
-
         }
 
 
