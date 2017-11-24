@@ -1250,8 +1250,8 @@
         
         //NT_Expr();
 
-        if (match(token_semicolon) == false)
-            raise_error(E_SYNTAX, "Semicolon ';' is missing. ");
+        // if (match(token_semicolon) == false)
+        //     raise_error(E_SYNTAX, "Semicolon ';' is missing. ");
 
         NT_ExprList();
 
@@ -1264,7 +1264,7 @@
         
         while(active_token->type != token_eol)
         {
-            //NT_Expr( '??' ,variables);
+            NT_Expr(0);
             
              next_tmp_name("pop"); //creates new variable name in tmp_cnt
              add_inst("DEFVAR", i_gf , tmp_name , i_null,NULL,i_null,NULL);
