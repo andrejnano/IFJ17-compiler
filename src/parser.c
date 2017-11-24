@@ -1158,12 +1158,12 @@
         next_tmp_name("whl");
         char* while_label = malloc(sizeof(char)*16);
         strcpy(while_label, tmp_name);
+        next_tmp_name("pop");
+        add_inst("DEFVAR", i_gf, tmp_name, i_null,NULL,i_null,NULL);
         add_inst("LABEL", i_null, while_label, i_null,NULL,i_null,NULL);
 
         NT_Expr(token_boolean);
       
-        next_tmp_name("pop");
-        add_inst("DEFVAR", i_gf, tmp_name, i_null,NULL,i_null,NULL);
         add_inst("POPS", i_gf, tmp_name, i_null,NULL,i_null,NULL);
         add_inst("JUMPIFEQ", i_end, while_label, i_bool, "false", i_gf, tmp_name);      
 
