@@ -63,7 +63,7 @@ char* i2type(int val)
   }
   else if(val == token_string)
   {
-    str = "str";
+    str = "string";
   }
   else
   {

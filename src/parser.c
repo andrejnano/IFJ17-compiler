@@ -22,7 +22,6 @@
     #include "instructions.h"
 
 
-
     // current token from scanner
     Token_t* active_token;
 

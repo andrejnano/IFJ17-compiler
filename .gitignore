@@ -60,3 +60,5 @@ stdout
 *.json
 
 log/*
+
+*.zip
