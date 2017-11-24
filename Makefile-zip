@@ -15,32 +15,16 @@
 #        jazyce IFJ17 a preloží jej do cílového jazyka IFJcode17 (mezikód).
 #
 
-##   GENERAL MAKEFILE
-
 CC=gcc
-CFLAGS=-O2 -std=c99 -g -Wall -pedantic
-OBJFILES=$(patsubst src/%.c, build/%.o, $(shell ls src/*.c))
+CFLAGS=-O2 -std=c99 -Wall -pedantic
 OUTFILE=ifj2017
-ZIPNAME=xnanoa00
 
-all: build
+all: $(OUTFILE)
 
-.PHONY: clean run zip
+.PHONY: clean
 
-build/%.o: src/%.c src/*.h
-	$(CC) $(CFLAGS) -c $< -o $@
-
-build: $(OBJFILES)
-	$(CC) $(CFLAGS) $^ -o $(OUTFILE)
+ifj2017: *.c *.h
+	$(CC) $(CFLAGS) *.c -o $(OUTFILE)
 
 clean:
-	rm -rf build/* $(OUTFILE) $(ZIPNAME).zip
-
-run:
-	./$(OUTFILE)
-	
-zip:
-	cp Makefile-zip src/Makefile
-	cp rozdeleni src/rozdeleni
-	cd src; zip ../$(ZIPNAME).zip *
-	rm src/Makefile src/rozdeleni
+	rm *.o $(OUTFILE)
