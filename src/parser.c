@@ -389,6 +389,8 @@
                 {
                     // check the parameters
                     // if they match push the body
+                    char *function_name = (char *)malloc(sizeof(char) * strlen(active_token->value.c) + 1);
+                    strcpy(function_name, active_token->value.c);
 
                     match(token_identifier);
 
@@ -495,7 +497,7 @@
                     }
 
                     //INST
-                    add_inst("LABEL", i_null, "myFunc", i_null,NULL,i_null,NULL);
+                    add_inst("LABEL", i_null, function_name, i_null, NULL, i_null, NULL);
                     add_inst("PUSHFRAME", i_null,NULL,i_null,NULL,i_null,NULL);
                     add_inst("DEFVAR", i_lf, "%retval", i_null,NULL,i_null,NULL);
         
@@ -552,11 +554,11 @@
 						  param_list_dispose(function_parameters);
 
                     //INST
-                    add_inst("LABEL", i_end, "myFunc", i_null,NULL,i_null,NULL);
-                    add_inst("POPFRAME", i_null,NULL,i_null,NULL,i_null,NULL);
-                    add_inst("RETURN", i_null,NULL,i_null,NULL,i_null,NULL);
+                          add_inst("LABEL", i_end, function_name, i_null, NULL, i_null, NULL);
+                          add_inst("POPFRAME", i_null, NULL, i_null, NULL, i_null, NULL);
+                          add_inst("RETURN", i_null, NULL, i_null, NULL, i_null, NULL);
 
-                    return; // !IMPORTANT
+                          return; // !IMPORTANT
 
                 } // end of 'else if (function_metadata->is_declared)'
             } // end of 'if (function_metadata)' 
@@ -665,22 +667,27 @@
                 //  GENERATE CODE FROM CompoundStmt
                 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-                    // -----------------
-                    // NEW LOCAL SCOPE
-                    // -----------------
+                //INST
+                add_inst("LABEL", i_null, new_function_name, i_null, NULL, i_null, NULL);
+                add_inst("PUSHFRAME", i_null, NULL, i_null, NULL, i_null, NULL);
+                add_inst("DEFVAR", i_lf, "%retval", i_null, NULL, i_null, NULL);
 
-                    stl_push(&variables);
+                // -----------------
+                // NEW LOCAL SCOPE
+                // -----------------
 
-                    while (function_parameters != NULL)
-                    {
-                        Metadata_t var_from_parameter;
-                        var_from_parameter.parameters = NULL;
-                        var_from_parameter.is_declared = true;
-                        var_from_parameter.is_defined = false;
-                        var_from_parameter.type = function_parameters->type;
+                stl_push(&variables);
 
-                        stl_insert_top(variables, function_parameters->name, &var_from_parameter);
-                        function_parameters = function_parameters->next;
+                while (function_parameters != NULL)
+                {
+                    Metadata_t var_from_parameter;
+                    var_from_parameter.parameters = NULL;
+                    var_from_parameter.is_declared = true;
+                    var_from_parameter.is_defined = false;
+                    var_from_parameter.type = function_parameters->type;
+
+                    stl_insert_top(variables, function_parameters->name, &var_from_parameter);
+                    function_parameters = function_parameters->next;
                     }
 
                     NT_CompoundStmt();
@@ -708,6 +715,12 @@
                     stl_insert_top(functions, new_function_name, &new_function_metadata);
 					free(new_function_name);
 					param_list_dispose(function_parameters);
+
+                    //INST
+                    add_inst("LABEL", i_end, new_function_name, i_null, NULL, i_null, NULL);
+                    add_inst("POPFRAME", i_null, NULL, i_null, NULL, i_null, NULL);
+                    add_inst("RETURN", i_null, NULL, i_null, NULL, i_null, NULL);
+
                     return;
 				}
 				param_list_dispose(function_parameters);
