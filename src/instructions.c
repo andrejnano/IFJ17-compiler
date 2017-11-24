@@ -229,7 +229,7 @@ void generate_code(FILE* output_file)
     if(actual->second)
     {
       fprintf(output_file, " ");
-      print_const_type(output_file, actual->third_type);
+      print_const_type(output_file, actual->second_type);
       fprintf(output_file, "%s",actual->second); 
     }
     if(actual->third)
