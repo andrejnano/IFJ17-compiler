@@ -108,6 +108,7 @@
         tmp_name = malloc(sizeof(char)*16);
 
         add_inst(".IFJcode17", i_null, NULL, i_null, NULL, i_null, NULL);
+        add_inst("jump main", i_null, NULL, i_null, NULL, i_null, NULL);
 
         NT_Head();
         NT_Scope();
@@ -824,7 +825,9 @@
 
         if (match(token_scope) == false) // keyword 'Scope'
             raise_error(E_SYNTAX, "Expected 'Scope' keyword not found.");
-        
+
+        add_inst("LABEL main", i_null, NULL, i_null, NULL, i_null, NULL);
+
         if (match(token_eol) == false)
             raise_error(E_SYNTAX, "EOL expected at this point.");
 
@@ -1003,7 +1006,7 @@
             if (variable_name)
             {
                 //INST
-                NT_Expr(var_meta->type ,variables);
+                NT_Expr(var_meta->type);
         	      add_inst("POPS", i_lf, variable_name, i_null,NULL,i_null,NULL);
                 free(variable_name);
                 return;
@@ -1043,7 +1046,7 @@
 
                 if (match(token_op_eq) == false)
                     raise_error(E_SYNTAX, "Assignment operator '=' expected.");
-                NT_Expr(variable->type, variables);
+                NT_Expr(variable->type);
 
 		            add_inst("POPS", i_lf, name, i_null,NULL,i_null,NULL);
                 //fprintf(output_code, "pops lf@%s\n", name);
@@ -1072,7 +1075,7 @@
             raise_error(E_SYNTAX, "Keyword 'If' expected.");
 
 
-        NT_Expr(token_boolean, variables);
+        NT_Expr(token_boolean);
         
         //INST
         next_tmp_name("els");
@@ -1154,7 +1157,7 @@
         strcpy(while_label, tmp_name);
         add_inst("LABEL", i_null, while_label, i_null,NULL,i_null,NULL);
 
-        NT_Expr(token_boolean, variables);
+        NT_Expr(token_boolean);
       
         next_tmp_name("pop");
         add_inst("POPS", i_gf, tmp_name, i_null,NULL,i_null,NULL);
@@ -1198,7 +1201,7 @@
 
             // function return datatype gets updated each time 
             // new function is added to symtable
-            NT_Expr(function_return_datatype, variables);
+            NT_Expr(function_return_datatype);
             // generate instructions
             add_inst("POPS", i_lf, "%retval", i_null,NULL,i_null,NULL);
             add_inst("POPFRAME", i_null,NULL,i_null,NULL,i_null,NULL);
