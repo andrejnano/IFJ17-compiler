@@ -1,7 +1,7 @@
 /**
  * @file Scanner.c
  * @author Jan Švanda
- * @date 2017-11-20
+ * @date 2017-11-24
  * Implementation of source code scanner and lexical analysis.
  */
 
@@ -370,7 +370,6 @@ typedef enum {
     STRING_ESC,
     STRING_ESC_1N,
     STRING_ESC_2N,
-    STRING_END,
     DIV_SIGN,
     COMMENT_SINGLE,
     COMMENT_MULTI,
@@ -766,28 +765,9 @@ bool get_next_token(FILE *file, Token_t *token)
             }
             else if (c == '"')
             {
-                // End loading string - ignore till newline
-                state = STRING_END;
-            }
-            else if (c > 32)
-            {
-                // Regular printable character
-                if (!dStrAddChar(&value, c)) return_eof_false(token);
-            }
-            else
-            {
-                // Wrong character string
-                raise_error(E_LEX, "String contains wrong character @line:%u", line);
-                return_eof_false(token);
-            }
-            break;
-        case STRING_END:
-            // Ignore everything till new line
-            if (c == '\n')
-            {
 
-                // Return newline back
-                ungetc(c, file);
+                // Finished reading string
+                state = EMPTY;
 
                 // Returns string token
                 token->type = token_val_string;
@@ -808,6 +788,18 @@ bool get_next_token(FILE *file, Token_t *token)
 
                 // Return success
                 return true;
+
+            }
+            else if (c > 32)
+            {
+                // Regular printable character
+                if (!dStrAddChar(&value, c)) return_eof_false(token);
+            }
+            else
+            {
+                // Wrong character string
+                raise_error(E_LEX, "String contains wrong character @line:%u", line);
+                return_eof_false(token);
             }
             break;
         case STRING_ESC:
