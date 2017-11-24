@@ -623,6 +623,8 @@ void NT_Expr(int type)
 	int i = 0;
 	while (active_token->type != token_eol)
 	{
+
+		printTokenType(stderr, active_token->type);
 		switch (active_token->type)
 		{
 		case token_op_add:
@@ -723,7 +725,9 @@ void NT_Expr(int type)
 			if (istype(active_token->type))
 				raise_error(TYPE_ERROR, "Wrong type in expression\n");
 			if (!i)
+			{
 				raise_error(SYNTAX_ERROR, "Wrong syntax of expression\n");
+			}
 			while (s && s->priority < STACK_STOPPER)
 			{
 				if (execOp(&s, &numOp, &last_type).priority == STACK_STOPPER)
@@ -734,12 +738,18 @@ void NT_Expr(int type)
 				raise_error(SYNTAX_ERROR, "Wrong expression syntax\n");
 				return;
 			}
-			if (type != last_type)
+			if (type && type != last_type)
 				converts(last_type, &type, 0);
 			free(sPop(&s));		
 			return;
 		}
-		get_next_token(source_code, active_token);
+
+		fprintf(stderr, "prvy token vo vyraze raidok %d ", active_token->line);
+		printTokenType(stderr, active_token->type);
+		get_next_token(source_code, active_token); // nacitam dalsi ked je to print !"str";
+																// ocakavam ';'
+		fprintf(stderr, "dalsi token vo vyraze raidok %d ", active_token->line);
+		printTokenType(stderr, active_token->type);
 		i++;
 	}
 	while (s && s->priority < STACK_STOPPER)
