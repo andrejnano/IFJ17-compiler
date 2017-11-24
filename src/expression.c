@@ -624,7 +624,6 @@ void NT_Expr(int type)
 	while (active_token->type != token_eol)
 	{
 
-		printTokenType(stderr, active_token->type);
 		switch (active_token->type)
 		{
 		case token_op_add:
@@ -744,12 +743,7 @@ void NT_Expr(int type)
 			return;
 		}
 
-		fprintf(stderr, "prvy token vo vyraze raidok %d ", active_token->line);
-		printTokenType(stderr, active_token->type);
-		get_next_token(source_code, active_token); // nacitam dalsi ked je to print !"str";
-																// ocakavam ';'
-		fprintf(stderr, "dalsi token vo vyraze raidok %d ", active_token->line);
-		printTokenType(stderr, active_token->type);
+		get_next_token(source_code, active_token);
 		i++;
 	}
 	while (s && s->priority < STACK_STOPPER)
