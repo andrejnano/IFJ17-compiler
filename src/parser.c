@@ -1020,6 +1020,17 @@
                 //NT_Expr();
             }
         }
+        else if (active_token->type == token_eol)
+        {
+
+            if(variable_name)
+            {
+                zeroVarInit(variable_name);
+                add_inst("POPS", i_lf, variable_name, i_null, NULL, i_null, NULL);
+            }
+
+        }
+
 
         free(variable_name);
         // if no equals, just declare.. 
