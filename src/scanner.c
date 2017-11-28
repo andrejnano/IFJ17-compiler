@@ -127,7 +127,7 @@ bool dStrOptimize(string_t *s)
 static string_t value; // Token value
 static unsigned int line; // Line counter
 static bool end_of_file = true; // Identifies end of file
-static bool new_line_start = true; // Identify empty line
+static bool empty_new_line = true; // Identify empty line
 
 /**
  * @brief Initialize scanner
@@ -362,6 +362,7 @@ typedef enum {
     ID,
     NUMBER,
     DECIMAL,
+    DECIMAL_DOT,
     DOUBLE_EXP,
     DOUBLE_EXP_SIGN,
     DOUBLE,
@@ -460,8 +461,8 @@ bool get_next_token(FILE *file, Token_t *token)
         {
         case EMPTY:
 
-            // Update empty line check - line is not empty
-            if (c != '\n' && c != 13 && c != '\'') new_line_start = false;
+            // Update empty line check - line is not empty [\n] ['] [/]
+            if (c!='\n' && c!=13 && c!='\'' && c!='/') empty_new_line = false;
 
             // Identifier beginning
             if ((c >= 'a' && c <= 'z') || c == '_')
@@ -494,15 +495,20 @@ bool get_next_token(FILE *file, Token_t *token)
                 case '(': token->type = token_lbrace; return true;
                 case ')': token->type = token_rbrace; return true;
                 case ';': token->type = token_semicolon; return true;
+                case '.':
+                    // Might be double (.number --> 0.number)
+                    if (!dStrAddChar(&value, '0')) return_eof_false(token);
+                    if (!dStrAddChar(&value, '.')) return_eof_false(token);
+                    state = DECIMAL_DOT;
+                    break;
                 case '\n': line++;
                     // Return only one EOL per group of EOL's
-                    if (!new_line_start)
+                    if (!empty_new_line)
                     {
-                        new_line_start = true;
+                        empty_new_line = true;
                         token->type = token_eol;
                         return true;
                     }
-                    // Skip repeating empty line
                 case 13: continue; // Windows CRLF compatibility
                 default:
                     // Unknown character
@@ -529,6 +535,7 @@ bool get_next_token(FILE *file, Token_t *token)
             else
             {
                 // Not comment -> return division token
+                empty_new_line = false;
                 ungetc(c, file);
                 token->type = token_op_div;
                 return true;
@@ -557,15 +564,11 @@ bool get_next_token(FILE *file, Token_t *token)
                 // Multi line might still end, keeps state
                 continue;
             }
-            else if (c == '\n')
-            {
-                // Counting source code lines
-                line++;
-            }
             else
             {
                 // Continues to be multi line comment
                 state = COMMENT_MULTI;
+                if (c == '\n') line++;
             }
             break;
         case ID:
@@ -660,6 +663,21 @@ bool get_next_token(FILE *file, Token_t *token)
                 return true;
             }
             break;
+        case DECIMAL_DOT:
+            if (c >= '0' && c <= '9')
+            {
+                // Decimal continues correctly
+                if (!dStrAddChar(&value, c)) return_eof_false(token);
+                state = DECIMAL;
+            }
+            else
+            {
+                // Bad double format (only dot)
+                ungetc(c, file);
+                raise_error(E_LEX, "Wrong double format @line:%u", line);
+                return_eof_false(token);
+            }
+            break;            
         case DOUBLE_EXP:
             if (c >= '0' && c <= '9')
             {
@@ -955,7 +973,7 @@ bool get_next_token(FILE *file, Token_t *token)
     token->type = token_eof;
 
     // Check state at the end
-    if (!(state == COMMENT_MULTI || state == EMPTY))
+    if (state != EMPTY)
     {
         // Unexpected end of file
         raise_error(E_LEX, "End of file unexpected.");
