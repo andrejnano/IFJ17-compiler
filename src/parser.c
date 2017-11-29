@@ -563,7 +563,8 @@
 						  param_list_dispose(function_parameters);
 
                     //INST
-                          add_inst("LABEL", i_end, function_name, i_null, NULL, i_null, NULL);
+                          //add_inst("LABEL", i_end, function_name, i_null, NULL, i_null, NULL);
+                          add_inst("POPFRAME", i_null, NULL, i_null, NULL, i_null, NULL);
                           add_inst("RETURN", i_null, NULL, i_null, NULL, i_null, NULL);
 
                           return; // !IMPORTANT
@@ -724,7 +725,7 @@
 					param_list_dispose(function_parameters);
 
                     //INST
-                    add_inst("LABEL", i_end, new_function_name, i_null, NULL, i_null, NULL);
+                    //add_inst("LABEL", i_end, new_function_name, i_null, NULL, i_null, NULL);
                     add_inst("POPFRAME", i_null, NULL, i_null, NULL, i_null, NULL);
                     add_inst("RETURN", i_null, NULL, i_null, NULL, i_null, NULL);
 
@@ -1321,7 +1322,7 @@
         if (active_token->type == token_eof)
             return;
         
-        while(active_token->type != token_eol)
+        while((active_token->type != token_eol) && (active_token->type != token_eof))
         {
             NT_Expr(0);
             
