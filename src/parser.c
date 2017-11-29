@@ -167,6 +167,7 @@
     
     void NT_FunctionDec()
     {
+        function_return_datatype = 0;
         if (active_token->type == token_eof)
             return;
 
@@ -353,6 +354,7 @@
     
     void NT_FunctionDef()
     {
+        function_return_datatype = 0;
         if (active_token->type == token_eof)
             return;
         /*
@@ -843,6 +845,7 @@
 
     void NT_Scope()
     {   
+        function_return_datatype = 0;
         if (active_token->type == token_eof)
             return;
 
@@ -1259,7 +1262,6 @@
             // generate instructions
             add_inst("POPS", i_lf, "%retval", i_null,NULL,i_null,NULL);
             add_inst("RETURN", i_null,NULL,i_null,NULL,i_null,NULL);
-            function_return_datatype = 0;
         }
 
 

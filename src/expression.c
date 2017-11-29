@@ -165,10 +165,10 @@ void zeroVarInit(char *varName) {
  */
 void converts(int new_type, int *old_type, bool byPriority)
 {
-	if (new_type == *old_type)
-	return;
 if (istype(new_type) && istype(new_type))
 {
+	if (new_type == *old_type)
+		return;
 	if (new_type == token_double && *old_type == token_integer)
 	{
 		if (byPriority)
@@ -178,14 +178,11 @@ if (istype(new_type) && istype(new_type))
 				add_inst("POPS", i_lf, temp, i_null,NULL,i_null,NULL);
 				add_inst("INT2FLOATS", i_null,NULL,i_null,NULL,i_null,NULL);
 				add_inst("PUSHS", i_lf, temp, i_null,NULL,i_null,NULL);
-			//fprintf(output_code, "pops lf@%s\n", temp);
-			//fprintf(output_code, "int2floats\n");
-			//fprintf(output_code, "pushs lf@%s\n", temp);
 			*old_type = token_double;
 		}
 		else
 		{
-				add_inst("FLOAT2R2EINTS", i_null,NULL,i_null,NULL,i_null,NULL);
+			add_inst("FLOAT2R2EINTS", i_null,NULL,i_null,NULL,i_null,NULL);
 			//fprintf(output_code, "float2r2eints\n");
 			*old_type = token_integer;
 		}
@@ -199,6 +196,8 @@ if (istype(new_type) && istype(new_type))
 	else
 	{
 		raise_error(TYPE_ERROR, "Wrong type for conversion\n");
+		printTokenType(stderr, *old_type);
+		printTokenType(stderr, new_type);
 		return;
 	}
 }
@@ -262,7 +261,6 @@ tStack execOp (tStack **s, int *numOp, int *new_type)
 	tStack *operation = sPop(s);
 	if (*numOp < 2 && operation->type != token_lbrace)
 	{
-		raise_error(SYNTAX_ERROR, "Wrong syntax of expression\n");
 		tmp.priority = STACK_STOPPER;
 		tmp.type = STACK_STOPPER;
 		return tmp;
@@ -284,6 +282,8 @@ tStack execOp (tStack **s, int *numOp, int *new_type)
 				//fprintf(output_code, "pops lf@%s\n", tmpName2);
 				//fprintf(output_code, "concat lf@%s lf@%s lf@%s\n", tmpName1, tmpName2, tmpName1);
 				//fprintf(output_code, "pushs lf@%s\n", tmpName1);
+				free(tmpName1);
+				free(tmpName2);
 				break;
 			}
 			converts(operation->lOperandType, new_type, 1);
@@ -322,30 +322,11 @@ tStack execOp (tStack **s, int *numOp, int *new_type)
 		break;  
 		case token_op_mod:
 			converts(operation->lOperandType, new_type, 1);
-			generateName(&tmpName1);
-			generateName(&tmpName2);
-			add_inst("POPS", i_lf, tmpName1, i_null,NULL,i_null,NULL);
-			add_inst("POPS", i_lf, tmpName2, i_null,NULL,i_null,NULL);
-			add_inst("PUSHS", i_lf, tmpName2, i_null,NULL,i_null,NULL);
-			add_inst("PUSHS", i_lf, tmpName2, i_null,NULL,i_null,NULL);
-			add_inst("PUSHS", i_lf, tmpName1, i_null,NULL,i_null,NULL);
+			add_inst("FLOAT2R2EINTS", i_null,NULL,i_null,NULL,i_null,NULL);
+			add_inst("INT2FLOATS", i_null,NULL,i_null,NULL,i_null,NULL);
 			add_inst("DIVS", i_null,NULL,i_null,NULL,i_null,NULL);
-			add_inst("PUSHS", i_lf, tmpName1, i_null,NULL,i_null,NULL);
-			add_inst("MULS", i_null,NULL,i_null,NULL,i_null,NULL);
-			add_inst("SUBS", i_null,NULL,i_null,NULL,i_null,NULL);
-			//fprintf(output_code, "pops lf@%s\n", tmpName1);
-			//fprintf(output_code, "pops lf@%s\n", tmpName2);
-			//fprintf(output_code, "pushs lf@%s\n", tmpName2);
-			//fprintf(output_code, "pushs lf@%s\n", tmpName2);
-			//fprintf(output_code, "pushs lf@%s\n", tmpName1);
-			//fprintf(output_code, "divs\n");
-			//fprintf(output_code, "pushs lf@%s\n", tmpName1);
-			//fprintf(output_code, "muls\n");
-			//fprintf(output_code, "subs\n");
-			free(tmpName1);
-			free(tmpName2);
-			add_inst("DIVS", i_null,NULL,i_null,NULL,i_null,NULL);
-			add_inst("FLOAT2INTS", i_null, NULL, i_null,NULL,i_null,NULL);
+			add_inst("FLOAT2INTS", i_null,NULL,i_null,NULL,i_null,NULL);
+			add_inst("INT2FLOATS", i_null,NULL,i_null,NULL,i_null,NULL);
 			//fprintf(output_code,"divs\n");
 		break;
 		case token_op_eq:
@@ -466,57 +447,40 @@ void NT_CallExpr(Metadata_t *funcMeta, char *funcName)
 			raise_error(E_SEM_DEF, "Too many arguments for function\n");
 			return;
 		}
-		add_inst("DEFVAR", i_tf, arg->name, i_null,NULL,i_null,NULL);
 		//fprintf(output_code, "defvar tf@%s\n", arg->name);
-		if (active_token->type == token_identifier)
-		{
-			char *id = active_token->value.c;
-			Metadata_t *tmpMeta;
-			if ((tmpMeta = stl_search(variables, id)))
-			{
-				if (tmpMeta->type == funcMeta->type)
-				{
-					add_inst("MOVE", i_tf, arg->name, i_lf, id, i_null,NULL);
-					//fprintf(output_code, "move tf@%s lf@%s\n", arg->name, id);
-				}
-				else
-				{
-					char *name = convert(tmpMeta->type, arg->type, active_token->value, "lf");
-					add_inst("MOVE", i_tf, arg->name, i_lf, name, i_null,NULL);
-					//fprintf(output_code, "move tf@%s lf@%s\n", arg->name, name);
-					free(name);
-				}
-				
-			}
-			// if ((tmpMeta = stl_search(functions, id)))
-			// {
-			// 	NT_CallExpr(tmpMeta, id);
-			// }
-			else
-			{
-				raise_error(E_SEM_DEF, "Use of undeclared\n");
-				return;
-			}
-		}
+		// if (active_token->type == token_identifier)
+		// {
+				NT_Expr(arg->type);
+				// add_inst("CREATEFRAME", i_null, NULL, i_null, NULL, i_null,NULL);
+				// add_inst("DEFVAR", i_tf, arg->name, i_null, NULL, i_null,NULL);
+				add_inst("", i_null, NULL, i_null, NULL, i_null,NULL);
+				add_inst("DEFVAR", i_tf, arg->name, i_null,NULL,i_null,NULL);
+				add_inst("POPS", i_tf, arg->name, i_null, NULL, i_null,NULL);
+		// }
 		// tvalToKeyword returns corresponding keyword to literal for example token_val_integer -> token_integer
 		// it is used because types are in structures stored as keyword for example token_integer
-		else if (TvalToKeyword(active_token->type) == arg->type)
-		{
-			add_inst("MOVE", i_tf, arg->name, i_null, NULL, i_null,NULL);
-			//fprintf(output_code, "move tf@%s ", arg->name);
-			printTokenVal();
-		}
-		else
-		{
-			char *name = convert(TvalToKeyword(active_token->type), arg->type, active_token->value, NULL);
-			add_inst("MOVE", i_tf, arg->name, i_lf, name, i_null,NULL);
-			//fprintf(output_code, "move tf@%s lf@%s\n", arg->name, name);
-			free(name);
-		}
+		// else if (TvalToKeyword(active_token->type) == arg->type)
+		// {
+		// 	add_inst("MOVE", i_tf, arg->name, i_null, NULL, i_null,NULL);
+		// 	//fprintf(output_code, "move tf@%s ", arg->name);
+		// 	printTokenVal();
+		// }
+		// else
+		// {
+		// 	char *name = convert(TvalToKeyword(active_token->type), arg->type, active_token->value, NULL);
+		// 	add_inst("MOVE", i_tf, arg->name, i_lf, name, i_null,NULL);
+		// 	//fprintf(output_code, "move tf@%s lf@%s\n", arg->name, name);
+		// 	free(name);
+		// }
 		arg = arg->next;
-		get_next_token(source_code, active_token);
+		printTokenType(stderr, active_token->type);
 		if (active_token->type != token_comma)
 			break;
+		printTokenType(stderr, active_token->type);
+		get_next_token(source_code, active_token);
+	}
+	if (active_token->type == token_rbrace)
+	{
 		get_next_token(source_code, active_token);
 	}
 
@@ -527,6 +491,9 @@ void NT_CallExpr(Metadata_t *funcMeta, char *funcName)
 	}
 	add_inst("PUSHFRAME", i_null,NULL,i_null,NULL,i_null,NULL);
 	add_inst("CALL", i_null, funcName, i_null,NULL,i_null,NULL);
+	add_inst("POPFRAME", i_null,NULL,i_null,NULL,i_null,NULL);
+	add_inst("PUSHS", i_tf, "%retval", i_null,NULL,i_null,NULL);
+	add_inst("CREATEFRAME", i_null,NULL,i_null,NULL,i_null,NULL);
 	//fprintf(output_code, "pushframe\ncall %s\n", funcName);
 }
 
@@ -544,23 +511,23 @@ void NT_Expr(int type)
 	sPush(&s, &insert);
 	int numOp = 0, new_type = 0;
 	Metadata_t *var;
-	int i = 0;
+	bool not_int = false;
 	while (active_token->type != token_eol)
 	{
-
 		switch (active_token->type)
 		{
 		case token_op_add:
 		case token_op_sub:
 			insert.type = active_token->type;
-         insert.priority = 3;
-         insert.lOperandType = new_type;
+         	insert.priority = 3;
+         	insert.lOperandType = new_type;
 			while (s && s->priority && s->priority <= insert.priority)
 				if (execOp(&s, &numOp, &new_type).priority == STACK_STOPPER)
 					return;
 			sPush(&s, &insert);
 			break;
 		case token_op_div:
+			not_int = true;
 		case token_op_mul:
 			insert.type = active_token->type;
 			insert.priority = 1;
@@ -608,30 +575,40 @@ void NT_Expr(int type)
 			while (s && s->type != token_lbrace)
 			{
 				if (execOp(&s, &numOp, &new_type).priority == STACK_STOPPER)
+				{
+					converts(new_type, &type, 0);
 					return;
+				}
 			}
 			free(sPop(&s));
 			break;
 		case token_identifier:
-		 numOp++;
+		 	numOp++;
 			if ((var = stl_search(variables, active_token->value.c)))
 			{
+				if (var->type != token_integer)
+					not_int = true;
             	new_type = var->type;
 				add_inst("PUSHS", i_lf, active_token->value.c, i_null,NULL,i_null,NULL);
 				if (new_type == token_integer)
+				{
 					add_inst("INT2FLOATS", i_null, NULL, i_null,NULL,i_null,NULL);
+					new_type = token_double;
+				}
 				//fprintf(output_code, "pushs lf@%s\n", active_token->value.c);
 			}
 			else if ((var = stl_search(functions, active_token->value.c)))
 			{
+				if (var->type != token_integer)
+					not_int = true;
             	new_type = var->type;
 				NT_CallExpr(var, active_token->value.c);
-				add_inst("POPFRAME", i_null,NULL,i_null,NULL,i_null,NULL);
-				add_inst("PUSHS", i_tf, "%retval", i_null,NULL,i_null,NULL);
 				if (new_type == token_integer)
+				{
 					add_inst("INT2FLOATS", i_null, NULL, i_null,NULL,i_null,NULL);
-				//fprintf(output_code, "pushs tf@return\n");
-				//fprintf(output_code, "popframe\n");
+					new_type = token_double;
+				}
+				continue;
 			}
 			else
 			{
@@ -648,23 +625,21 @@ void NT_Expr(int type)
 			break;
 		case token_val_double:
 			numOp++;
+			not_int = true;
 			add_inst("PUSHS", i_null, NULL, i_null,NULL,i_null,NULL);
 			printTokenVal();
 			new_type = token_double;
 			break;
 		case token_val_string:
-         numOp++;
+         	numOp++;
+			not_int = true;
 			new_type = token_string;
-                        add_inst("PUSHS", i_null,NULL,i_null,NULL,i_null,NULL); 
+            add_inst("PUSHS", i_null,NULL,i_null,NULL,i_null,NULL); 
 			printTokenVal();
 			break;
 		default:
 			if (istype(active_token->type))
 				raise_error(E_SEM_TYPE, "Wrong type in expression\n");
-			if (!i)
-			{
-				raise_error(SYNTAX_ERROR, "Wrong syntax of expression\n");
-			}
 			while (s && s->priority < STACK_STOPPER)
 			{
 				if (execOp(&s, &numOp, &new_type).priority == STACK_STOPPER)
@@ -675,6 +650,8 @@ void NT_Expr(int type)
 				raise_error(SYNTAX_ERROR, "Wrong expression syntax\n");
 				return;
 			}
+			if (!type && !not_int)
+				type = token_integer;
 			if (type && type != new_type)
 				converts(new_type, &type, 0);
 			free(sPop(&s));		
@@ -682,7 +659,6 @@ void NT_Expr(int type)
 		}
 
 		get_next_token(source_code, active_token);
-		i++;
 	}
 	while (s && s->priority < STACK_STOPPER)
 	{
@@ -694,6 +670,8 @@ void NT_Expr(int type)
 		raise_error(SYNTAX_ERROR, "Wrong expression syntax\n");
 		return;
 	}
+	if (!type && !not_int)
+		type = token_integer;
 	if (type && type != new_type)
 		converts(new_type, &type, 0);
 	free(sPop(&s));
