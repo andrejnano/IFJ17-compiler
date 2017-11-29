@@ -564,7 +564,7 @@
 
                     //INST
                           //add_inst("LABEL", i_end, function_name, i_null, NULL, i_null, NULL);
-                          add_inst("POPFRAME", i_null, NULL, i_null, NULL, i_null, NULL);
+                          //add_inst("POPFRAME", i_null, NULL, i_null, NULL, i_null, NULL);
                           add_inst("RETURN", i_null, NULL, i_null, NULL, i_null, NULL);
 
                           return; // !IMPORTANT
@@ -726,7 +726,7 @@
 
                     //INST
                     //add_inst("LABEL", i_end, new_function_name, i_null, NULL, i_null, NULL);
-                    add_inst("POPFRAME", i_null, NULL, i_null, NULL, i_null, NULL);
+                    //add_inst("POPFRAME", i_null, NULL, i_null, NULL, i_null, NULL);
                     add_inst("RETURN", i_null, NULL, i_null, NULL, i_null, NULL);
 
                     return;
