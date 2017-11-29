@@ -495,12 +495,6 @@ bool get_next_token(FILE *file, Token_t *token)
                 case '(': token->type = token_lbrace; return true;
                 case ')': token->type = token_rbrace; return true;
                 case ';': token->type = token_semicolon; return true;
-                case '.':
-                    // Might be double (.number --> 0.number)
-                    if (!dStrAddChar(&value, '0')) return_eof_false(token);
-                    if (!dStrAddChar(&value, '.')) return_eof_false(token);
-                    state = DECIMAL_DOT;
-                    break;
                 case '\n': line++;
                     // Return only one EOL per group of EOL's
                     if (!empty_new_line)
@@ -623,7 +617,7 @@ bool get_next_token(FILE *file, Token_t *token)
             {
                 // Becomes decimal number
                 if (!dStrAddChar(&value, c)) return_eof_false(token);
-                state = DECIMAL;
+                state = DECIMAL_DOT;
             }
             else if (c == 'e')
             {
@@ -672,7 +666,7 @@ bool get_next_token(FILE *file, Token_t *token)
             }
             else
             {
-                // Bad double format (only dot)
+                // Bad double format (number.)
                 ungetc(c, file);
                 raise_error(E_LEX, "Wrong double format @line:%u", line);
                 return_eof_false(token);
@@ -693,13 +687,10 @@ bool get_next_token(FILE *file, Token_t *token)
             }
             else
             {
-                // Returns double token (broken double 123e) appends '0'
+                // Bad double format (numE)
                 ungetc(c, file);
-                if (!dStrAddChar(&value, '0')) return_eof_false(token);
-                double val = (double) strtod(value.str, NULL);
-                token->type = token_val_double;
-                token->value.d = val;
-                return true;
+                raise_error(E_LEX, "Wrong double format @line:%u", line);
+                return_eof_false(token);
             }
             break;
         case DOUBLE_EXP_SIGN:
@@ -711,13 +702,10 @@ bool get_next_token(FILE *file, Token_t *token)
             }
             else
             {
-                // Returns double token (broken double 123e+) appends '0'
+                // Bad double format (numberEsign)
                 ungetc(c, file);
-                if (!dStrAddChar(&value, '0')) return_eof_false(token);
-                double val = (double) strtod(value.str, NULL);
-                token->type = token_val_double;
-                token->value.d = val;
-                return true;
+                raise_error(E_LEX, "Wrong double format @line:%u", line);
+                return_eof_false(token);
             }
             break;
         case DOUBLE:
