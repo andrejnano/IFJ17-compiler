@@ -506,7 +506,7 @@ bool get_next_token(FILE *file, Token_t *token)
                 case 13: continue; // Windows CRLF compatibility
                 default:
                     // Unknown character
-                    raise_error(E_LEX, "Unknown character @line:%u", line);
+                    raise_error(E_LEX, "Unknown character 0x%02x", c);
                     return_eof_false(token);
                 }
             }
@@ -668,7 +668,7 @@ bool get_next_token(FILE *file, Token_t *token)
             {
                 // Bad double format (number.)
                 ungetc(c, file);
-                raise_error(E_LEX, "Wrong double format @line:%u", line);
+                raise_error(E_LEX, "Wrong double format, got 0x%02x", c);
                 return_eof_false(token);
             }
             break;            
@@ -689,7 +689,7 @@ bool get_next_token(FILE *file, Token_t *token)
             {
                 // Bad double format (numE)
                 ungetc(c, file);
-                raise_error(E_LEX, "Wrong double format @line:%u", line);
+                raise_error(E_LEX, "Wrong double format, got 0x%02x", c);
                 return_eof_false(token);
             }
             break;
@@ -704,7 +704,7 @@ bool get_next_token(FILE *file, Token_t *token)
             {
                 // Bad double format (numberEsign)
                 ungetc(c, file);
-                raise_error(E_LEX, "Wrong double format @line:%u", line);
+                raise_error(E_LEX, "Wrong double format, got 0x%02x", c);
                 return_eof_false(token);
             }
             break;
@@ -734,7 +734,7 @@ bool get_next_token(FILE *file, Token_t *token)
             {
                 // Returns unknown token (!)
                 ungetc(c, file);
-                raise_error(E_LEX, "Unknown character @line:%u", line);
+                raise_error(E_LEX, "Unknown character 0x%02x", c);
                 return_eof_false(token);
             }
             break;
@@ -804,7 +804,7 @@ bool get_next_token(FILE *file, Token_t *token)
             else
             {
                 // Wrong character string
-                raise_error(E_LEX, "String contains wrong character @line:%u", line);
+                raise_error(E_LEX, "String contains bad character, 0x%02x is not allowed", c);
                 return_eof_false(token);
             }
             break;
@@ -850,7 +850,7 @@ bool get_next_token(FILE *file, Token_t *token)
             else
             {
                 // Wrong escape sequence string
-                raise_error(E_LEX, "Escape character with no meaning @line:%u", line);
+                raise_error(E_LEX, "Escape character with no meaning, got 0x%02x", c);
                 return_eof_false(token);
             }
             break;
@@ -864,7 +864,7 @@ bool get_next_token(FILE *file, Token_t *token)
             else
             {
                 // Wrong escape sequence string
-                raise_error(E_LEX, "Terminated escape sequence @line:%u", line);
+                raise_error(E_LEX, "Terminated escape sequence, expected number, got 0x%02x", c);
                 return_eof_false(token);
             }
             break;
@@ -877,7 +877,7 @@ bool get_next_token(FILE *file, Token_t *token)
                 // Check invalidity of the character
                 if (strEcsValue < 1 || strEcsValue > 255)
                 {
-                    raise_error(E_LEX, "Escape sequence out of bounds @line:%u", line);
+                    raise_error(E_LEX, "Escape sequence out of bounds for %03d", strEcsValue);
                     return_eof_false(token);
                 }
 
@@ -921,7 +921,7 @@ bool get_next_token(FILE *file, Token_t *token)
             else
             {
                 // Wrong escape sequence string
-                raise_error(E_LEX, "Terminated escape sequence @line:%u", line);
+                raise_error(E_LEX, "Terminated escape sequence, expected number, got 0x%02x", c);
                 return_eof_false(token);
             }
             break;
