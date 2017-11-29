@@ -112,7 +112,7 @@
         add_inst(".IFJcode17", i_null, NULL, i_null, NULL, i_null, NULL);
         add_inst("CREATEFRAME", i_null,NULL,i_null,NULL,i_null,NULL);
         add_inst("PUSHFRAME", i_null,NULL,i_null,NULL,i_null,NULL);   
-        add_inst("JUMP", i_null, "main", i_null, NULL, i_null, NULL);
+        add_inst("JUMP", i_null, "$main", i_null, NULL, i_null, NULL);
 
         NT_Head();
         NT_Scope();
@@ -857,7 +857,8 @@
         if (match(token_scope) == false) // keyword 'Scope'
             raise_error(E_SYNTAX, "Expected 'Scope' keyword not found.");
 
-        add_inst("LABEL", i_null, "main", i_null, NULL, i_null, NULL);
+        add_inst("LABEL", i_null, "$main", i_null, NULL, i_null, NULL);
+        add_inst("CREATEFRAME", i_null, NULL, i_null, NULL, i_null, NULL);
 
         if (match(token_eol) == false)
             raise_error(E_SYNTAX, "EOL expected at this point.");
