@@ -237,8 +237,9 @@ bool param_list_cmp(Parameter_t *p1, Parameter_t *p2)
 {
     while (p1 != NULL && p2 != NULL)
     {
-        if (strcmp(p1->name, p2->name) != 0)
-            return false;
+        // staci porovnat typy
+        // if (strcmp(p1->name, p2->name) != 0)
+        //     return false;
         
         if (p1->type != p2->type)
             return false;
