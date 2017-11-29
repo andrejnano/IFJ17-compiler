@@ -421,7 +421,7 @@ bool get_next_token(FILE *file, Token_t *token)
     token->value.i = 0;
 
     // Cycle
-    int strEcsValue; // Escape character value
+    int strEcsValue = 0; // Escape character value
     int c = '\0'; // Character being read from the source
 
     // Reads source file
@@ -812,7 +812,7 @@ bool get_next_token(FILE *file, Token_t *token)
             if (c >= '0' && c <= '2')
             {
                 // Decimal escape sequence start
-                strEcsValue += 100 * (c - '0');
+                strEcsValue = 100 * (c - '0');
                 state = STRING_ESC_1N;
             }
             else if (c == 'n')
