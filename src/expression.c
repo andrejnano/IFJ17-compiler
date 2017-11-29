@@ -44,7 +44,7 @@ void generateName(char **var)
 	char *before = *var;
 	*var = (char *)malloc(sizeof(*var) + 10);
 	sprintf(*var,"$%s%u", before, count);
-        add_inst("DEFVAR", i_lf, *var ,i_null,NULL,i_null,NULL);
+        add_inst("DEFVAR", i_tf, *var ,i_null,NULL,i_null,NULL);
 	//fprintf(output_code, "defvar lf@%s\n", *var);
 	count++;
 }
@@ -100,10 +100,10 @@ char *convert(int inType, int outType, token_value val, char *frame)
 		}
 		generateName(&tmpVar);
 		if (!frame)
-			add_inst("FLOAT2R2EINT", i_lf, tmpVar, i_fl , d2s(val.d), i_null,NULL);
+			add_inst("FLOAT2R2EINT", i_tf, tmpVar, i_fl , d2s(val.d), i_null,NULL);
 			//fprintf(output_code, "float2r2eint lf@%s float@%g\n", tmpVar, val.d);
 		else
-			add_inst("FLOAT2R2EINT", i_lf, tmpVar, fr2in(frame), val.c, i_null,NULL);
+			add_inst("FLOAT2R2EINT", i_tf, tmpVar, fr2in(frame), val.c, i_null,NULL);
 			//fprintf(output_code, "float2r2eint lf@%s %s@%s\n", tmpVar, frame, val.c);
 	break;
 	case  token_double:
@@ -114,10 +114,10 @@ char *convert(int inType, int outType, token_value val, char *frame)
 		}
 		generateName(&tmpVar);
 		if (!frame)
-			add_inst("INT2FLOAT", i_lf, tmpVar, i_int , i2s(val.i), i_null,NULL);
+			add_inst("INT2FLOAT", i_tf, tmpVar, i_int , i2s(val.i), i_null,NULL);
 			//fprintf(output_code, "int2float lf@%s int@%d\n", tmpVar, val.i);
 		else
-			add_inst("FLOAT2R2EINT", i_lf, tmpVar, fr2in(frame) , val.c, i_null,NULL);
+			add_inst("FLOAT2R2EINT", i_tf, tmpVar, fr2in(frame) , val.c, i_null,NULL);
 			//fprintf(output_code, "int2float lf@%s %s@%s\n", tmpVar, frame, val.c);
 	break;
 	default:
@@ -175,9 +175,9 @@ void converts(int new_type, int *old_type, bool byPriority)
 			{
 				char *temp = "tmp";
 				generateName(&temp);
-					add_inst("POPS", i_lf, temp, i_null,NULL,i_null,NULL);
+					add_inst("POPS", i_tf, temp, i_null,NULL,i_null,NULL);
 					add_inst("INT2FLOATS", i_null,NULL,i_null,NULL,i_null,NULL);
-					add_inst("PUSHS", i_lf, temp, i_null,NULL,i_null,NULL);
+					add_inst("PUSHS", i_tf, temp, i_null,NULL,i_null,NULL);
 				*old_type = token_double;
 			}
 			else
@@ -231,9 +231,9 @@ void testCmpOps(int OP1, int *OP2)
 	{
 		char *temp1 = "tmp";
 		generateName(&temp1);
-		add_inst("POPS", i_lf, temp1, i_null,NULL,i_null,NULL);
+		add_inst("POPS", i_tf, temp1, i_null,NULL,i_null,NULL);
 		add_inst("INT2FLOATS", i_null,NULL,i_null,NULL,i_null,NULL);
-		add_inst("PUSHS", i_lf, temp1, i_null,NULL,i_null,NULL);
+		add_inst("PUSHS", i_tf, temp1, i_null,NULL,i_null,NULL);
 		*OP2 = token_double;
 	}
 	else
@@ -270,10 +270,10 @@ tStack execOp (tStack **s, int *numOp, int *new_type)
 			{
 				generateName(&tmpName1);
 				generateName(&tmpName2);
-				add_inst("POPS", i_lf, tmpName1, i_null,NULL,i_null,NULL);
-				add_inst("POPS", i_lf, tmpName2, i_null,NULL,i_null,NULL);
-				add_inst("CONCAT", i_lf, tmpName1, i_lf, tmpName2, i_lf, tmpName1);
-				add_inst("PUSHS", i_lf, tmpName1, i_null,NULL,i_null,NULL);
+				add_inst("POPS", i_tf, tmpName1, i_null,NULL,i_null,NULL);
+				add_inst("POPS", i_tf, tmpName2, i_null,NULL,i_null,NULL);
+				add_inst("CONCAT", i_tf, tmpName1, i_lf, tmpName2, i_lf, tmpName1);
+				add_inst("PUSHS", i_tf, tmpName1, i_null,NULL,i_null,NULL);
 				free(tmpName1);
 				free(tmpName2);
 				break;
@@ -330,13 +330,13 @@ tStack execOp (tStack **s, int *numOp, int *new_type)
 			testCmpOps(operation->lOperandType, new_type);
 			generateName(&tmpName1);
 			generateName(&tmpName2);
-			add_inst("POPS", i_lf, tmpName1, i_null,NULL,i_null,NULL);
-			add_inst("POPS", i_lf, tmpName2, i_null,NULL,i_null,NULL);
-			add_inst("PUSHS", i_lf, tmpName2, i_null,NULL,i_null,NULL);
-			add_inst("PUSHS", i_lf, tmpName1, i_null,NULL,i_null,NULL);
+			add_inst("POPS", i_tf, tmpName1, i_null,NULL,i_null,NULL);
+			add_inst("POPS", i_tf, tmpName2, i_null,NULL,i_null,NULL);
+			add_inst("PUSHS", i_tf, tmpName2, i_null,NULL,i_null,NULL);
+			add_inst("PUSHS", i_tf, tmpName1, i_null,NULL,i_null,NULL);
 			add_inst("LTS", i_null,NULL,i_null,NULL,i_null,NULL);
-			add_inst("PUSHS", i_lf, tmpName2, i_null,NULL,i_null,NULL);
-			add_inst("PUSHS", i_lf, tmpName1, i_null,NULL,i_null,NULL);
+			add_inst("PUSHS", i_tf, tmpName2, i_null,NULL,i_null,NULL);
+			add_inst("PUSHS", i_tf, tmpName1, i_null,NULL,i_null,NULL);
 			add_inst("EQS", i_null,NULL,i_null,NULL,i_null,NULL);
 			add_inst("ORS", i_null,NULL,i_null,NULL,i_null,NULL);
 			*new_type = token_boolean;
@@ -345,13 +345,13 @@ tStack execOp (tStack **s, int *numOp, int *new_type)
 			testCmpOps(operation->lOperandType, new_type);
 			generateName(&tmpName1);
 			generateName(&tmpName2);
-			add_inst("POPS", i_lf, tmpName1, i_null,NULL,i_null,NULL);
-			add_inst("POPS", i_lf, tmpName2, i_null,NULL,i_null,NULL);
-			add_inst("PUSHS", i_lf, tmpName2, i_null,NULL,i_null,NULL);
-			add_inst("PUSHS", i_lf, tmpName1, i_null,NULL,i_null,NULL);
+			add_inst("POPS", i_tf, tmpName1, i_null,NULL,i_null,NULL);
+			add_inst("POPS", i_tf, tmpName2, i_null,NULL,i_null,NULL);
+			add_inst("PUSHS", i_tf, tmpName2, i_null,NULL,i_null,NULL);
+			add_inst("PUSHS", i_tf, tmpName1, i_null,NULL,i_null,NULL);
 			add_inst("GTS", i_null,NULL,i_null,NULL,i_null,NULL);
-			add_inst("PUSHS", i_lf, tmpName2, i_null,NULL,i_null,NULL);
-			add_inst("PUSHS", i_lf, tmpName1, i_null,NULL,i_null,NULL);
+			add_inst("PUSHS", i_tf, tmpName2, i_null,NULL,i_null,NULL);
+			add_inst("PUSHS", i_tf, tmpName1, i_null,NULL,i_null,NULL);
 			add_inst("EQS", i_null,NULL,i_null,NULL,i_null,NULL);
 			add_inst("ORS", i_null,NULL,i_null,NULL,i_null,NULL);
 			*new_type = token_boolean;
@@ -360,13 +360,13 @@ tStack execOp (tStack **s, int *numOp, int *new_type)
 			testCmpOps(operation->lOperandType, new_type);
 			generateName(&tmpName1);
 			generateName(&tmpName2);
-			add_inst("POPS", i_lf, tmpName1, i_null,NULL,i_null,NULL);
-			add_inst("POPS", i_lf, tmpName2, i_null,NULL,i_null,NULL);
-			add_inst("PUSHS", i_lf, tmpName2, i_null,NULL,i_null,NULL);
-			add_inst("PUSHS", i_lf, tmpName1, i_null,NULL,i_null,NULL);
+			add_inst("POPS", i_tf, tmpName1, i_null,NULL,i_null,NULL);
+			add_inst("POPS", i_tf, tmpName2, i_null,NULL,i_null,NULL);
+			add_inst("PUSHS", i_tf, tmpName2, i_null,NULL,i_null,NULL);
+			add_inst("PUSHS", i_tf, tmpName1, i_null,NULL,i_null,NULL);
 			add_inst("LTS", i_null,NULL,i_null,NULL,i_null,NULL);
-			add_inst("PUSHS", i_lf, tmpName2, i_null,NULL,i_null,NULL);
-			add_inst("PUSHS", i_lf, tmpName1, i_null,NULL,i_null,NULL);
+			add_inst("PUSHS", i_tf, tmpName2, i_null,NULL,i_null,NULL);
+			add_inst("PUSHS", i_tf, tmpName1, i_null,NULL,i_null,NULL);
 			add_inst("GTS", i_null,NULL,i_null,NULL,i_null,NULL);
 			add_inst("ORS", i_null,NULL,i_null,NULL,i_null,NULL);
 			*new_type = token_boolean;
