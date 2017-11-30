@@ -394,7 +394,11 @@ tStack execOp (tStack **s, int *numOp, int *new_type)
 void NT_CallExpr(Metadata_t *funcMeta, char *funcName)
 {
 	get_next_token(source_code, active_token);
-	match(token_lbrace);
+	if (!match(token_lbrace))
+	{
+		raise_error(E_SEM_DEF, "Left bracket expected for function call");
+		return;
+	}
 	add_inst("CREATEFRAME", i_null,NULL,i_null,NULL,i_null,NULL);
 	//fprintf(output_code, "createframe\n");
 	Parameter_t *arg = funcMeta->parameters;
