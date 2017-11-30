@@ -997,7 +997,6 @@
                     if (stl_search(functions, new_variable_name))
                     {
                         raise_error(E_SEM_DEF, "Definition of variable with name already used for function");
-                        return NULL;
                     }
                     if (stl_insert_top(variables, new_variable_name, &new_variable_metadata))
                     {
