@@ -442,7 +442,7 @@
                         else
                         {
                             raise_error(E_SYNTAX, "Expected datatype after a parameter.");
-                            match(token_blank); // @TODO len sa posunut, zaruceny fail sice,..
+                            match(token_blank);
                         }
 
                         if (active_token->type == token_comma)
@@ -516,12 +516,15 @@
 
                     if (!definition_error)
                     {
+                        function_metadata->is_defined = true;
+                        
                         // -----------------
                         // NEW LOCAL SCOPE
                         // -----------------
 
                         stl_push(&variables);
-
+                        
+                        // create local variables from parameters
                         while (function_parameters != NULL)
                         {
                             Metadata_t var_from_parameter;
@@ -995,7 +998,7 @@
                     if (stl_search(functions, new_variable_name))
                     {
                         raise_error(E_SEM_DEF, "Definition of variable with name already used for function");
-                        return;
+                        return NULL;
                     }
                     if (stl_insert_top(variables, new_variable_name, &new_variable_metadata))
                     {
