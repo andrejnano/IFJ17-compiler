@@ -403,7 +403,7 @@ void NT_CallExpr(Metadata_t *funcMeta, char *funcName)
 	{
 		if (!arg)	// no bracket but still expected argument
 		{
-			raise_error(E_SEM_DEF, "Too many arguments for function\n");
+			raise_error(E_SEM_TYPE, "Too many arguments for function\n");
 			return;
 		}
 		NT_Expr(arg->type);

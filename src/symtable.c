@@ -280,7 +280,7 @@ bool param_list_append(Parameter_t **parameter_list, Parameter_t *new_parameter)
         // if there are 2 same parameters
         if ( strcmp(current_parameter->name, tmp->name) == 0 )
         {
-            raise_error(E_SEM_OTHER, "Same named parameters in function declaration\n");
+            raise_error(E_SEM_DEF, "Same named parameters in function declaration\n");
             return false;
         }
 

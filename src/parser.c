@@ -68,11 +68,10 @@
         scanner_init();
 
         // first token reading
-        if (get_next_token(source_code, active_token) == false)
+        if (get_next_token(source_code, active_token) == false || active_token->type == token_eof)
         {
             //free(active_token);
             raise_error(E_SYNTAX, "EOF at the beginning of file.");
-            return;
         }
         else
         {
@@ -1100,7 +1099,7 @@
             }
             else
             {
-                raise_error(E_SEM_OTHER, "This variable doesn't exist.");
+                raise_error(E_SEM_DEF, "This variable doesn't exist.");
             }
         }
 
@@ -1289,7 +1288,7 @@
             }
             else
             {
-                raise_error(E_SEM_OTHER, "Variable '",active_token->value.c,"' is not declared.");
+                raise_error(E_SEM_DEF, "Variable '",active_token->value.c,"' is not declared.");
             }
         }
 
@@ -1346,3 +1345,5 @@ void next_tmp_name(char *spec)
   sprintf(tmp_name, "%s$%d", spec, tmp_cnt);
   tmp_cnt++;
 }
+
+/*****************************************************************************/
