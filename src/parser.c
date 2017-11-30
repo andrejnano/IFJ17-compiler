@@ -531,7 +531,7 @@
                     //INST
                     add_inst("LABEL", i_null, function_name, i_null, NULL, i_null, NULL);
                     add_inst("DEFVAR", i_lf, "%retval", i_null,NULL,i_null,NULL);
-        
+                    add_inst("CREATEFRAME", i_null, NULL, i_null, NULL, i_null, NULL);
 
                     if (!definition_error)
                     {   
@@ -715,7 +715,8 @@
                 //INST
                 add_inst("LABEL", i_null, new_function_name, i_null, NULL, i_null, NULL);
                 add_inst("DEFVAR", i_lf, "%retval", i_null, NULL, i_null, NULL);
-
+                add_inst("CREATEFRAME", i_null, NULL, i_null, NULL, i_null, NULL);
+                
                 // FINALLY add to symtable if there are no error during declaration
                 if (!definition_error) //&& !compiler_error)
                 {
