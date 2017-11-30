@@ -72,6 +72,7 @@
         {
             //free(active_token);
             raise_error(E_SYNTAX, "EOF at the beginning of file.");
+            return;
         }
         else
         {
@@ -103,13 +104,15 @@
 
     void NT_Program()
     {
+        if (active_token->type == token_eof)
+            return;
         tmp_cnt = 0;//inicialization of temporary names generator
         tmp_name = malloc(sizeof(char)*16);
 
         add_inst(".IFJcode17", i_null, NULL, i_null, NULL, i_null, NULL);
         add_inst("CREATEFRAME", i_null,NULL,i_null,NULL,i_null,NULL);
         add_inst("PUSHFRAME", i_null,NULL,i_null,NULL,i_null,NULL);   
-        add_inst("JUMP", i_null, "main", i_null, NULL, i_null, NULL);
+        add_inst("JUMP", i_null, "$main", i_null, NULL, i_null, NULL);
 
         NT_Head();
         NT_Scope();
@@ -128,6 +131,8 @@
 
     void NT_Head()
     {
+        if (active_token->type == token_eof)
+            return;
 
         if (active_token->type == token_declare)
         {
@@ -162,6 +167,9 @@
     
     void NT_FunctionDec()
     {
+        function_return_datatype = 0;
+        if (active_token->type == token_eof)
+            return;
 
 		match(token_declare);
         
@@ -346,6 +354,9 @@
     
     void NT_FunctionDef()
     {
+        function_return_datatype = 0;
+        if (active_token->type == token_eof)
+            return;
         /*
             1) Function was already defined
             2) Function was already declared
@@ -552,7 +563,8 @@
 						  param_list_dispose(function_parameters);
 
                     //INST
-                          add_inst("LABEL", i_end, function_name, i_null, NULL, i_null, NULL);
+                          //add_inst("LABEL", i_end, function_name, i_null, NULL, i_null, NULL);
+                          //add_inst("POPFRAME", i_null, NULL, i_null, NULL, i_null, NULL);
                           add_inst("RETURN", i_null, NULL, i_null, NULL, i_null, NULL);
 
                           return; // !IMPORTANT
@@ -713,8 +725,8 @@
 					param_list_dispose(function_parameters);
 
                     //INST
-                    add_inst("LABEL", i_end, new_function_name, i_null, NULL, i_null, NULL);
-                    add_inst("POPFRAME", i_null, NULL, i_null, NULL, i_null, NULL);
+                    //add_inst("LABEL", i_end, new_function_name, i_null, NULL, i_null, NULL);
+                    //add_inst("POPFRAME", i_null, NULL, i_null, NULL, i_null, NULL);
                     add_inst("RETURN", i_null, NULL, i_null, NULL, i_null, NULL);
 
                     return;
@@ -777,6 +789,8 @@
 
     void NT_ParamList()
     {
+        if (active_token->type == token_eof)
+            return;
         if (active_token->type == token_identifier)
         {
             NT_Param();
@@ -791,6 +805,8 @@
 
     void NT_NextParam()
     {
+        if (active_token->type == token_eof)
+            return;
         if (active_token->type == token_comma)
         {
             match(token_comma);
@@ -805,6 +821,8 @@
 
     void NT_Param()
     {
+        if (active_token->type == token_eof)
+            return;
         // @TODO >>>>>>>>
         // generate instruction to push identifier to stack or something..
         if (match(token_identifier) == false)
@@ -828,6 +846,9 @@
 
     void NT_Scope()
     {   
+        function_return_datatype = 0;
+        if (active_token->type == token_eof)
+            return;
 
         while(active_token->type == token_eol)
         {
@@ -837,7 +858,8 @@
         if (match(token_scope) == false) // keyword 'Scope'
             raise_error(E_SYNTAX, "Expected 'Scope' keyword not found.");
 
-        add_inst("LABEL", i_null, "main", i_null, NULL, i_null, NULL);
+        add_inst("LABEL", i_null, "$main", i_null, NULL, i_null, NULL);
+        add_inst("CREATEFRAME", i_null, NULL, i_null, NULL, i_null, NULL);
 
         if (match(token_eol) == false)
             raise_error(E_SYNTAX, "EOL expected at this point.");
@@ -870,6 +892,8 @@
 
     void NT_CompoundStmt()
     {   
+        if (active_token->type == token_eof)
+            return;
         
         switch (active_token->type)
         {
@@ -965,7 +989,11 @@
                     //add_inst("POPS", i_lf, new_variable_name, i_null, NULL, i_null, NULL);
 
                     match(active_token->type);
-
+                    if (stl_search(functions, new_variable_name))
+                    {
+                        raise_error(E_SEM_DEF, "Definition of variable with name already used for function");
+                        return;
+                    }
                     if (stl_insert_top(variables, new_variable_name, &new_variable_metadata))
                     {
                         return new_variable_name;
@@ -1008,6 +1036,8 @@
 
     void NT_VarDef()
     {
+        if (active_token->type == token_eof)
+            return;
         // gets the name of declared variable if everything is OK
         char* variable_name = NT_VarDec();
         Metadata_t *var_meta = stl_search(variables, variable_name);
@@ -1043,6 +1073,8 @@
 
     void NT_AssignStmt()
     {
+        if (active_token->type == token_eof)
+            return;
         // @TODO >>>>>>>>
         // Generate instruction, declare inside symtable.. etc.
 
@@ -1084,6 +1116,8 @@
 
     void NT_IfStmt()
     {
+        if (active_token->type == token_eof)
+            return;
 
         if (match(token_if) == false)
             raise_error(E_SYNTAX, "Keyword 'If' expected.");
@@ -1160,6 +1194,8 @@
 
     void NT_WhileStmt()
     {
+        if (active_token->type == token_eof)
+            return;
         if (match(token_do) == false)
             raise_error(E_SYNTAX, "Keyword 'Do' expected.");
 
@@ -1212,11 +1248,18 @@
 
         void NT_ReturnStmt()
         {
+            if (active_token->type == token_eof)
+                return;
             if (match(token_return) == false)
                 raise_error(E_SYNTAX, "Keyword 'Return' expected.");
 
             // function return datatype gets updated each time 
             // new function is added to symtable
+            if (!function_return_datatype)
+            {
+                raise_error(E_SYNTAX,"callinig return outside of function");
+                return;
+            }
             NT_Expr(function_return_datatype);
             // generate instructions
             add_inst("POPS", i_lf, "%retval", i_null,NULL,i_null,NULL);
@@ -1229,6 +1272,8 @@
 
     void NT_InputStmt()
     {
+        if (active_token->type == token_eof)
+            return;
         if (match(token_input) == false)
             raise_error(E_SYNTAX, "Keyword 'source_code' expected.");
 
@@ -1239,7 +1284,7 @@
             
             if (variable_metadata && variable_metadata->is_declared)
             {
-
+                add_inst("WRITE", i_str, "?\\032", i_null, NULL, i_null, NULL);
                 add_inst("READ", i_lf, active_token->value.c, i_null, i2type(variable_metadata->type), i_null, NULL);
             }
             else
@@ -1256,6 +1301,8 @@
 
     void NT_PrintStmt()
     {
+        if (active_token->type == token_eof)
+            return;
         if (match(token_print) == false)
             raise_error(E_SYNTAX, "Keyword 'Print' expected.");
         
@@ -1272,8 +1319,10 @@
 
     void NT_ExprList()
     {
+        if (active_token->type == token_eof)
+            return;
         
-        while(active_token->type != token_eol || active_token->type != token_eof)
+        while((active_token->type != token_eol) && (active_token->type != token_eof))
         {
             NT_Expr(0);
             
@@ -1288,94 +1337,6 @@
 
         // epsilon rule otherwise
     }
-
-
-// /*****************************************************************************/
-
-//     void NT_TermList()
-//     {
-//         // if the term list is empty end right brace is the next token..
-//         if (active_token->type == token_rbrace) 
-//             return;
-//         switch (active_token->type)
-//         {
-//             case token_integer: 
-//             {
-//                 // do something
-//                 match(token_integer);
-//                 break;
-//             }
-//             case token_double:
-//             {
-//                 // do something
-//                 match(token_double);
-//                 break;
-//             }
-//             case token_string:
-//             {
-//                 // do something
-//                 match(token_string);
-//                 break;
-//             }
-//             case token_identifier:
-//             {
-//                 // do something
-//                 match(token_identifier);
-//                 break;
-//             }
-
-//             default: 
-//             {
-//                 raise_error(E_SYNTAX, "Unexpected term inside the term list.");
-//                 active_token = get_token();
-//                 return;
-//             }
-//         }
-
-//         if (active_token->type == token_comma)
-//         {
-//             match(token_comma);
-//             NT_TermList();
-//         }
-//     }
-
-
-// /*****************************************************************************/
-
-//     void NT_CallExpr()
-//     {
-
-//         if (active_token->type == token_identifier)
-//         {
-//             // do something
-//             match(token_identifier);
-//         }
-
-//         if (match(token_lbrace) == false)
-//             raise_error(E_SYNTAX, "Left brace '(' expected.");
-
-//         //INST
-//         add_inst("CREATEFRAME", i_null,NULL,i_null,NULL,i_null,NULL);
-
-//         NT_TermList();
-
-//         if (match(token_rbrace) == false)
-//             raise_error(E_SYNTAX, "Right brace ')' expected.");
-
-//         //INST
-//         add_inst("CALL", i_null, function name , i_null,NULL,i_null,NULL);
-        
-//     }
-
-
-// /*****************************************************************************/
-
-/*    void NT_Expr()
-    {
-       printf("\n**MAGIC**\n");
-       match(token_val_integer);
-       printf("was here");
-    }*/
 
 /**
  * generates new name in tmp_name

@@ -127,7 +127,7 @@ bool dStrOptimize(string_t *s)
 static string_t value; // Token value
 static unsigned int line; // Line counter
 static bool end_of_file = true; // Identifies end of file
-static bool new_line_start = true; // Identify empty line
+static bool empty_new_line = true; // Identify empty line
 
 /**
  * @brief Initialize scanner
@@ -362,6 +362,7 @@ typedef enum {
     ID,
     NUMBER,
     DECIMAL,
+    DECIMAL_DOT,
     DOUBLE_EXP,
     DOUBLE_EXP_SIGN,
     DOUBLE,
@@ -420,7 +421,7 @@ bool get_next_token(FILE *file, Token_t *token)
     token->value.i = 0;
 
     // Cycle
-    int strEcsValue; // Escape character value
+    int strEcsValue = 0; // Escape character value
     int c = '\0'; // Character being read from the source
 
     // Reads source file
@@ -460,8 +461,8 @@ bool get_next_token(FILE *file, Token_t *token)
         {
         case EMPTY:
 
-            // Update empty line check - line is not empty
-            if (c != '\n' && c != 13 && c != '\'') new_line_start = false;
+            // Update empty line check - line is not empty [\n] ['] [/]
+            if (c!='\n' && c!=13 && c!='\'' && c!='/') empty_new_line = false;
 
             // Identifier beginning
             if ((c >= 'a' && c <= 'z') || c == '_')
@@ -496,17 +497,16 @@ bool get_next_token(FILE *file, Token_t *token)
                 case ';': token->type = token_semicolon; return true;
                 case '\n': line++;
                     // Return only one EOL per group of EOL's
-                    if (!new_line_start)
+                    if (!empty_new_line)
                     {
-                        new_line_start = true;
+                        empty_new_line = true;
                         token->type = token_eol;
                         return true;
                     }
-                    // Skip repeating empty line
                 case 13: continue; // Windows CRLF compatibility
                 default:
                     // Unknown character
-                    raise_error(E_LEX, "Unknown character @line:%u", line);
+                    raise_error(E_LEX, "Unknown character 0x%02x", c);
                     return_eof_false(token);
                 }
             }
@@ -529,6 +529,7 @@ bool get_next_token(FILE *file, Token_t *token)
             else
             {
                 // Not comment -> return division token
+                empty_new_line = false;
                 ungetc(c, file);
                 token->type = token_op_div;
                 return true;
@@ -557,15 +558,11 @@ bool get_next_token(FILE *file, Token_t *token)
                 // Multi line might still end, keeps state
                 continue;
             }
-            else if (c == '\n')
-            {
-                // Counting source code lines
-                line++;
-            }
             else
             {
                 // Continues to be multi line comment
                 state = COMMENT_MULTI;
+                if (c == '\n') line++;
             }
             break;
         case ID:
@@ -620,7 +617,7 @@ bool get_next_token(FILE *file, Token_t *token)
             {
                 // Becomes decimal number
                 if (!dStrAddChar(&value, c)) return_eof_false(token);
-                state = DECIMAL;
+                state = DECIMAL_DOT;
             }
             else if (c == 'e')
             {
@@ -660,6 +657,21 @@ bool get_next_token(FILE *file, Token_t *token)
                 return true;
             }
             break;
+        case DECIMAL_DOT:
+            if (c >= '0' && c <= '9')
+            {
+                // Decimal continues correctly
+                if (!dStrAddChar(&value, c)) return_eof_false(token);
+                state = DECIMAL;
+            }
+            else
+            {
+                // Bad double format (number.)
+                ungetc(c, file);
+                raise_error(E_LEX, "Wrong double format, got 0x%02x", c);
+                return_eof_false(token);
+            }
+            break;            
         case DOUBLE_EXP:
             if (c >= '0' && c <= '9')
             {
@@ -675,13 +687,10 @@ bool get_next_token(FILE *file, Token_t *token)
             }
             else
             {
-                // Returns double token (broken double 123e) appends '0'
+                // Bad double format (numE)
                 ungetc(c, file);
-                if (!dStrAddChar(&value, '0')) return_eof_false(token);
-                double val = (double) strtod(value.str, NULL);
-                token->type = token_val_double;
-                token->value.d = val;
-                return true;
+                raise_error(E_LEX, "Wrong double format, got 0x%02x", c);
+                return_eof_false(token);
             }
             break;
         case DOUBLE_EXP_SIGN:
@@ -693,13 +702,10 @@ bool get_next_token(FILE *file, Token_t *token)
             }
             else
             {
-                // Returns double token (broken double 123e+) appends '0'
+                // Bad double format (numberEsign)
                 ungetc(c, file);
-                if (!dStrAddChar(&value, '0')) return_eof_false(token);
-                double val = (double) strtod(value.str, NULL);
-                token->type = token_val_double;
-                token->value.d = val;
-                return true;
+                raise_error(E_LEX, "Wrong double format, got 0x%02x", c);
+                return_eof_false(token);
             }
             break;
         case DOUBLE:
@@ -728,7 +734,7 @@ bool get_next_token(FILE *file, Token_t *token)
             {
                 // Returns unknown token (!)
                 ungetc(c, file);
-                raise_error(E_LEX, "Unknown character @line:%u", line);
+                raise_error(E_LEX, "Unknown character 0x%02x", c);
                 return_eof_false(token);
             }
             break;
@@ -798,7 +804,7 @@ bool get_next_token(FILE *file, Token_t *token)
             else
             {
                 // Wrong character string
-                raise_error(E_LEX, "String contains wrong character @line:%u", line);
+                raise_error(E_LEX, "String contains bad character, 0x%02x is not allowed", c);
                 return_eof_false(token);
             }
             break;
@@ -806,7 +812,7 @@ bool get_next_token(FILE *file, Token_t *token)
             if (c >= '0' && c <= '2')
             {
                 // Decimal escape sequence start
-                strEcsValue += 100 * (c - '0');
+                strEcsValue = 100 * (c - '0');
                 state = STRING_ESC_1N;
             }
             else if (c == 'n')
@@ -844,7 +850,7 @@ bool get_next_token(FILE *file, Token_t *token)
             else
             {
                 // Wrong escape sequence string
-                raise_error(E_LEX, "Escape character with no meaning @line:%u", line);
+                raise_error(E_LEX, "Escape character with no meaning, got 0x%02x", c);
                 return_eof_false(token);
             }
             break;
@@ -858,7 +864,7 @@ bool get_next_token(FILE *file, Token_t *token)
             else
             {
                 // Wrong escape sequence string
-                raise_error(E_LEX, "Terminated escape sequence @line:%u", line);
+                raise_error(E_LEX, "Terminated escape sequence, expected number, got 0x%02x", c);
                 return_eof_false(token);
             }
             break;
@@ -871,7 +877,7 @@ bool get_next_token(FILE *file, Token_t *token)
                 // Check invalidity of the character
                 if (strEcsValue < 1 || strEcsValue > 255)
                 {
-                    raise_error(E_LEX, "Escape sequence out of bounds @line:%u", line);
+                    raise_error(E_LEX, "Escape sequence out of bounds for %03d", strEcsValue);
                     return_eof_false(token);
                 }
 
@@ -915,7 +921,7 @@ bool get_next_token(FILE *file, Token_t *token)
             else
             {
                 // Wrong escape sequence string
-                raise_error(E_LEX, "Terminated escape sequence @line:%u", line);
+                raise_error(E_LEX, "Terminated escape sequence, expected number, got 0x%02x", c);
                 return_eof_false(token);
             }
             break;
@@ -955,7 +961,7 @@ bool get_next_token(FILE *file, Token_t *token)
     token->type = token_eof;
 
     // Check state at the end
-    if (!(state == COMMENT_MULTI || state == EMPTY))
+    if (state != EMPTY)
     {
         // Unexpected end of file
         raise_error(E_LEX, "End of file unexpected.");

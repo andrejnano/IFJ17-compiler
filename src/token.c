@@ -357,19 +357,19 @@ const char *debug_token_name(Token_t *token)
     }
     case token_val_integer:
     {
-        char *buffer = (char *)malloc(sizeof(char) * 20);
+        char *buffer = (char *)malloc(sizeof(char) * 100);
         sprintf(buffer, "token_val_integer >> " ANSI_COLOR_BLUE "'%d'" ANSI_COLOR_RESET, token->value.i);
         return buffer;
     }
     case token_val_double:
     {
-        char *buffer = (char *)malloc(sizeof(char) * 20);
+        char *buffer = (char *)malloc(sizeof(char) * 100);
         sprintf(buffer, "token_val_double >> " ANSI_COLOR_BLUE "'%f'" ANSI_COLOR_RESET, token->value.d);
         return buffer;
     }
     case token_val_string:
     {
-        char *buffer = (char *)malloc(sizeof(char) * 20);
+        char *buffer = (char *)malloc(sizeof(char) * 100);
         sprintf(buffer, "token_val_string >> " ANSI_COLOR_BLUE "'%s'" ANSI_COLOR_RESET, token->value.c);
         return buffer;
     }
@@ -486,6 +486,9 @@ const char *debug_token_name(Token_t *token)
     case token_eof:
         return "token_eof";
     }
+
+    // Not found
+    return "token_not_found";
 }
 
 bool istype(int type)
