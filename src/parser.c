@@ -1273,7 +1273,7 @@
     void NT_ExprList()
     {
         
-        while(active_token->type != token_eol)
+        while(active_token->type != token_eol || active_token->type != token_eof)
         {
             NT_Expr(0);
             
