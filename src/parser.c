@@ -1134,9 +1134,9 @@
         char* else_label = malloc(sizeof(char)*16);
         strcpy(else_label, tmp_name);
         next_tmp_name("pop");
-        add_inst("DEFVAR", i_lf, tmp_name, i_null,NULL,i_null,NULL);       
-        add_inst("POPS", i_lf, tmp_name, i_null,NULL,i_null,NULL);
-        add_inst("JUMPIFEQ", i_null, else_label, i_bool, "false", i_lf, tmp_name);
+        add_inst("DEFVAR", i_tf, tmp_name, i_null,NULL,i_null,NULL);       
+        add_inst("POPS", i_tf, tmp_name, i_null,NULL,i_null,NULL);
+        add_inst("JUMPIFEQ", i_null, else_label, i_bool, "false", i_tf, tmp_name);
 
         if (match(token_then) == false)
             raise_error(E_SYNTAX, "Keyword 'Then' expected.");
@@ -1211,13 +1211,13 @@
         char* while_label = malloc(sizeof(char)*16);
         strcpy(while_label, tmp_name);
         next_tmp_name("pop");
-        add_inst("DEFVAR", i_lf, tmp_name, i_null,NULL,i_null,NULL);
         add_inst("LABEL", i_null, while_label, i_null,NULL,i_null,NULL);
+        add_inst("DEFVAR", i_tf, tmp_name, i_null,NULL,i_null,NULL);
 
         NT_Expr(token_boolean);
       
-        add_inst("POPS", i_lf, tmp_name, i_null,NULL,i_null,NULL);
-        add_inst("JUMPIFEQ", i_end, while_label, i_bool, "false", i_lf, tmp_name);      
+        add_inst("POPS", i_tf, tmp_name, i_null,NULL,i_null,NULL);
+        add_inst("JUMPIFEQ", i_end, while_label, i_bool, "false", i_tf, tmp_name);      
 
         if (match(token_eol) == false)
             raise_error(E_SYNTAX, "EOL expected.");
@@ -1236,7 +1236,7 @@
         // ------------------
         // END OF LOCAL SCOPE
         // ------------------
-
+        add_inst("CREATEFRAME", i_null, NULL, i_null,NULL,i_null,NULL);
         add_inst("JUMP", i_null, while_label, i_null,NULL,i_null,NULL);
 
         if (match(token_loop) == false)
@@ -1331,9 +1331,9 @@
             NT_Expr(0);
             
              next_tmp_name("pop"); //creates new variable name in tmp_cnt
-             add_inst("DEFVAR", i_lf , tmp_name , i_null,NULL,i_null,NULL);
-             add_inst("POPS", i_lf , tmp_name , i_null,NULL,i_null,NULL);
-             add_inst("WRITE", i_lf , tmp_name , i_null,NULL,i_null,NULL);
+             add_inst("DEFVAR", i_tf , tmp_name , i_null,NULL,i_null,NULL);
+             add_inst("POPS", i_tf , tmp_name , i_null,NULL,i_null,NULL);
+             add_inst("WRITE", i_tf , tmp_name , i_null,NULL,i_null,NULL);
 
             if (match(token_semicolon) == false)
                 raise_error(E_SYNTAX, "Semicolon ';' is missing. ");
