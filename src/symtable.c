@@ -331,6 +331,7 @@ SymbolTable_t *param_to_var(char *func_name, SymbolTable_t *functions)
     return local_vars;
 }
 
+
 /*
  * \brief Recursive function for cleaning up tree
  * \param top Top of the tree to be cleaned
@@ -362,6 +363,43 @@ void tree_dispose(Item_t *current_item)
         param_list_dispose(current_item->metadata->parameters);
         free(current_item->metadata);
         free(current_item);
+    }
+}
+
+
+/**
+ * \brief Checks if all functions in symtable were defined
+ * \param current_item the item on which the check will 
+ *  recursively start on
+ */
+void items_definition_check(Item_t *current_item)
+{
+
+    if (current_item == NULL)
+    {
+        return;
+    }
+
+    Metadata_t *current_metadata = current_item->metadata;
+
+    if (current_item->left_ptr == NULL && current_item->right_ptr == NULL)
+    {
+        if (current_metadata->is_defined == false)
+        {
+            raise_error(E_SEM_DEF, "Function was declared, but not defined.");
+        }
+    }
+    else
+    {
+        if (current_item->left_ptr)
+            items_definition_check(current_item->left_ptr);
+        if (current_item->right_ptr)
+            items_definition_check(current_item->right_ptr);
+
+        if (current_metadata->is_defined == false)
+        {
+            raise_error(E_SEM_DEF, "Function was declared, but not defined.");
+        }
     }
 }
 

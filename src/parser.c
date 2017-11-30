@@ -114,6 +114,10 @@
         add_inst("JUMP", i_null, "$main", i_null, NULL, i_null, NULL);
 
         NT_Head();
+
+        // check if all functions were defined and not only declared
+        items_definition_check(functions->top);
+
         NT_Scope();
 
         if (match(token_eol) == false)
