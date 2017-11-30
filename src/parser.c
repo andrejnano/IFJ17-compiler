@@ -263,6 +263,11 @@
                         match(token_comma);
                        
                         // append current parameter and continue with next one
+                        if (stl_search(functions, new_parameter.name) || !strcmp(new_function_name, new_parameter.name))
+                        {
+                            raise_error(E_SEM_DEF, "Use of function identifier as variable");
+                            return;
+                        }
                         if ( param_list_append(&function_parameters, &new_parameter) )
                             continue;
                         else
@@ -273,7 +278,12 @@
                     }
                     else if (active_token->type == token_rbrace)
                     {
-                        if(param_list_append(&function_parameters, &new_parameter))
+                        if (stl_search(functions, new_parameter.name))
+                        {
+                            raise_error(E_SEM_DEF, "Use of function identifier as variable");
+                            return;
+                        }
+                        if(param_list_append(&function_parameters, &new_parameter) || !strcmp(new_function_name, new_parameter.name))
                             break;
                         else
                         {
@@ -444,15 +454,24 @@
                             raise_error(E_SYNTAX, "Expected datatype after a parameter.");
                             match(token_blank);
                         }
-
                         if (active_token->type == token_comma)
                         {
+                            if (stl_search(functions, new_parameter.name))
+                            {
+                                raise_error(E_SEM_DEF, "Use of function identifier as variable");
+                                return;
+                            }
                             match(token_comma);
                             if (param_list_append(&function_parameters, &new_parameter))
                                 continue;
                         }
                         else if (active_token->type == token_rbrace)
                         {
+                            if (stl_search(functions, new_parameter.name))
+                            {
+                                raise_error(E_SEM_DEF, "Use of function identifier as variable");
+                                return;
+                            }
                             param_list_append(&function_parameters, &new_parameter);
                             break;
                         }
@@ -632,12 +651,22 @@
 
                     if (active_token->type == token_comma)
                     {
+                        if (stl_search(functions, new_parameter.name))
+                        {
+                            raise_error(E_SEM_DEF, "Use of function identifier as variable");
+                            return;
+                        }
                         match(token_comma);
                         if (param_list_append(&function_parameters, &new_parameter))
                             continue;
                     }
                     else if (active_token->type == token_rbrace)
                     {
+                        if (stl_search(functions, new_parameter.name))
+                        {
+                            raise_error(E_SEM_DEF, "Use of function identifier as variable");
+                            return;
+                        }
                         param_list_append(&function_parameters, &new_parameter);
                         break;
                     }
