@@ -515,9 +515,10 @@
         
 
                     if (!definition_error)
-                    {
+                    {   
+                        // set function as defined
                         function_metadata->is_defined = true;
-                        
+
                         // -----------------
                         // NEW LOCAL SCOPE
                         // -----------------
@@ -686,23 +687,31 @@
                 add_inst("LABEL", i_null, new_function_name, i_null, NULL, i_null, NULL);
                 add_inst("DEFVAR", i_lf, "%retval", i_null, NULL, i_null, NULL);
 
-                // -----------------
-                // NEW LOCAL SCOPE
-                // -----------------
-
-                stl_push(&variables);
-
-                while (function_parameters != NULL)
+                // FINALLY add to symtable if there are no error during declaration
+                if (!definition_error) //&& !compiler_error)
                 {
-                    Metadata_t var_from_parameter;
-                    var_from_parameter.parameters = NULL;
-                    var_from_parameter.is_declared = true;
-                    var_from_parameter.is_defined = false;
-                    var_from_parameter.type = function_parameters->type;
+                    stl_insert_top(functions, new_function_name, &new_function_metadata);
+                    free(new_function_name);
+                }
+                    // -----------------
+                    // NEW LOCAL SCOPE
+                    // -----------------
 
-                    stl_insert_top(variables, function_parameters->name, &var_from_parameter);
-                    function_parameters = function_parameters->next;
+                    stl_push(&variables);
+
+                    while (function_parameters != NULL)
+                    {
+                        Metadata_t var_from_parameter;
+                        var_from_parameter.parameters = NULL;
+                        var_from_parameter.is_declared = true;
+                        var_from_parameter.is_defined = false;
+                        var_from_parameter.type = function_parameters->type;
+
+                        stl_insert_top(variables, function_parameters->name, &var_from_parameter);
+                        function_parameters = function_parameters->next;
                     }
+
+                    param_list_dispose(function_parameters);
 
                     NT_CompoundStmt();
 
@@ -722,22 +731,12 @@
                 if (match(token_function) == false)
                     raise_error(E_SYNTAX, "'Function' keyword expected at this point.");
 
+                //INST
+                //add_inst("LABEL", i_end, new_function_name, i_null, NULL, i_null, NULL);
+                //add_inst("POPFRAME", i_null, NULL, i_null, NULL, i_null, NULL);
+                add_inst("RETURN", i_null, NULL, i_null, NULL, i_null, NULL);
 
-                // FINALLY add to symtable if there are no error during declaration
-                if (!definition_error) //&& !compiler_error)
-                {
-                    stl_insert_top(functions, new_function_name, &new_function_metadata);
-					free(new_function_name);
-					param_list_dispose(function_parameters);
-
-                    //INST
-                    //add_inst("LABEL", i_end, new_function_name, i_null, NULL, i_null, NULL);
-                    //add_inst("POPFRAME", i_null, NULL, i_null, NULL, i_null, NULL);
-                    add_inst("RETURN", i_null, NULL, i_null, NULL, i_null, NULL);
-
-                    return;
-				}
-				param_list_dispose(function_parameters);
+                return;
             }
         } // end of IF identifier
         
