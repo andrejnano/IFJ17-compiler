@@ -259,6 +259,7 @@ tStack execOp (tStack **s, int *numOp, int *new_type)
 	{
 		tmp.priority = STACK_STOPPER;
 		tmp.type = STACK_STOPPER;
+		(*numOp)--;
 		return tmp;
 	}
 	char *tmpName1 = "tmpName";
@@ -272,7 +273,7 @@ tStack execOp (tStack **s, int *numOp, int *new_type)
 				generateName(&tmpName2);
 				add_inst("POPS", i_tf, tmpName1, i_null,NULL,i_null,NULL);
 				add_inst("POPS", i_tf, tmpName2, i_null,NULL,i_null,NULL);
-				add_inst("CONCAT", i_tf, tmpName1, i_lf, tmpName2, i_lf, tmpName1);
+				add_inst("CONCAT", i_tf, tmpName1, i_tf, tmpName2, i_tf, tmpName1);
 				add_inst("PUSHS", i_tf, tmpName1, i_null,NULL,i_null,NULL);
 				free(tmpName1);
 				free(tmpName2);
@@ -583,9 +584,13 @@ void NT_Expr(int type)
 			while (s && s->priority < STACK_STOPPER)
 			{
 				if (execOp(&s, &numOp, &new_type).priority == STACK_STOPPER)
+				{
+					if (!numOp)
+						raise_error(SYNTAX_ERROR, "Wrong expression syntax\n");
 					return;
+				}
 			}
-			if (numOp != 1)
+			if (numOp != 1 || s->priority != STACK_STOPPER)
 			{
 				raise_error(SYNTAX_ERROR, "Wrong expression syntax\n");
 				return;
@@ -603,9 +608,13 @@ void NT_Expr(int type)
 	while (s && s->priority < STACK_STOPPER)
 	{
 		if (execOp(&s, &numOp, &new_type).priority == STACK_STOPPER)
+		{
+			if (!numOp)
+				raise_error(SYNTAX_ERROR, "Wrong expression syntax\n");
 			return;
+		}
 	}
-	if (numOp != 1)
+	if (numOp != 1 || s->priority != STACK_STOPPER)
 	{
 		raise_error(SYNTAX_ERROR, "Wrong expression syntax\n");
 		return;
