@@ -1213,7 +1213,8 @@
         next_tmp_name("pop");
         add_inst("DEFVAR", i_tf, tmp_name, i_null,NULL,i_null,NULL);
         add_inst("LABEL", i_null, while_label, i_null,NULL,i_null,NULL);
-
+        add_inst("CREATEFRAME", i_null, NULL, i_null, NULL, i_null, NULL);
+        
         NT_Expr(token_boolean);
       
         add_inst("POPS", i_tf, tmp_name, i_null,NULL,i_null,NULL);
