@@ -4,17 +4,20 @@
 # xnanoa00 Andrej Nano
 # xsvand06 Švanda Jan
 
-from subprocess import *
-from testc import *
-from tests import *
-import platform
+from subprocess import CompletedProcess, run, PIPE, TimeoutExpired
+from platform import system
+from os import path
+from testc import TestList
+from tests import loadTests
 
 # Default compiler and interpreter for linux
 compiler = './ifj2017'
-interpreter = 'tests/ic17int'
+interpreter = './ic17int'
+if not path.exists(interpreter):
+    interpreter = 'tests/ic17int'
 
 # Switch to windows interpreter
-if platform.system() in ['Windows']:
+if system() in ['Windows']:
     compiler = '../ifj2017.exe'
     interpreter = 'ic17int.exe'
 
@@ -54,9 +57,12 @@ for test in test_list:
                         
                         # Interpreter returned non zero value
                         print('[{}] Interpret error: {}'.format(test.desc, proc.returncode))
+                        print(proc.stdout, '\n', ' -'*40)
                         
                 except TimeoutExpired:
-                    print('[{}] Interpret timeout expired'.format(test.desc))
+                    print('[{}] Interpretr timeout expired'.format(test.desc))
+                except:
+                    print('[{}] Interpreter coding error?'.format(test.desc))
             
             else:
                 # Not to be interpreted
@@ -67,9 +73,12 @@ for test in test_list:
             # Compiler test failed
             print('[{}] Compiler failed: expected {} got {}'.format(
                 test.desc, ' or '.join(str(el) for el in test.expret), proc.returncode))
+            print(test.stdin, '\n', ' -'*40)
 
     except TimeoutExpired:
         print('[{}] Compiler timeout expired'.format(test.desc))
+    except:
+        print('[{}] Compiler coding error?'.format(test.desc))
 
 # Print results
 print(test_list)
@@ -77,5 +86,5 @@ with open('testout', 'w') as file:
     file.write(str(test_list))
 
 # Windows wait
-if platform.system() in ['Windows']:
+if system() in ['Windows']:
     input('Press enter to exit.')

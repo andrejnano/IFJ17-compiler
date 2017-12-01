@@ -48,3 +48,4 @@ zip:
 	cp -R tests/ src/tests/
 	cd src; zip -r ../$(ZIPNAME).zip *
 	rm src/Makefile src/rozdeleni
+	rm -rf src/tests
