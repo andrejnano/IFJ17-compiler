@@ -10,8 +10,8 @@ from tests import *
 import platform
 
 # Default compiler and interpreter for linux
-compiler = '../ifj2017'
-interpreter = 'ic17int'
+compiler = './ifj2017'
+interpreter = 'tests/ic17int'
 
 # Switch to windows interpreter
 if platform.system() in ['Windows']:
@@ -77,5 +77,5 @@ with open('testout', 'w') as file:
     file.write(str(test_list))
 
 # Window wait
-if __name__ == '__main__':
-    input('Press enter to exit.')
+#if __name__ == '__main__':
+#    input('Press enter to exit.')
