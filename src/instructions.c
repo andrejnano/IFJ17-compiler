@@ -245,14 +245,74 @@ void generate_code(FILE* output_file)
 
 void generate_base(FILE* output_file)
 {
-    fprintf(output_file, ".IFJcode17\nCREATEFRAME\nPUSHFRAME\nJUMP $main\n");
+    fprintf(output_file, "\
+.IFJcode17\n\
+CREATEFRAME\n\
+PUSHFRAME\n\
+JUMP $main\n");
 }
 
 void generate_builtin(FILE* output_file)
 {
     //if Lenght used
-    fprintf(output_file, "LABEL Length\nDEFVAR lf@%retval\nSTRLEN lf@%retval lf@s\nRETURN\n");
+    fprintf(output_file, "\
+LABEL Length\n\
+DEFVAR lf@%retval\n\
+STRLEN lf@%retval lf@s\n\
+RETURN\n");
     //TODO generate next built-in functions
+    //if Asc used
+    fprintf(output_file, "\
+LABEL Asc\n\
+CREATEFRAME\n\
+DEFVAR lf@%retval\n\
+DEFVAR lf@a*cmp\n\
+LT lf@a*cmp lf@i int@0\n\
+JUMPIFEQ els*a0a bool@false lf@a*cmp\n\
+MOVE lf@%retval int@0\n\
+WRITE string@ret0a\n\
+RETURN\n\
+JUMP end*els*a0a\n\
+LABEL els*a0\n\
+DEFVAR lf@len\n\
+STRLEN lf@len lf@s\n\
+GT lf@a*cmp lf@len lf@i\n\
+JUMPIFNEQ els*a1a bool@false lf@a*cmp\n\
+MOVE lf@%retval int@0\n\
+WRITE string@ret0b\n\
+RETURN\n\
+JUMP end*els*a1a\n\
+LABEL els*a1a\n\
+STRI2INT lf@%retval lf@s lf@i\n\
+LABEL end*els*a1a\n\
+LABEL end*els*a0a\n\
+RETURN\n");
+    //if Chr used
+    fprintf(output_file, "\
+LABEL Chr\n\
+CREATEFRAME\n\
+DEFVAR lf@%retval\n\
+DEFVAR lf@c*cmp\n\
+LT lf@c*cmp lf@i int@0\n\
+JUMPIFEQ els*a0c bool@false lf@c*cmp\n\
+MOVE lf@%retval int@0\n\
+WRITE string@ret0a\n\
+RETURN\n\
+JUMP end*els*a0c\n\
+LABEL els*a0c\n\
+DEFVAR lf@max\n\
+MOVE lf@max int@255\n\
+LT lf@c*cmp lf@max lf@i\n\
+JUMPIFEQ els*a1c bool@false lf@c*cmp\n\
+MOVE lf@%retval int@0\n\
+WRITE string@ret0b\n\
+RETURN\n\
+JUMP end*els*a1c\n\
+LABEL els*a1c\n\
+INT2CHAR lf@%retval lf@i\n\
+LABEL end*els*a1c\n\
+LABEL end*els*a0c\n\
+RETURN\n");
 }
 
 void free_inst_list()
