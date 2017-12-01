@@ -76,6 +76,6 @@ print(test_list)
 with open('testout', 'w') as file:
     file.write(str(test_list))
 
-# Window wait
-#if __name__ == '__main__':
-#    input('Press enter to exit.')
+# Windows wait
+if platform.system() in ['Windows']:
+    input('Press enter to exit.')
