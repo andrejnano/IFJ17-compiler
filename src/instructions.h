@@ -48,6 +48,8 @@ void add_inst(char *inst_type, t_const first_type, char *first,
               t_const second_type, char *second, t_const third_type, char *third);
 void add_op_to_last_inst(t_const type, char *value);
 void generate_code(FILE* output_file);
+void generate_base(FILE* output_file);
+void generate_builtin(FILE* output_file);
 void free_inst_list();
 
 #endif

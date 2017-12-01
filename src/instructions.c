@@ -243,6 +243,18 @@ void generate_code(FILE* output_file)
   }
 }
 
+void generate_base(FILE* output_file)
+{
+    fprintf(output_file, ".IFJcode17\nCREATEFRAME\nPUSHFRAME\nJUMP $main\n");
+}
+
+void generate_builtin(FILE* output_file)
+{
+    //if Lenght used
+    fprintf(output_file, "LABEL Length\nDEFVAR lf@%retval\nSTRLEN lf@%retval lf@s\nRETURN\n");
+    //TODO generate next built-in functions
+}
+
 void free_inst_list()
 {
   while(first_inst != NULL)
