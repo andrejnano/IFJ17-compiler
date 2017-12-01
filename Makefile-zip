@@ -21,10 +21,13 @@ OUTFILE=ifj2017
 
 all: $(OUTFILE)
 
-.PHONY: clean
+.PHONY: clean test
 
 ifj2017: *.c *.h
 	$(CC) $(CFLAGS) *.c -o $(OUTFILE)
 
 clean:
 	rm *.o $(OUTFILE)
+
+test:
+	python3 tests/test.py

@@ -45,5 +45,6 @@ test:
 zip:
 	cp Makefile-zip src/Makefile
 	cp rozdeleni src/rozdeleni
-	cd src; zip ../$(ZIPNAME).zip *
+	cp -R tests/ src/tests/
+	cd src; zip -r ../$(ZIPNAME).zip *
 	rm src/Makefile src/rozdeleni
