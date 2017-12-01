@@ -43,20 +43,56 @@ def loadTests (tests):
 
     tests.add("SEM - Dim x", "scope\nDiM X as INTEger\nx    = 7  \n\nend scope", [0])
 
-    tests.add("SYN - min source code", "'minimal source code test\nscope\nend scope", [0])
     tests.add("SYN - variable declarations", "scope\nDim x as Integer\nDim y as String\nDim z as Double\nend scope", [0])
     tests.add("SYN - variable definitions", "scope\nDim a as Integer = 42\nDim b as Double = 4.2\nDim c as Double = 3e-5\nend scope", [0])
-
     tests.add("SYN - function definition","function func() as Integer\n\nend function\n\nscope\nend scope", [0])
     tests.add("SYN - function definition with parameter","function func(n as Integer) as Integer\n\nend function\n\nscope\nend scope", [0])
-
     tests.add("SYN - function definition", "function func() as Integer\n\nend function\n\nscope\nend scope", [0])
+
+
+
+
     tests.add("SEM - Dim x", "scope\nDiM X as INTEger\n\nend scope", [0])
     tests.add("SEM - Dim x used", "scope\nDiM X as inTEger\nx    = 7  \n\nend scope", [0])
     tests.add("SEM - Dim x =", "scope\nDiM X as INTEger    = 3 \nend scope", [0])
     tests.add("SEM - Dim double", "scope\ndim var_name as double = 7\nend scope", [0])
     tests.add("SEM - Dim double add", "scope\ndim var_name as double = 2.7 + 3\nend scope", [0])
     tests.add("SEM - Dim double add int", "scope\ndim i as inteGER = 3\ndim var_name as double = 7 + i\nend scope", [0])
+
+    tests.add("SEM - declaration after definition", """
+    function func() as Double
+        return 42
+    end function
+    
+    Declare function func() as Double
+    
+    scope
+    end scope
+    """, [3])
+
+    tests.add("SEM - undeclared variable assignment", """
+    function func() as Integer
+        dim x as Integer
+        y = 22
+    end function
+    scope
+    end scope
+    """, [3])
+
+    tests.add("SYN - function declaration inside scope", """
+    scope
+    declare function test() as Integer
+    end scope
+    """, [2])
+
+    tests.add("SYN - function definition inside scope", """
+    scope
+    function test() as Integer
+        return 0
+    end function
+    end scope
+    """, [2])
+
 
     tests.add("PROG - Factorial", """'Výpočet faktoriálu (iterativně)
 scope 'Hlavni telo programu
