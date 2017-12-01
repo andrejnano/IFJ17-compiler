@@ -25,7 +25,7 @@ ZIPNAME=xnanoa00
 
 all: build
 
-.PHONY: clean run zip
+.PHONY: clean run zip test
 
 build/%.o: src/%.c src/*.h
 	$(CC) $(CFLAGS) -c $< -o $@
@@ -38,6 +38,9 @@ clean:
 
 run:
 	./$(OUTFILE)
+	
+test:
+	python3 tests/test.py
 	
 zip:
 	cp Makefile-zip src/Makefile
