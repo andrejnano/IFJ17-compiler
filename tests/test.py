@@ -1,10 +1,12 @@
+#!/usr/bin/env python3
+
 # Quick tests for ifj2017 compilator
 # xmarko15 Peter Marko
 # xmechl00 Stanislav Mechl
 # xnanoa00 Andrej Nano
 # xsvand06 Švanda Jan
 
-from subprocess import CompletedProcess, run, PIPE, TimeoutExpired
+from subprocess import * # CompletedProcess, run, PIPE, TimeoutExpired
 from platform import system
 from os import path
 from testc import TestList
