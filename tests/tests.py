@@ -29,3 +29,12 @@ def loadTests (tests):
     tests.add("LEX - Multiline comment", "/'comment'/scope/'c'/\nend/'space'/ scope", [0])
 
     tests.add("SEM - Dim x", "scope\nDiM X as INTEger\nx    = 7  \n\nend scope", [0])
+
+    tests.add("SYN - min source code", "'minimal source code test\nscope\nend scope", [0])
+    tests.add("SYN - variable declarations", "scope\nDim x as Integer\nDim y as String\nDim z as Double\nend scope", [0])
+    tests.add("SYN - variable definitions", "scope\nDim a as Integer = 42\nDim b as Double = 4.2\nDim c as Double = 3e-5\nend scope", [0])
+
+    tests.add("SYN - function definition","function func() as Integer\n\nend function\n\nscope\nend scope", [0])
+    tests.add("SYN - function definition with parameter","function func(n as Integer) as Integer\n\nend function\n\nscope\nend scope", [0])
+
+    tests.add("SYN - function definition", "function func() as Integer\n\nend function\n\nscope\nend scope", [0])
