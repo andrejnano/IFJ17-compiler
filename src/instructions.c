@@ -252,17 +252,27 @@ PUSHFRAME\n\
 JUMP $main\n");
 }
 
+bool builtin_length_used = false;
+bool builtin_substr_used = false;
+bool builtin_asc_used = false;
+bool builtin_chr_used = false;
+
 void generate_builtin(FILE* output_file)
 {
     //if Lenght used
-    fprintf(output_file, "\
+    if(builtin_length_used == true)
+    {
+      fprintf(output_file, "\
 LABEL Length\n\
 DEFVAR lf@%retval\n\
 STRLEN lf@%retval lf@s\n\
 RETURN\n");
+    }
     //TODO generate next built-in functions
     //if Asc used
-    fprintf(output_file, "\
+    if(builtin_asc_used == true)
+    {
+      fprintf(output_file, "\
 LABEL Asc\n\
 CREATEFRAME\n\
 DEFVAR lf@%retval\n\
@@ -287,8 +297,11 @@ STRI2INT lf@%retval lf@s lf@i\n\
 LABEL end*els*a1a\n\
 LABEL end*els*a0a\n\
 RETURN\n");
+    }
     //if Chr used
-    fprintf(output_file, "\
+    if(builtin_chr_used == true)
+    {
+      fprintf(output_file, "\
 LABEL Chr\n\
 CREATEFRAME\n\
 DEFVAR lf@%retval\n\
@@ -313,8 +326,11 @@ INT2CHAR lf@%retval lf@i\n\
 LABEL end*els*a1c\n\
 LABEL end*els*a0c\n\
 RETURN\n");
+    }
     //if SubStr used
-    fprintf(output_file, "\
+    if(builtin_substr_used == true)
+    {
+      fprintf(output_file, "\
 LABEL SubStr\n\
 CREATEFRAME\n\
 DEFVAR lf@%retval\n\
@@ -368,6 +384,7 @@ MOVE lf@%retval lf@ret\n\
 LABEL end*els*a2s\n\
 LABEL end*els*a0s\n\
 RETURN\n");
+  }
 }
 
 void free_inst_list()

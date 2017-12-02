@@ -14,6 +14,13 @@
 #ifndef INSTRUCTIONS_H
 #define INSTRUCTIONS_H
 
+#include <stdbool.h>
+
+extern bool builtin_length_used;
+extern bool builtin_substr_used;
+extern bool builtin_asc_used;
+extern bool builtin_chr_used;
+
 typedef enum{
   i_null, //no variable or constant - just following string is copied
   i_gf, //global frame - generates "gf@" before operand
