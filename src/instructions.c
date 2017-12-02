@@ -313,6 +313,61 @@ INT2CHAR lf@%retval lf@i\n\
 LABEL end*els*a1c\n\
 LABEL end*els*a0c\n\
 RETURN\n");
+    //if SubStr used
+    fprintf(output_file, "\
+LABEL SubStr\n\
+CREATEFRAME\n\
+DEFVAR lf@%retval\n\
+DEFVAR lf@%cmp\n\
+EQ lf@%cmp lf@s string@\n\
+JUMPIFEQ els$0 bool@false lf@%cmp\n\
+MOVE lf@%retval string@\n\
+WRITE string@retA\n\
+RETURN\n\
+JUMP end*els$0\n\
+LABEL els$0\n\
+GT lf@%cmp lf@i int@0\n\
+JUMPIFNEQ els$2 bool@false lf@%cmp\n\
+MOVE lf@%retval string@\n\
+WRITE string@retB\n\
+RETURN\n\
+JUMP end*els$2\n\
+LABEL els$2\n\
+DEFVAR lf@len\n\
+STRLEN lf@len lf@s\n\
+LT lf@%cmp lf@n int@0\n\
+JUMPIFEQ els$4 bool@false lf@%cmp\n\
+ADD lf@n lf@len int@1\n\
+JUMP end*els$4\n\
+LABEL els$4\n\
+LT lf@%cmp lf@len lf@n\n\
+JUMPIFEQ els$6 bool@false lf@%cmp\n\
+ADD lf@n lf@len int@1\n\
+JUMP end*els$6\n\
+LABEL els$6\n\
+LABEL end*els$6\n\
+LABEL end*els$4\n\
+DEFVAR lf@ret\n\
+MOVE lf@ret string@\n\
+PUSHS string@\n\
+POPS lf@ret\n\
+DEFVAR lf@act\n\
+MOVE lf@act string@\n\
+DEFVAR lf@pop$9\n\
+SUB lf@i lf@i int@1\n\
+ADD lf@len lf@i lf@n\n\
+LABEL whl$8\n\
+LT lf@%cmp lf@i lf@len\n\
+JUMPIFEQ end*whl$8 bool@false lf@%cmp\n\
+GETCHAR lf@act lf@s lf@i\n\
+CONCAT lf@ret lf@ret lf@act\n\
+ADD lf@i lf@i int@1\n\
+JUMP whl$8\n\
+LABEL end*whl$8\n\
+MOVE lf@%retval lf@ret\n\
+LABEL end*els$2\n\
+LABEL end*els$0\n\
+RETURN\n");
 }
 
 void free_inst_list()
