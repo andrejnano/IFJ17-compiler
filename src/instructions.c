@@ -318,35 +318,35 @@ RETURN\n");
 LABEL SubStr\n\
 CREATEFRAME\n\
 DEFVAR lf@%retval\n\
-DEFVAR lf@%cmp\n\
-EQ lf@%cmp lf@s string@\n\
-JUMPIFEQ els$0 bool@false lf@%cmp\n\
+DEFVAR lf@s*cmp\n\
+EQ lf@s*cmp lf@s string@\n\
+JUMPIFEQ els*a0s bool@false lf@s*cmp\n\
 MOVE lf@%retval string@\n\
 WRITE string@retA\n\
 RETURN\n\
-JUMP end*els$0\n\
-LABEL els$0\n\
-GT lf@%cmp lf@i int@0\n\
-JUMPIFNEQ els$2 bool@false lf@%cmp\n\
+JUMP end*els*a0s\n\
+LABEL els*a0s\n\
+GT lf@s*cmp lf@i int@0\n\
+JUMPIFNEQ els*a2s bool@false lf@s*cmp\n\
 MOVE lf@%retval string@\n\
 WRITE string@retB\n\
 RETURN\n\
-JUMP end*els$2\n\
-LABEL els$2\n\
+JUMP end*els*a2s\n\
+LABEL els*a2s\n\
 DEFVAR lf@len\n\
 STRLEN lf@len lf@s\n\
-LT lf@%cmp lf@n int@0\n\
-JUMPIFEQ els$4 bool@false lf@%cmp\n\
+LT lf@s*cmp lf@n int@0\n\
+JUMPIFEQ els*a4s bool@false lf@s*cmp\n\
 ADD lf@n lf@len int@1\n\
-JUMP end*els$4\n\
-LABEL els$4\n\
-LT lf@%cmp lf@len lf@n\n\
-JUMPIFEQ els$6 bool@false lf@%cmp\n\
+JUMP end*els*a4s\n\
+LABEL els*a4s\n\
+LT lf@s*cmp lf@len lf@n\n\
+JUMPIFEQ els*a6s bool@false lf@s*cmp\n\
 ADD lf@n lf@len int@1\n\
-JUMP end*els$6\n\
-LABEL els$6\n\
-LABEL end*els$6\n\
-LABEL end*els$4\n\
+JUMP end*els*a6s\n\
+LABEL els*a6s\n\
+LABEL end*els*a6s\n\
+LABEL end*els*a4s\n\
 DEFVAR lf@ret\n\
 MOVE lf@ret string@\n\
 PUSHS string@\n\
@@ -356,17 +356,17 @@ MOVE lf@act string@\n\
 DEFVAR lf@pop$9\n\
 SUB lf@i lf@i int@1\n\
 ADD lf@len lf@i lf@n\n\
-LABEL whl$8\n\
-LT lf@%cmp lf@i lf@len\n\
-JUMPIFEQ end*whl$8 bool@false lf@%cmp\n\
+LABEL whl*a8s\n\
+LT lf@s*cmp lf@i lf@len\n\
+JUMPIFEQ end*whl*a8s bool@false lf@s*cmp\n\
 GETCHAR lf@act lf@s lf@i\n\
 CONCAT lf@ret lf@ret lf@act\n\
 ADD lf@i lf@i int@1\n\
-JUMP whl$8\n\
-LABEL end*whl$8\n\
+JUMP whl*a8s\n\
+LABEL end*whl*a8s\n\
 MOVE lf@%retval lf@ret\n\
-LABEL end*els$2\n\
-LABEL end*els$0\n\
+LABEL end*els*a2s\n\
+LABEL end*els*a0s\n\
 RETURN\n");
 }
 
