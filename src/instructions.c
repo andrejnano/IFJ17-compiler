@@ -387,6 +387,27 @@ RETURN\n");
   }
 }
 
+Metadata_t builtin_length_meta;
+Metadata_t builtin_substr_meta;
+Metadata_t builtin_asc_meta;
+Metadata_t builtin_chr_meta;
+
+void set_builtin_meta()
+{
+  //Length
+  builtin_length_meta.type = token_val_integer;
+  builtin_length_meta.parameters = malloc(sizeof(Parameter_t));
+  builtin_length_meta.parameters->type = token_val_string;
+  builtin_length_meta.parameters->name = "s";
+  builtin_length_meta.parameters->next = NULL;
+  //Chr
+  builtin_chr_meta.type = token_val_string;
+  builtin_chr_meta.parameters = malloc(sizeof(Parameter_t));
+  builtin_chr_meta.parameters->type = token_val_integer;
+  builtin_chr_meta.parameters->name = "i";
+  builtin_chr_meta.parameters->next = NULL;     
+}
+
 void free_inst_list()
 {
   while(first_inst != NULL)

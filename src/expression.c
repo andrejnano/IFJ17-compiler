@@ -513,7 +513,9 @@ void NT_Expr(int type)
 			{
 				if (execOp(&s, &numOp, &new_type).priority == STACK_STOPPER)
 				{
+          fprintf(stderr, "Cosi se deje!!!!\n");
 					converts(new_type, &type, 0);
+          fprintf(stderr, "Uz se to dodelo....\n");
 					return;
 				}
 			}
@@ -572,6 +574,96 @@ void NT_Expr(int type)
 			new_type = token_string;
             add_inst("PUSHS", i_null,NULL,i_null,NULL,i_null,NULL); 
 			printTokenVal();
+			break;
+    case token_length:
+				/*get_next_token(source_code, active_token);
+				match(token_lbrace);
+				add_inst("CREATEFRAME", i_null,NULL,i_null,NULL,i_null,NULL);
+				// read check types and convert arguments for calling function
+  			if (active_token->type == token_rbrace)	// no bracket but still expected argument
+				{
+					raise_error(E_SEM_DEF, "Too few arguments for Length function\n");
+					return;
+				}
+				NT_Expr(token_val_string);
+				add_inst("DEFVAR", i_tf, "s", i_null,NULL,i_null,NULL);
+				add_inst("POPS", i_tf, "s", i_null, NULL, i_null,NULL);
+        fprintf(stderr, ">>");//
+				printTokenType(stderr, active_token->type);//
+				if (active_token->type == token_rbrace)
+				{
+					get_next_token(source_code, active_token);
+				}
+        else
+        {
+					raise_error(E_SEM_DEF, "Too many arguments for Length function\n");
+					return;
+				}
+				add_inst("PUSHFRAME", i_null,NULL,i_null,NULL,i_null,NULL);
+				add_inst("CALL", i_null, "Length", i_null,NULL,i_null,NULL);
+				add_inst("POPFRAME", i_null,NULL,i_null,NULL,i_null,NULL);
+				add_inst("PUSHS", i_tf, "%retval", i_null,NULL,i_null,NULL);
+				add_inst("CREATEFRAME", i_null,NULL,i_null,NULL,i_null,NULL);*/
+
+        //set_builtin_meta();
+
+        fprintf(stderr, ">>>>CallExpr with params at %p\n", builtin_length_meta.parameters);
+        fprintf(stderr, ">>>>name -%s-\n", builtin_length_meta.parameters->name);
+        fprintf(stderr, ">>>>type %d\n", builtin_length_meta.parameters->type);  
+        fprintf(stderr, ">>>>next at %p\n", builtin_length_meta.parameters->next);
+
+		 	  numOp++;        
+        if (builtin_length_meta.parameters->type != token_integer)
+					not_int = true;
+            	new_type = builtin_length_meta.parameters->type;                
+        NT_CallExpr(&builtin_length_meta, "Length");        
+				if (new_type == token_integer)
+				{
+					add_inst("INT2FLOATS", i_null, NULL, i_null,NULL,i_null,NULL);
+					new_type = token_double;
+				}
+			break;
+    case token_chr:
+        fprintf(stderr, ">>>>CallExpr with params at %p\n", builtin_chr_meta.parameters);
+        fprintf(stderr, ">>>>name -%s-\n", builtin_chr_meta.parameters->name);
+        fprintf(stderr, ">>>>type %d\n", builtin_chr_meta.parameters->type); 
+        fprintf(stderr, ">>>>next at %p\n", builtin_chr_meta.parameters->next);
+		 	  /*numOp++;       
+        if (builtin_chr_meta.parameters->type != token_integer)
+					not_int = true;
+            	new_type = builtin_chr_meta.parameters->type;               
+        NT_CallExpr(&builtin_chr_meta, "Length");        
+				if (new_type == token_integer)
+				{
+					add_inst("INT2FLOATS", i_null, NULL, i_null,NULL,i_null,NULL);
+					new_type = token_double;
+				} */
+				get_next_token(source_code, active_token);
+				match(token_lbrace);
+				add_inst("CREATEFRAME", i_null,NULL,i_null,NULL,i_null,NULL);
+				// read check types and convert arguments for calling function
+  			if (active_token->type == token_rbrace)	// no bracket but still expected argument
+				{
+					raise_error(E_SEM_DEF, "Too few arguments for Length function\n");
+					return;
+				}
+				NT_Expr(token_integer);
+				add_inst("DEFVAR", i_tf, "i", i_null,NULL,i_null,NULL);
+				add_inst("POPS", i_tf, "i", i_null, NULL, i_null,NULL);
+				if (active_token->type == token_rbrace)
+				{
+					get_next_token(source_code, active_token);
+				}
+        else
+        {
+					raise_error(E_SEM_DEF, "Too many arguments for Length function\n");
+					return;
+				}
+				add_inst("PUSHFRAME", i_null,NULL,i_null,NULL,i_null,NULL);
+				add_inst("CALL", i_null, "Chr", i_null,NULL,i_null,NULL);
+				add_inst("POPFRAME", i_null,NULL,i_null,NULL,i_null,NULL);
+				add_inst("PUSHS", i_tf, "%retval", i_null,NULL,i_null,NULL);
+				add_inst("CREATEFRAME", i_null,NULL,i_null,NULL,i_null,NULL);
 			break;
 		default:
 			if (istype(active_token->type))

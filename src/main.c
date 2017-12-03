@@ -59,6 +59,8 @@
 
         source_code = stdin;
         output_code = stdout;
+        
+        set_builtin_meta();
 
         parse();
 
