@@ -513,9 +513,7 @@ void NT_Expr(int type)
 			{
 				if (execOp(&s, &numOp, &new_type).priority == STACK_STOPPER)
 				{
-          fprintf(stderr, "Cosi se deje!!!!\n");
 					converts(new_type, &type, 0);
-          fprintf(stderr, "Uz se to dodelo....\n");
 					return;
 				}
 			}
