@@ -353,7 +353,7 @@ DEFVAR lf@len\n\
 STRLEN lf@len lf@s\n\
 LT lf@s*cmp lf@n int@0\n\
 JUMPIFEQ els*a4s bool@false lf@s*cmp\n\
-ADD lf@n lf@len int@1\n\
+SUB lf@n lf@len int@1\n\
 JUMP end*els*a4s\n\
 LABEL els*a4s\n\
 LT lf@s*cmp lf@len lf@n\n\
@@ -371,7 +371,6 @@ DEFVAR lf@act\n\
 MOVE lf@act string@\n\
 DEFVAR lf@pop$9\n\
 SUB lf@i lf@i int@1\n\
-ADD lf@len lf@i lf@n\n\
 LABEL whl*a8s\n\
 LT lf@s*cmp lf@i lf@len\n\
 JUMPIFEQ end*whl*a8s bool@false lf@s*cmp\n\
