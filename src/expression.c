@@ -544,6 +544,7 @@ void NT_Expr(int type)
 					add_inst("INT2FLOATS", i_null, NULL, i_null,NULL,i_null,NULL);
 					new_type = token_double;
 				}
+        fprintf(stderr, "---TOKEN---%d---\n", active_token->type);
 				continue;
 			}
 			else
@@ -610,16 +611,20 @@ void NT_Expr(int type)
         fprintf(stderr, ">>>>type %d\n", builtin_length_meta.parameters->type);  
         fprintf(stderr, ">>>>next at %p\n", builtin_length_meta.parameters->next);
 
+        builtin_length_used = true;
+        
 		 	  numOp++;        
-        if (builtin_length_meta.parameters->type != token_integer)
+        if (builtin_length_meta.type != token_integer)
 					not_int = true;
-            	new_type = builtin_length_meta.parameters->type;                
+            	new_type = builtin_length_meta.type;                
         NT_CallExpr(&builtin_length_meta, "Length");        
 				if (new_type == token_integer)
 				{
 					add_inst("INT2FLOATS", i_null, NULL, i_null,NULL,i_null,NULL);
 					new_type = token_double;
 				}
+        fprintf(stderr, "---TOKEN---%d---\n", active_token->type);
+        continue;
 			break;
     case token_chr:
         fprintf(stderr, ">>>>CallExpr with params at %p\n", builtin_chr_meta.parameters);
@@ -662,6 +667,8 @@ void NT_Expr(int type)
 				add_inst("POPFRAME", i_null,NULL,i_null,NULL,i_null,NULL);
 				add_inst("PUSHS", i_tf, "%retval", i_null,NULL,i_null,NULL);
 				add_inst("CREATEFRAME", i_null,NULL,i_null,NULL,i_null,NULL);
+        fprintf(stderr, "---TOKEN---%d---\n", active_token->type);
+        continue;
 			break;
 		default:
 			if (istype(active_token->type))
@@ -673,7 +680,7 @@ void NT_Expr(int type)
 			}
 			if (numOp != 1)
 			{
-				raise_error(SYNTAX_ERROR, "Wrong expression syntax\n");
+				raise_error(SYNTAX_ERROR, "Wrong expression syntax - A\n");
 				return;
 			}
 			if (!type && !not_int)
@@ -693,7 +700,7 @@ void NT_Expr(int type)
 	}
 	if (numOp != 1)
 	{
-		raise_error(SYNTAX_ERROR, "Wrong expression syntax\n");
+		raise_error(SYNTAX_ERROR, "Wrong expression syntax - B\n");
 		return;
 	}
 	if (!type && !not_int)
