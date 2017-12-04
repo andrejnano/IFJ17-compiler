@@ -280,19 +280,19 @@ DEFVAR lf@a*cmp\n\
 LT lf@a*cmp lf@i int@0\n\
 JUMPIFEQ els*a0a bool@false lf@a*cmp\n\
 MOVE lf@%%retval int@0\n\
-WRITE string@ret0a\n\
 RETURN\n\
 JUMP end*els*a0a\n\
 LABEL els*a0a\n\
 DEFVAR lf@len\n\
 STRLEN lf@len lf@s\n\
+SUB lf@len lf@len int@1\n\
 GT lf@a*cmp lf@len lf@i\n\
 JUMPIFNEQ els*a1a bool@false lf@a*cmp\n\
 MOVE lf@%%retval int@0\n\
-WRITE string@ret0b\n\
 RETURN\n\
 JUMP end*els*a1a\n\
 LABEL els*a1a\n\
+SUB lf@i lf@i int@1\n\
 STRI2INT lf@%%retval lf@s lf@i\n\
 LABEL end*els*a1a\n\
 LABEL end*els*a0a\n\
@@ -309,7 +309,6 @@ DEFVAR lf@c*cmp\n\
 LT lf@c*cmp lf@i int@0\n\
 JUMPIFEQ els*a0c bool@false lf@c*cmp\n\
 MOVE lf@%%retval int@0\n\
-WRITE string@ret0a\n\
 RETURN\n\
 JUMP end*els*a0c\n\
 LABEL els*a0c\n\
@@ -318,7 +317,6 @@ MOVE lf@max int@255\n\
 LT lf@c*cmp lf@max lf@i\n\
 JUMPIFEQ els*a1c bool@false lf@c*cmp\n\
 MOVE lf@%%retval int@0\n\
-WRITE string@ret0b\n\
 RETURN\n\
 JUMP end*els*a1c\n\
 LABEL els*a1c\n\
@@ -338,14 +336,12 @@ DEFVAR lf@s*cmp\n\
 EQ lf@s*cmp lf@s string@\n\
 JUMPIFEQ els*a0s bool@false lf@s*cmp\n\
 MOVE lf@%%retval string@\n\
-WRITE string@retA\n\
 RETURN\n\
 JUMP end*els*a0s\n\
 LABEL els*a0s\n\
 GT lf@s*cmp lf@i int@0\n\
 JUMPIFNEQ els*a2s bool@false lf@s*cmp\n\
 MOVE lf@%%retval string@\n\
-WRITE string@retB\n\
 RETURN\n\
 JUMP end*els*a2s\n\
 LABEL els*a2s\n\
