@@ -415,10 +415,10 @@ void NT_CallExpr(Metadata_t *funcMeta, char *funcName)
 		add_inst("DEFVAR", i_tf, arg->name, i_null,NULL,i_null,NULL);
 		add_inst("POPS", i_tf, arg->name, i_null, NULL, i_null,NULL);
 		arg = arg->next;
-		printTokenType(stderr, active_token->type);
+		// printTokenType(stderr, active_token->type);
 		if (active_token->type != token_comma)
 			break;
-		printTokenType(stderr, active_token->type);
+		// printTokenType(stderr, active_token->type);
 		get_next_token(source_code, active_token);
 	}
 	if (active_token->type == token_rbrace)
