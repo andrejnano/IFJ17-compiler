@@ -243,6 +243,200 @@ void generate_code(FILE* output_file)
   }
 }
 
+void generate_base(FILE* output_file)
+{
+    fprintf(output_file, "\
+.IFJcode17\n\
+CREATEFRAME\n\
+PUSHFRAME\n\
+JUMP $main\n");
+}
+
+bool builtin_length_used = false;
+bool builtin_substr_used = false;
+bool builtin_asc_used = false;
+bool builtin_chr_used = false;
+
+void generate_builtin(FILE* output_file)
+{
+    //if Lenght used
+    if(builtin_length_used == true)
+    {
+      fprintf(output_file, "\
+LABEL Length\n\
+DEFVAR lf@%%retval\n\
+STRLEN lf@%%retval lf@s\n\
+RETURN\n");
+    }
+    //TODO generate next built-in functions
+    //if Asc used
+    if(builtin_asc_used == true)
+    {
+      fprintf(output_file, "\
+LABEL Asc\n\
+CREATEFRAME\n\
+DEFVAR lf@%%retval\n\
+DEFVAR lf@a*cmp\n\
+LT lf@a*cmp lf@i int@0\n\
+JUMPIFEQ els*a0a bool@false lf@a*cmp\n\
+MOVE lf@%%retval int@0\n\
+WRITE string@ret0a\n\
+RETURN\n\
+JUMP end*els*a0a\n\
+LABEL els*a0a\n\
+DEFVAR lf@len\n\
+STRLEN lf@len lf@s\n\
+GT lf@a*cmp lf@len lf@i\n\
+JUMPIFNEQ els*a1a bool@false lf@a*cmp\n\
+MOVE lf@%%retval int@0\n\
+WRITE string@ret0b\n\
+RETURN\n\
+JUMP end*els*a1a\n\
+LABEL els*a1a\n\
+STRI2INT lf@%%retval lf@s lf@i\n\
+LABEL end*els*a1a\n\
+LABEL end*els*a0a\n\
+RETURN\n");
+    }
+    //if Chr used
+    if(builtin_chr_used == true)
+    {
+      fprintf(output_file, "\
+LABEL Chr\n\
+CREATEFRAME\n\
+DEFVAR lf@%%retval\n\
+DEFVAR lf@c*cmp\n\
+LT lf@c*cmp lf@i int@0\n\
+JUMPIFEQ els*a0c bool@false lf@c*cmp\n\
+MOVE lf@%%retval int@0\n\
+WRITE string@ret0a\n\
+RETURN\n\
+JUMP end*els*a0c\n\
+LABEL els*a0c\n\
+DEFVAR lf@max\n\
+MOVE lf@max int@255\n\
+LT lf@c*cmp lf@max lf@i\n\
+JUMPIFEQ els*a1c bool@false lf@c*cmp\n\
+MOVE lf@%%retval int@0\n\
+WRITE string@ret0b\n\
+RETURN\n\
+JUMP end*els*a1c\n\
+LABEL els*a1c\n\
+INT2CHAR lf@%%retval lf@i\n\
+LABEL end*els*a1c\n\
+LABEL end*els*a0c\n\
+RETURN\n");
+    }
+    //if SubStr used
+    if(builtin_substr_used == true)
+    {
+      fprintf(output_file, "\
+LABEL SubStr\n\
+CREATEFRAME\n\
+DEFVAR lf@%%retval\n\
+DEFVAR lf@s*cmp\n\
+EQ lf@s*cmp lf@s string@\n\
+JUMPIFEQ els*a0s bool@false lf@s*cmp\n\
+MOVE lf@%%retval string@\n\
+WRITE string@retA\n\
+RETURN\n\
+JUMP end*els*a0s\n\
+LABEL els*a0s\n\
+GT lf@s*cmp lf@i int@0\n\
+JUMPIFNEQ els*a2s bool@false lf@s*cmp\n\
+MOVE lf@%%retval string@\n\
+WRITE string@retB\n\
+RETURN\n\
+JUMP end*els*a2s\n\
+LABEL els*a2s\n\
+DEFVAR lf@len\n\
+STRLEN lf@len lf@s\n\
+LT lf@s*cmp lf@n int@0\n\
+JUMPIFEQ els*a4s bool@false lf@s*cmp\n\
+ADD lf@n lf@len int@1\n\
+JUMP end*els*a4s\n\
+LABEL els*a4s\n\
+LT lf@s*cmp lf@len lf@n\n\
+JUMPIFEQ els*a6s bool@false lf@s*cmp\n\
+ADD lf@n lf@len int@1\n\
+JUMP end*els*a6s\n\
+LABEL els*a6s\n\
+LABEL end*els*a6s\n\
+LABEL end*els*a4s\n\
+DEFVAR lf@ret\n\
+MOVE lf@ret string@\n\
+PUSHS string@\n\
+POPS lf@ret\n\
+DEFVAR lf@act\n\
+MOVE lf@act string@\n\
+DEFVAR lf@pop$9\n\
+SUB lf@i lf@i int@1\n\
+ADD lf@len lf@i lf@n\n\
+LABEL whl*a8s\n\
+LT lf@s*cmp lf@i lf@len\n\
+JUMPIFEQ end*whl*a8s bool@false lf@s*cmp\n\
+GETCHAR lf@act lf@s lf@i\n\
+CONCAT lf@ret lf@ret lf@act\n\
+ADD lf@i lf@i int@1\n\
+JUMP whl*a8s\n\
+LABEL end*whl*a8s\n\
+MOVE lf@%%retval lf@ret\n\
+LABEL end*els*a2s\n\
+LABEL end*els*a0s\n\
+RETURN\n");
+  }
+}
+
+Metadata_t builtin_length_meta;
+Metadata_t builtin_substr_meta;
+Metadata_t builtin_asc_meta;
+Metadata_t builtin_chr_meta;
+
+void set_builtin_meta()
+{
+  //Length
+  builtin_length_meta.type = token_integer;
+  builtin_length_meta.is_defined = true;
+  builtin_length_meta.is_declared = true;
+  builtin_length_meta.parameters = malloc(sizeof(Parameter_t));
+  builtin_length_meta.parameters->type = token_string;
+  builtin_length_meta.parameters->name = "s";
+  builtin_length_meta.parameters->next = NULL;
+  //SubStr
+  builtin_substr_meta.type = token_string;
+  builtin_substr_meta.is_defined = true;
+  builtin_substr_meta.is_declared = true;
+  builtin_substr_meta.parameters = malloc(sizeof(Parameter_t));
+  builtin_substr_meta.parameters->type = token_string;
+  builtin_substr_meta.parameters->name = "s";
+  builtin_substr_meta.parameters->next = malloc(sizeof(Parameter_t));
+  builtin_substr_meta.parameters->next->type = token_integer;
+  builtin_substr_meta.parameters->next->name = "i";
+  builtin_substr_meta.parameters->next->next = malloc(sizeof(Parameter_t));
+  builtin_substr_meta.parameters->next->next->type = token_integer;
+  builtin_substr_meta.parameters->next->next->name = "n";
+  builtin_substr_meta.parameters->next->next->next = NULL;
+  //Asc
+  builtin_asc_meta.type = token_integer;
+  builtin_asc_meta.is_defined = true;
+  builtin_asc_meta.is_declared = true;
+  builtin_asc_meta.parameters = malloc(sizeof(Parameter_t));
+  builtin_asc_meta.parameters->type = token_string;
+  builtin_asc_meta.parameters->name = "s";
+  builtin_asc_meta.parameters->next = malloc(sizeof(Parameter_t));
+  builtin_asc_meta.parameters->next->type = token_integer;
+  builtin_asc_meta.parameters->next->name = "i";
+  builtin_asc_meta.parameters->next->next = NULL;  
+  //Chr
+  builtin_chr_meta.type = token_string;
+  builtin_chr_meta.is_defined = true;
+  builtin_chr_meta.is_declared = true;
+  builtin_chr_meta.parameters = malloc(sizeof(Parameter_t));
+  builtin_chr_meta.parameters->type = token_integer;
+  builtin_chr_meta.parameters->name = "i";
+  builtin_chr_meta.parameters->next = NULL;     
+}
+
 void free_inst_list()
 {
   while(first_inst != NULL)

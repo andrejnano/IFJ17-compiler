@@ -108,11 +108,6 @@
         tmp_cnt = 0;//inicialization of temporary names generator
         tmp_name = malloc(sizeof(char)*16);
 
-        add_inst(".IFJcode17", i_null, NULL, i_null, NULL, i_null, NULL);
-        add_inst("CREATEFRAME", i_null,NULL,i_null,NULL,i_null,NULL);
-        add_inst("PUSHFRAME", i_null,NULL,i_null,NULL,i_null,NULL);   
-        add_inst("JUMP", i_null, "$main", i_null, NULL, i_null, NULL);
-
         NT_Head();
 
         // check if all functions were defined and not only declared

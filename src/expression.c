@@ -578,6 +578,62 @@ void NT_Expr(int type)
             add_inst("PUSHS", i_null,NULL,i_null,NULL,i_null,NULL); 
 			printTokenVal();
 			break;
+    case token_length:
+        builtin_length_used = true;      
+		 	  numOp++;        
+        if (builtin_length_meta.type != token_integer)
+					not_int = true;
+            	new_type = builtin_length_meta.type;                
+        NT_CallExpr(&builtin_length_meta, "Length");        
+				if (new_type == token_integer)
+				{
+					add_inst("INT2FLOATS", i_null, NULL, i_null,NULL,i_null,NULL);
+					new_type = token_double;
+				}
+        continue;
+			break;
+    case token_substr:
+        builtin_substr_used = true;      
+		 	  numOp++;        
+        if (builtin_substr_meta.type != token_integer)
+					not_int = true;
+            	new_type = builtin_substr_meta.type;                
+        NT_CallExpr(&builtin_substr_meta, "SubStr");        
+				if (new_type == token_integer)
+				{
+					add_inst("INT2FLOATS", i_null, NULL, i_null,NULL,i_null,NULL);
+					new_type = token_double;
+				}
+        continue;
+			break;
+    case token_asc:
+        builtin_asc_used = true;      
+		 	  numOp++;        
+        if (builtin_asc_meta.type != token_integer)
+					not_int = true;
+            	new_type = builtin_asc_meta.type;                
+        NT_CallExpr(&builtin_asc_meta, "Asc");        
+				if (new_type == token_integer)
+				{
+					add_inst("INT2FLOATS", i_null, NULL, i_null,NULL,i_null,NULL);
+					new_type = token_double;
+				}
+        continue;
+			break;
+    case token_chr:
+        builtin_chr_used = true;      
+		 	  numOp++;        
+        if (builtin_chr_meta.type != token_integer)
+					not_int = true;
+            	new_type = builtin_chr_meta.type;                
+        NT_CallExpr(&builtin_chr_meta, "Chr");        
+				if (new_type == token_integer)
+				{
+					add_inst("INT2FLOATS", i_null, NULL, i_null,NULL,i_null,NULL);
+					new_type = token_double;
+				}
+        continue;
+			break;
 		default:
 			if (istype(active_token->type))
 				raise_error(E_SEM_TYPE, "Wrong type in expression\n");
@@ -592,7 +648,7 @@ void NT_Expr(int type)
 			}
 			if (numOp != 1 || s->priority != STACK_STOPPER)
 			{
-				raise_error(SYNTAX_ERROR, "Wrong expression syntax\n");
+				raise_error(SYNTAX_ERROR, "Wrong expression syntax - A\n");
 				return;
 			}
 			if (!type && !not_int)
@@ -616,7 +672,7 @@ void NT_Expr(int type)
 	}
 	if (numOp != 1 || s->priority != STACK_STOPPER)
 	{
-		raise_error(SYNTAX_ERROR, "Wrong expression syntax\n");
+		raise_error(SYNTAX_ERROR, "Wrong expression syntax - B\n");
 		return;
 	}
 	if (!type && !not_int)

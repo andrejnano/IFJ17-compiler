@@ -14,6 +14,18 @@
 #ifndef INSTRUCTIONS_H
 #define INSTRUCTIONS_H
 
+#include "symtable.h"
+
+extern bool builtin_length_used;
+extern bool builtin_substr_used;
+extern bool builtin_asc_used;
+extern bool builtin_chr_used;
+
+extern Metadata_t builtin_length_meta;
+extern Metadata_t builtin_substr_meta;
+extern Metadata_t builtin_asc_meta;
+extern Metadata_t builtin_chr_meta;
+
 typedef enum{
   i_null, //no variable or constant - just following string is copied
   i_gf, //global frame - generates "gf@" before operand
@@ -48,6 +60,9 @@ void add_inst(char *inst_type, t_const first_type, char *first,
               t_const second_type, char *second, t_const third_type, char *third);
 void add_op_to_last_inst(t_const type, char *value);
 void generate_code(FILE* output_file);
+void generate_base(FILE* output_file);
+void generate_builtin(FILE* output_file);
+void set_builtin_meta();
 void free_inst_list();
 
 #endif

@@ -59,12 +59,16 @@
 
         source_code = stdin;
         output_code = stdout;
+        
+        set_builtin_meta();
 
         parse();
 
         //  if (!(output_code = fopen(argv[2], "w")))
         //       return E_INTERNAL;
 
+        generate_base(output_code);
+        generate_builtin(output_code);
         generate_code(output_code);
 
         //cleanup();
