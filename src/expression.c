@@ -544,7 +544,6 @@ void NT_Expr(int type)
 					add_inst("INT2FLOATS", i_null, NULL, i_null,NULL,i_null,NULL);
 					new_type = token_double;
 				}
-        fprintf(stderr, "---TOKEN---%d---\n", active_token->type);
 				continue;
 			}
 			else
@@ -575,44 +574,7 @@ void NT_Expr(int type)
 			printTokenVal();
 			break;
     case token_length:
-				/*get_next_token(source_code, active_token);
-				match(token_lbrace);
-				add_inst("CREATEFRAME", i_null,NULL,i_null,NULL,i_null,NULL);
-				// read check types and convert arguments for calling function
-  			if (active_token->type == token_rbrace)	// no bracket but still expected argument
-				{
-					raise_error(E_SEM_DEF, "Too few arguments for Length function\n");
-					return;
-				}
-				NT_Expr(token_val_string);
-				add_inst("DEFVAR", i_tf, "s", i_null,NULL,i_null,NULL);
-				add_inst("POPS", i_tf, "s", i_null, NULL, i_null,NULL);
-        fprintf(stderr, ">>");//
-				printTokenType(stderr, active_token->type);//
-				if (active_token->type == token_rbrace)
-				{
-					get_next_token(source_code, active_token);
-				}
-        else
-        {
-					raise_error(E_SEM_DEF, "Too many arguments for Length function\n");
-					return;
-				}
-				add_inst("PUSHFRAME", i_null,NULL,i_null,NULL,i_null,NULL);
-				add_inst("CALL", i_null, "Length", i_null,NULL,i_null,NULL);
-				add_inst("POPFRAME", i_null,NULL,i_null,NULL,i_null,NULL);
-				add_inst("PUSHS", i_tf, "%retval", i_null,NULL,i_null,NULL);
-				add_inst("CREATEFRAME", i_null,NULL,i_null,NULL,i_null,NULL);*/
-
-        //set_builtin_meta();
-
-        fprintf(stderr, ">>>>CallExpr with params at %p\n", builtin_length_meta.parameters);
-        fprintf(stderr, ">>>>name -%s-\n", builtin_length_meta.parameters->name);
-        fprintf(stderr, ">>>>type %d\n", builtin_length_meta.parameters->type);  
-        fprintf(stderr, ">>>>next at %p\n", builtin_length_meta.parameters->next);
-
-        builtin_length_used = true;
-        
+        builtin_length_used = true;      
 		 	  numOp++;        
         if (builtin_length_meta.type != token_integer)
 					not_int = true;
@@ -623,51 +585,48 @@ void NT_Expr(int type)
 					add_inst("INT2FLOATS", i_null, NULL, i_null,NULL,i_null,NULL);
 					new_type = token_double;
 				}
-        fprintf(stderr, "---TOKEN---%d---\n", active_token->type);
         continue;
 			break;
-    case token_chr:
-        fprintf(stderr, ">>>>CallExpr with params at %p\n", builtin_chr_meta.parameters);
-        fprintf(stderr, ">>>>name -%s-\n", builtin_chr_meta.parameters->name);
-        fprintf(stderr, ">>>>type %d\n", builtin_chr_meta.parameters->type); 
-        fprintf(stderr, ">>>>next at %p\n", builtin_chr_meta.parameters->next);
-		 	  /*numOp++;       
-        if (builtin_chr_meta.parameters->type != token_integer)
+    case token_substr:
+        builtin_substr_used = true;      
+		 	  numOp++;        
+        if (builtin_substr_meta.type != token_integer)
 					not_int = true;
-            	new_type = builtin_chr_meta.parameters->type;               
-        NT_CallExpr(&builtin_chr_meta, "Length");        
+            	new_type = builtin_substr_meta.type;                
+        NT_CallExpr(&builtin_substr_meta, "SubStr");        
 				if (new_type == token_integer)
 				{
 					add_inst("INT2FLOATS", i_null, NULL, i_null,NULL,i_null,NULL);
 					new_type = token_double;
-				} */
-				get_next_token(source_code, active_token);
-				match(token_lbrace);
-				add_inst("CREATEFRAME", i_null,NULL,i_null,NULL,i_null,NULL);
-				// read check types and convert arguments for calling function
-  			if (active_token->type == token_rbrace)	// no bracket but still expected argument
+				}
+        continue;
+			break;
+    case token_asc:
+        builtin_asc_used = true;      
+		 	  numOp++;        
+        if (builtin_asc_meta.type != token_integer)
+					not_int = true;
+            	new_type = builtin_asc_meta.type;                
+        NT_CallExpr(&builtin_asc_meta, "Asc");        
+				if (new_type == token_integer)
 				{
-					raise_error(E_SEM_DEF, "Too few arguments for Length function\n");
-					return;
+					add_inst("INT2FLOATS", i_null, NULL, i_null,NULL,i_null,NULL);
+					new_type = token_double;
 				}
-				NT_Expr(token_integer);
-				add_inst("DEFVAR", i_tf, "i", i_null,NULL,i_null,NULL);
-				add_inst("POPS", i_tf, "i", i_null, NULL, i_null,NULL);
-				if (active_token->type == token_rbrace)
+        continue;
+			break;
+    case token_chr:
+        builtin_chr_used = true;      
+		 	  numOp++;        
+        if (builtin_chr_meta.type != token_integer)
+					not_int = true;
+            	new_type = builtin_chr_meta.type;                
+        NT_CallExpr(&builtin_chr_meta, "Chr");        
+				if (new_type == token_integer)
 				{
-					get_next_token(source_code, active_token);
+					add_inst("INT2FLOATS", i_null, NULL, i_null,NULL,i_null,NULL);
+					new_type = token_double;
 				}
-        else
-        {
-					raise_error(E_SEM_DEF, "Too many arguments for Length function\n");
-					return;
-				}
-				add_inst("PUSHFRAME", i_null,NULL,i_null,NULL,i_null,NULL);
-				add_inst("CALL", i_null, "Chr", i_null,NULL,i_null,NULL);
-				add_inst("POPFRAME", i_null,NULL,i_null,NULL,i_null,NULL);
-				add_inst("PUSHS", i_tf, "%retval", i_null,NULL,i_null,NULL);
-				add_inst("CREATEFRAME", i_null,NULL,i_null,NULL,i_null,NULL);
-        fprintf(stderr, "---TOKEN---%d---\n", active_token->type);
         continue;
 			break;
 		default:

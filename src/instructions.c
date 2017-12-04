@@ -264,8 +264,8 @@ void generate_builtin(FILE* output_file)
     {
       fprintf(output_file, "\
 LABEL Length\n\
-DEFVAR lf@%retval\n\
-STRLEN lf@%retval lf@s\n\
+DEFVAR lf@%%retval\n\
+STRLEN lf@%%retval lf@s\n\
 RETURN\n");
     }
     //TODO generate next built-in functions
@@ -275,25 +275,25 @@ RETURN\n");
       fprintf(output_file, "\
 LABEL Asc\n\
 CREATEFRAME\n\
-DEFVAR lf@%retval\n\
+DEFVAR lf@%%retval\n\
 DEFVAR lf@a*cmp\n\
 LT lf@a*cmp lf@i int@0\n\
 JUMPIFEQ els*a0a bool@false lf@a*cmp\n\
-MOVE lf@%retval int@0\n\
+MOVE lf@%%retval int@0\n\
 WRITE string@ret0a\n\
 RETURN\n\
 JUMP end*els*a0a\n\
-LABEL els*a0\n\
+LABEL els*a0a\n\
 DEFVAR lf@len\n\
 STRLEN lf@len lf@s\n\
 GT lf@a*cmp lf@len lf@i\n\
 JUMPIFNEQ els*a1a bool@false lf@a*cmp\n\
-MOVE lf@%retval int@0\n\
+MOVE lf@%%retval int@0\n\
 WRITE string@ret0b\n\
 RETURN\n\
 JUMP end*els*a1a\n\
 LABEL els*a1a\n\
-STRI2INT lf@%retval lf@s lf@i\n\
+STRI2INT lf@%%retval lf@s lf@i\n\
 LABEL end*els*a1a\n\
 LABEL end*els*a0a\n\
 RETURN\n");
@@ -304,11 +304,11 @@ RETURN\n");
       fprintf(output_file, "\
 LABEL Chr\n\
 CREATEFRAME\n\
-DEFVAR lf@%retval\n\
+DEFVAR lf@%%retval\n\
 DEFVAR lf@c*cmp\n\
 LT lf@c*cmp lf@i int@0\n\
 JUMPIFEQ els*a0c bool@false lf@c*cmp\n\
-MOVE lf@%retval int@0\n\
+MOVE lf@%%retval int@0\n\
 WRITE string@ret0a\n\
 RETURN\n\
 JUMP end*els*a0c\n\
@@ -317,12 +317,12 @@ DEFVAR lf@max\n\
 MOVE lf@max int@255\n\
 LT lf@c*cmp lf@max lf@i\n\
 JUMPIFEQ els*a1c bool@false lf@c*cmp\n\
-MOVE lf@%retval int@0\n\
+MOVE lf@%%retval int@0\n\
 WRITE string@ret0b\n\
 RETURN\n\
 JUMP end*els*a1c\n\
 LABEL els*a1c\n\
-INT2CHAR lf@%retval lf@i\n\
+INT2CHAR lf@%%retval lf@i\n\
 LABEL end*els*a1c\n\
 LABEL end*els*a0c\n\
 RETURN\n");
@@ -333,18 +333,18 @@ RETURN\n");
       fprintf(output_file, "\
 LABEL SubStr\n\
 CREATEFRAME\n\
-DEFVAR lf@%retval\n\
+DEFVAR lf@%%retval\n\
 DEFVAR lf@s*cmp\n\
 EQ lf@s*cmp lf@s string@\n\
 JUMPIFEQ els*a0s bool@false lf@s*cmp\n\
-MOVE lf@%retval string@\n\
+MOVE lf@%%retval string@\n\
 WRITE string@retA\n\
 RETURN\n\
 JUMP end*els*a0s\n\
 LABEL els*a0s\n\
 GT lf@s*cmp lf@i int@0\n\
 JUMPIFNEQ els*a2s bool@false lf@s*cmp\n\
-MOVE lf@%retval string@\n\
+MOVE lf@%%retval string@\n\
 WRITE string@retB\n\
 RETURN\n\
 JUMP end*els*a2s\n\
@@ -380,7 +380,7 @@ CONCAT lf@ret lf@ret lf@act\n\
 ADD lf@i lf@i int@1\n\
 JUMP whl*a8s\n\
 LABEL end*whl*a8s\n\
-MOVE lf@%retval lf@ret\n\
+MOVE lf@%%retval lf@ret\n\
 LABEL end*els*a2s\n\
 LABEL end*els*a0s\n\
 RETURN\n");
@@ -402,6 +402,31 @@ void set_builtin_meta()
   builtin_length_meta.parameters->type = token_string;
   builtin_length_meta.parameters->name = "s";
   builtin_length_meta.parameters->next = NULL;
+  //SubStr
+  builtin_substr_meta.type = token_string;
+  builtin_substr_meta.is_defined = true;
+  builtin_substr_meta.is_declared = true;
+  builtin_substr_meta.parameters = malloc(sizeof(Parameter_t));
+  builtin_substr_meta.parameters->type = token_string;
+  builtin_substr_meta.parameters->name = "s";
+  builtin_substr_meta.parameters->next = malloc(sizeof(Parameter_t));
+  builtin_substr_meta.parameters->next->type = token_integer;
+  builtin_substr_meta.parameters->next->name = "i";
+  builtin_substr_meta.parameters->next->next = malloc(sizeof(Parameter_t));
+  builtin_substr_meta.parameters->next->next->type = token_integer;
+  builtin_substr_meta.parameters->next->next->name = "n";
+  builtin_substr_meta.parameters->next->next->next = NULL;
+  //Asc
+  builtin_asc_meta.type = token_integer;
+  builtin_asc_meta.is_defined = true;
+  builtin_asc_meta.is_declared = true;
+  builtin_asc_meta.parameters = malloc(sizeof(Parameter_t));
+  builtin_asc_meta.parameters->type = token_string;
+  builtin_asc_meta.parameters->name = "s";
+  builtin_asc_meta.parameters->next = malloc(sizeof(Parameter_t));
+  builtin_asc_meta.parameters->next->type = token_integer;
+  builtin_asc_meta.parameters->next->name = "i";
+  builtin_asc_meta.parameters->next->next = NULL;  
   //Chr
   builtin_chr_meta.type = token_string;
   builtin_chr_meta.is_defined = true;
