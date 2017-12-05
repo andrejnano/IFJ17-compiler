@@ -332,52 +332,48 @@ RETURN\n");
 LABEL SubStr\n\
 CREATEFRAME\n\
 DEFVAR lf@%%retval\n\
-DEFVAR lf@s*cmp\n\
-EQ lf@s*cmp lf@s string@\n\
-JUMPIFEQ els*a0s bool@false lf@s*cmp\n\
+DEFVAR lf@%%cmp\n\
+EQ lf@%%cmp lf@s string@\n\
+JUMPIFEQ s$els0 bool@false lf@%%cmp\n\
 MOVE lf@%%retval string@\n\
 RETURN\n\
-JUMP end*els*a0s\n\
-LABEL els*a0s\n\
-GT lf@s*cmp lf@i int@0\n\
-JUMPIFNEQ els*a2s bool@false lf@s*cmp\n\
+LABEL s$els0\n\
+GT lf@%%cmp lf@i int@0\n\
+JUMPIFNEQ s$els1 bool@false lf@%%cmp\n\
 MOVE lf@%%retval string@\n\
 RETURN\n\
-JUMP end*els*a2s\n\
-LABEL els*a2s\n\
+LABEL s$els1\n\
 DEFVAR lf@len\n\
 STRLEN lf@len lf@s\n\
-LT lf@s*cmp lf@n int@0\n\
-JUMPIFEQ els*a4s bool@false lf@s*cmp\n\
-SUB lf@n lf@len int@1\n\
-JUMP end*els*a4s\n\
-LABEL els*a4s\n\
-LT lf@s*cmp lf@len lf@n\n\
-JUMPIFEQ els*a6s bool@false lf@s*cmp\n\
-ADD lf@n lf@len int@1\n\
-JUMP end*els*a6s\n\
-LABEL els*a6s\n\
-LABEL end*els*a6s\n\
-LABEL end*els*a4s\n\
+SUB lf@len lf@len lf@i\n\
+SUB lf@i lf@i int@1\n\
+LT lf@%%cmp lf@n int@0\n\
+JUMPIFEQ s$els3 bool@false lf@%%cmp\n\
+STRLEN lf@len lf@s\n\
+JUMP end*s$els3\n\
+LABEL s$els3\n\
+LT lf@%%cmp lf@len lf@n\n\
+JUMPIFEQ s$els4 bool@false lf@%%cmp\n\
+STRLEN lf@len lf@s\n\
+JUMP end*s$els3\n\
+LABEL s$els4\n\
+ADD lf@len lf@n lf@i\n\
+LABEL end*s$els3\n\
 DEFVAR lf@ret\n\
 MOVE lf@ret string@\n\
 PUSHS string@\n\
 POPS lf@ret\n\
 DEFVAR lf@act\n\
 MOVE lf@act string@\n\
-DEFVAR lf@pop$9\n\
-SUB lf@i lf@i int@1\n\
-LABEL whl*a8s\n\
-LT lf@s*cmp lf@i lf@len\n\
-JUMPIFEQ end*whl*a8s bool@false lf@s*cmp\n\
+LABEL s$whl\n\
+LT lf@%%cmp lf@i lf@len\n\
+JUMPIFEQ end*s$whl bool@false lf@%%cmp\n\
 GETCHAR lf@act lf@s lf@i\n\
 CONCAT lf@ret lf@ret lf@act\n\
 ADD lf@i lf@i int@1\n\
-JUMP whl*a8s\n\
-LABEL end*whl*a8s\n\
+JUMP s$whl\n\
+LABEL end*s$whl\n\
 MOVE lf@%%retval lf@ret\n\
-LABEL end*els*a2s\n\
-LABEL end*els*a0s\n\
 RETURN\n");
   }
 }
