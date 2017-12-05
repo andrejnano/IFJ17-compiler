@@ -128,8 +128,8 @@
 
 extern int compiler_error;
 extern FILE* source_code, *output_code;
+    // true if token->type is data type
     bool istype(int type);
-    void printTokenType(FILE *output_file, int type);
 
 /******************************************************************************
     TOKEN MATCH 

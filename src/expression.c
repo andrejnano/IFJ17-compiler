@@ -1,6 +1,5 @@
 #include "expression.h"
 #include "symtable.h"
-#include "errors.h"
 #include "token.h"
 #include "parser.h"
 #include "instructions.h"
@@ -29,7 +28,7 @@ int TvalToKeyword(int val)
 }
 
 /*
-* \brief Generates new unused name with 
+* \brief Generates new unused name for variable or label
 */
 void generateName(char **var)
 {
@@ -143,7 +142,7 @@ void zeroVarInit(char *varName) {
 			add_inst("MOVE", i_lf, varName, i_bool , "false", i_null,NULL);
 			break;
 		default :
-			raise_error(SYNTAX_ERROR, "Expecet type int, double ...\n");
+			raise_error(E_SYNTAX, "Expecet type int, double ...\n");
 	}
 }
 
@@ -187,15 +186,13 @@ void converts(int new_type, int *old_type, bool byPriority)
 		else
 		{
 			// cannot convert other types then float -> int or int -> float
-			raise_error(TYPE_ERROR, "Wrong type for conversion\n");
-			printTokenType(stderr, *old_type);
-			printTokenType(stderr, new_type);
+			raise_error(E_SEM_TYPE, "Wrong type for conversion\n");
 			return;
 		}
 	}
 	else	// trying to convert something which is not data type
 	{
-		raise_error(SYNTAX_ERROR, "Wrong expression syntax\n");
+		raise_error(E_SYNTAX, "Wrong expression syntax\n");
 		return;
 	}
 }
@@ -209,7 +206,7 @@ void testCmpOps(int OP1, int *OP2)
 {
 	if (!istype(OP1) || !istype(*OP2))
 	{
-		raise_error(SYNTAX_ERROR, "Unexpected token\n");
+		raise_error(E_SYNTAX, "Unexpected token\n");
 		return;
 	}
 	if (OP1 == *OP2)
@@ -240,7 +237,7 @@ void testCmpOps(int OP1, int *OP2)
  * \brief Function for executing operation from top of stack
  * \param s Stack of operations
  * \param numOp Number of operators in stack
- * \param old_type type of last operator
+ * \param old_type type of prev operator
  * \return Executed operation, in case of error operation
  * with priority STACK_STOPPER
  */
@@ -262,6 +259,7 @@ tStack execOp (tStack **s, int *numOp, int *old_type)
 	// temporal vars for partial calculations
 	char *tmpName1 = "tmpName";
 	char *tmpName2 = "tmpName";
+	// generate specific code for each operation
 	switch (operation->type)
 	{
 		case token_op_add:
@@ -283,18 +281,15 @@ tStack execOp (tStack **s, int *numOp, int *old_type)
 		break;
 		case token_op_sub:
 			converts(operation->lOperandType, old_type, 1);
-			if (*old_type == token_string)
-				raise_error(E_SEM_TYPE, "Invalid operation for strings\n");
 			add_inst("SUBS", i_null,NULL,i_null,NULL,i_null,NULL);
 		break;  
 		case token_op_mul:
 			converts(operation->lOperandType, old_type, 1);
-			if (*old_type == token_string)
-				raise_error(E_SEM_TYPE, "Invalid operation for strings\n");
 			add_inst("MULS", i_null,NULL,i_null,NULL,i_null,NULL);
 		break;  
 		case token_op_div:
 			int_div = false;
+			// in case both are integers we have to convert first manually
 			if (operation->lOperandType == token_integer)
 			{
 				add_inst("INT2FLOATS", i_null, NULL, i_null,NULL,i_null,NULL);
@@ -405,11 +400,12 @@ void NT_CallExpr(Metadata_t *funcMeta, char *funcName)
 	// read check types and convert arguments for calling function
 	while (active_token->type != token_rbrace)
 	{
-		if (!arg)	// no bracket but still expected argument
+		if (!arg)	// no right bracket but no more arguments in function declaration
 		{
 			raise_error(E_SEM_TYPE, "Too many arguments for function\n");
 			return;
 		}
+		// evaluate argument
 		NT_Expr(arg->type);
 		add_inst("DEFVAR", i_tf, arg->name, i_null,NULL,i_null,NULL);
 		add_inst("POPS", i_tf, arg->name, i_null, NULL, i_null,NULL);
@@ -443,22 +439,26 @@ void NT_Expr(int type)
 {
 	tStack *s;
 	sInit(&s);
-	tStack insert; // pouzijem insert ako zarazku do stacku
+	tStack insert;
 	insert.priority = STACK_STOPPER;
 	insert.type = STACK_STOPPER;
-	sPush(&s, &insert);
-	int numOp = 0, new_type = 0;
-	Metadata_t *var;
-	bool not_int = false;
+	sPush(&s, &insert); // insert stack stoper for indication of last operator
+	int numOp = 0, // number of operands
+	new_type = 0; // variable for string actual type of result of executed operation
+	Metadata_t *tmp_meta; // temporal variable for storing function
+				// and variable metadata from symtable
+	bool not_int = false; // true if final result will not be of type int
 	while (active_token->type != token_eol)
 	{
+		// generating code of expression case for eche token which can occure in expresion
 		switch (active_token->type)
 		{
+		// operators
 		case token_op_add:
 		case token_op_sub:
 			insert.type = active_token->type;
-         	insert.priority = 3;
-         	insert.lOperandType = new_type;
+         insert.priority = 3;
+         insert.lOperandType = new_type;
 			while (s && s->priority && s->priority <= insert.priority)
 				if (execOp(&s, &numOp, &new_type).priority == STACK_STOPPER)
 					return;
@@ -504,6 +504,7 @@ void NT_Expr(int type)
 					return;
 			sPush(&s, &insert);
 			break;
+		// brackets
 		case token_lbrace:
 			insert.type = active_token->type;
 			insert.priority = 6;
@@ -520,13 +521,14 @@ void NT_Expr(int type)
 			}
 			free(sPop(&s));
 			break;
+		// IDs and literals
 		case token_identifier:
 		 	numOp++;
-			if ((var = stl_search(variables, active_token->value.c)))
+			if ((tmp_meta = stl_search(variables, active_token->value.c)))
 			{
-				if (var->type != token_integer)
+				if (tmp_meta->type != token_integer)
 					not_int = true;
-            new_type = var->type;
+            new_type = tmp_meta->type;
 				add_inst("PUSHS", i_lf, active_token->value.c, i_null,NULL,i_null,NULL);
 				if (new_type == token_integer)
 				{
@@ -534,12 +536,12 @@ void NT_Expr(int type)
 					new_type = token_double;
 				}
 			}
-			else if ((var = stl_search(functions, active_token->value.c)))
+			else if ((tmp_meta = stl_search(functions, active_token->value.c)))
 			{
-				if (var->type != token_integer)
+				if (tmp_meta->type != token_integer)
 					not_int = true;
-            new_type = var->type;
-				NT_CallExpr(var, active_token->value.c);
+            new_type = tmp_meta->type;
+				NT_CallExpr(tmp_meta, active_token->value.c);
 				if (new_type == token_integer)
 				{
 					add_inst("INT2FLOATS", i_null, NULL, i_null,NULL,i_null,NULL);
@@ -574,77 +576,76 @@ void NT_Expr(int type)
             add_inst("PUSHS", i_null,NULL,i_null,NULL,i_null,NULL); 
 			printTokenVal();
 			break;
-    case token_length:
-        builtin_length_used = true;      
-		 	  numOp++;        
-        if (builtin_length_meta.type != token_integer)
-					not_int = true;
-            	new_type = builtin_length_meta.type;                
-        NT_CallExpr(&builtin_length_meta, "Length");        
-				if (new_type == token_integer)
-				{
-					add_inst("INT2FLOATS", i_null, NULL, i_null,NULL,i_null,NULL);
-					new_type = token_double;
-				}
-        continue;
-			break;
-    case token_substr:
-        builtin_substr_used = true;      
-		 	  numOp++;        
-        if (builtin_substr_meta.type != token_integer)
-					not_int = true;
-            	new_type = builtin_substr_meta.type;                
-        NT_CallExpr(&builtin_substr_meta, "SubStr");        
-				if (new_type == token_integer)
-				{
-					add_inst("INT2FLOATS", i_null, NULL, i_null,NULL,i_null,NULL);
-					new_type = token_double;
-				}
-        continue;
-			break;
-    case token_asc:
-        builtin_asc_used = true;      
-		 	  numOp++;        
-        if (builtin_asc_meta.type != token_integer)
-					not_int = true;
-            	new_type = builtin_asc_meta.type;                
-        NT_CallExpr(&builtin_asc_meta, "Asc");        
-				if (new_type == token_integer)
-				{
-					add_inst("INT2FLOATS", i_null, NULL, i_null,NULL,i_null,NULL);
-					new_type = token_double;
-				}
-        continue;
-			break;
-    case token_chr:
-        builtin_chr_used = true;      
-		 	  numOp++;        
-        if (builtin_chr_meta.type != token_integer)
-					not_int = true;
-            	new_type = builtin_chr_meta.type;                
-        NT_CallExpr(&builtin_chr_meta, "Chr");        
-				if (new_type == token_integer)
-				{
-					add_inst("INT2FLOATS", i_null, NULL, i_null,NULL,i_null,NULL);
-					new_type = token_double;
-				}
-        continue;
-			break;
+		// built in functions
+    	case token_length:
+    	    builtin_length_used = true;      
+			numOp++;        
+    	    if (builtin_length_meta.type != token_integer)
+				not_int = true;
+    	    new_type = builtin_length_meta.type;                
+    	    NT_CallExpr(&builtin_length_meta, "Length");        
+			if (new_type == token_integer)
+			{
+				add_inst("INT2FLOATS", i_null, NULL, i_null,NULL,i_null,NULL);
+				new_type = token_double;
+			}
+    	    continue;
+    	case token_substr:
+    	    builtin_substr_used = true;      
+			numOp++;        
+    	    if (builtin_substr_meta.type != token_integer)
+				not_int = true;
+    	    new_type = builtin_substr_meta.type;                
+    	    NT_CallExpr(&builtin_substr_meta, "SubStr");        
+			if (new_type == token_integer)
+			{
+				add_inst("INT2FLOATS", i_null, NULL, i_null,NULL,i_null,NULL);
+				new_type = token_double;
+			}
+    	    continue;
+    	case token_asc:
+    	    builtin_asc_used = true;      
+		 	numOp++;        
+    	    if (builtin_asc_meta.type != token_integer)
+				not_int = true;
+    	    new_type = builtin_asc_meta.type;                
+    	    NT_CallExpr(&builtin_asc_meta, "Asc");        
+			if (new_type == token_integer)
+			{
+				add_inst("INT2FLOATS", i_null, NULL, i_null,NULL,i_null,NULL);
+				new_type = token_double;
+			}
+    	    continue;
+    	case token_chr:
+    	    builtin_chr_used = true;      
+		 	numOp++;        
+    	    if (builtin_chr_meta.type != token_integer)
+				not_int = true;
+    	    new_type = builtin_chr_meta.type;                
+    	    NT_CallExpr(&builtin_chr_meta, "Chr");        
+			if (new_type == token_integer)
+			{
+				add_inst("INT2FLOATS", i_null, NULL, i_null,NULL,i_null,NULL);
+				new_type = token_double;
+			}
+			continue;
+		// unexpected token for expreession end of expression
 		default:
 			if (istype(active_token->type))
 				raise_error(E_SEM_TYPE, "Wrong type in expression\n");
+			// execute operations from stack
 			while (s && s->priority < STACK_STOPPER)
 			{
 				if (execOp(&s, &numOp, &new_type).priority == STACK_STOPPER)
 				{
 					if (!numOp)
-						raise_error(SYNTAX_ERROR, "Wrong expression syntax\n");
+						raise_error(E_SYNTAX, "Wrong expression syntax\n");
 					return;
 				}
 			}
 			if (numOp != 1 || s->priority != STACK_STOPPER)
 			{
-				raise_error(SYNTAX_ERROR, "Wrong expression syntax - A\n");
+				raise_error(E_SYNTAX, "Wrong expression syntax - A\n");
 				return;
 			}
 			if (!type && !not_int)
@@ -657,18 +658,19 @@ void NT_Expr(int type)
 
 		get_next_token(source_code, active_token);
 	}
+	// execute operations from stack and end of expression
 	while (s && s->priority < STACK_STOPPER)
 	{
 		if (execOp(&s, &numOp, &new_type).priority == STACK_STOPPER)
 		{
 			if (!numOp)
-				raise_error(SYNTAX_ERROR, "Wrong expression syntax\n");
+				raise_error(E_SYNTAX, "Wrong expression syntax\n");
 			return;
 		}
 	}
 	if (numOp != 1 || s->priority != STACK_STOPPER)
 	{
-		raise_error(SYNTAX_ERROR, "Wrong expression syntax - B\n");
+		raise_error(E_SYNTAX, "Wrong expression syntax - B\n");
 		return;
 	}
 	if (!type && !not_int)
