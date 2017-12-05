@@ -526,6 +526,10 @@
                     //INST
                     add_inst("LABEL", i_null, function_name, i_null, NULL, i_null, NULL);
                     add_inst("DEFVAR", i_lf, "%retval", i_null,NULL,i_null,NULL);
+                    int tmp = active_token->type;
+                    active_token->type = function_return_datatype;
+                    zeroVarInit("%retval");
+                    active_token->type = tmp;
                     add_inst("CREATEFRAME", i_null, NULL, i_null, NULL, i_null, NULL);
 
                     if (!definition_error)
@@ -710,6 +714,10 @@
                 //INST
                 add_inst("LABEL", i_null, new_function_name, i_null, NULL, i_null, NULL);
                 add_inst("DEFVAR", i_lf, "%retval", i_null, NULL, i_null, NULL);
+                int tmp = active_token->type;
+                active_token->type = function_return_datatype;
+                zeroVarInit("%retval");
+                active_token->type = tmp;
                 add_inst("CREATEFRAME", i_null, NULL, i_null, NULL, i_null, NULL);
                 
                 // FINALLY add to symtable if there are no error during declaration

@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include "symtable.h"
 #include "errorcodes.h"
+#include "instructions.h"
 
 
 // DEBUG HELP FUNC
@@ -232,14 +233,20 @@ void param_list_dispose(Parameter_t *parameters)
 /*
  * \brief compares two parameters lists node by node
  * \return true if they are same false otherwise
+ * if names of arguments are not same argument names from
+ * p2 are copied to p1
  */
 bool param_list_cmp(Parameter_t *p1, Parameter_t *p2)
 {
     while (p1 != NULL && p2 != NULL)
     {
         // staci porovnat typy
-        // if (strcmp(p1->name, p2->name) != 0)
-        //     return false;
+        if (strcmp(p1->name, p2->name) != 0)
+        {
+            free(p1->name);
+            p1->name = (char *)malloc(strlen(p2->name) + 1);
+            strcpy(p1->name, p2->name);
+        }
         
         if (p1->type != p2->type)
             return false;

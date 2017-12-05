@@ -137,19 +137,15 @@ void zeroVarInit(char *varName) {
 	{
 		case token_integer:
 			add_inst("MOVE", i_lf, varName, i_int , "0", i_null,NULL);
-			//fprintf(output_code, "move lf@%s int@0\n", varName);
 			break;
 		case token_double:
 			add_inst("MOVE", i_lf, varName, i_fl , "0.0", i_null,NULL);
-			//fprintf(output_code, "move lf@%s float@0.0\n", varName);
 			break;
 		case token_string:
 			add_inst("MOVE", i_lf, varName, i_str , "", i_null,NULL);
-			//fprintf(output_code, "move lf@%s string@\n", varName);
 			break;
 		case token_boolean:
 			add_inst("MOVE", i_lf, varName, i_bool , "false", i_null,NULL);
-			//fprintf(output_code, "move lf@%s bool@false\n", varName);
 			break;
 		default :
 			raise_error(SYNTAX_ERROR, "Expecet type int, double ...\n");
