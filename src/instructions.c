@@ -277,25 +277,20 @@ LABEL Asc\n\
 CREATEFRAME\n\
 DEFVAR lf@%%retval\n\
 DEFVAR lf@a*cmp\n\
-LT lf@a*cmp lf@i int@0\n\
+LT lf@a*cmp lf@i int@1\n\
 JUMPIFEQ els*a0a bool@false lf@a*cmp\n\
 MOVE lf@%%retval int@0\n\
 RETURN\n\
-JUMP end*els*a0a\n\
 LABEL els*a0a\n\
 DEFVAR lf@len\n\
 STRLEN lf@len lf@s\n\
 SUB lf@len lf@len int@1\n\
-GT lf@a*cmp lf@len lf@i\n\
-JUMPIFNEQ els*a1a bool@false lf@a*cmp\n\
+LT lf@a*cmp lf@len lf@i\n\
+JUMPIFEQ els*a1a bool@false lf@a*cmp\n\
 MOVE lf@%%retval int@0\n\
 RETURN\n\
-JUMP end*els*a1a\n\
 LABEL els*a1a\n\
-SUB lf@i lf@i int@1\n\
-STRI2INT lf@%%retval lf@s lf@i\n\
-LABEL end*els*a1a\n\
-LABEL end*els*a0a\n\
+STRI2INT lf@%retval lf@s lf@i\n\
 RETURN\n");
     }
     //if Chr used
