@@ -1,11 +1,29 @@
+/*
+    + ------------- +
+    | PROJEKT IFJ17 |
+    + ------------- +
+
+    Společný projekt IFJ a IAL 2017
+        Implementace prekladace imperativního jazyka IFJ17.
+
+    Varianta zadanie:
+        Tým 025, varianta I
+
+    Soubor:
+        expression.c
+
+    Autori:
+        xmarko15 Peter Marko
+        xmechl00 Stanislav Mechl
+        xnanoa00 Andrej Nano
+        xsvand06 Švanda Jan
+*/
+
 #include "expression.h"
 #include "symtable.h"
 #include "token.h"
 #include "parser.h"
 #include "instructions.h"
-
-
-
 
 /*
  * \brief Function for converting token literal value to token

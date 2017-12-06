@@ -1,3 +1,23 @@
+/*
+    + ------------- +
+    | PROJEKT IFJ17 |
+    + ------------- +
+
+    Společný projekt IFJ a IAL 2017
+        Implementace prekladace imperativního jazyka IFJ17.
+
+    Varianta zadanie:
+        Tým 025, varianta I
+
+    Soubor:
+        parser.c
+
+    Autori:
+        xmarko15 Peter Marko
+        xmechl00 Stanislav Mechl
+        xnanoa00 Andrej Nano
+        xsvand06 Švanda Jan
+*/
 
 /******************************************************************************
  *    PARSER / SYNTAX ANALYZER

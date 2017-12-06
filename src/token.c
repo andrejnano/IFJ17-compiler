@@ -1,10 +1,30 @@
+/*
+    + ------------- +
+    | PROJEKT IFJ17 |
+    + ------------- +
+
+    Společný projekt IFJ a IAL 2017
+        Implementace prekladace imperativního jazyka IFJ17.
+
+    Varianta zadanie:
+        Tým 025, varianta I
+
+    Soubor:
+        token.c
+
+    Autori:
+        xmarko15 Peter Marko
+        xmechl00 Stanislav Mechl
+        xnanoa00 Andrej Nano
+        xsvand06 Švanda Jan
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include "scanner.h"
 #include "token.h"
 #include "errorcodes.h"
 #include "instructions.h"
-
 
 extern FILE* source_code;
 extern FILE *output_code;

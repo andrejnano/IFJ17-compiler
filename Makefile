@@ -1,18 +1,22 @@
 #
-#    + -------------- +
-#    | PROJEKT IFJ17  |
-#    + -------------- +
-#    Implementace prekladace imperativního jazyka IFJ17.
+#    + ------------- +
+#    | PROJEKT IFJ17 |
+#    + ------------- +
+#
+#    Společný projekt IFJ a IAL 2017
+#        Implementace prekladace imperativního jazyka IFJ17.
+#
+#    Varianta zadanie:
+#        Tým 025, varianta I
+#
+#    Soubor:
+#        Makefile
 #
 #    Autori:
 #        xmarko15 Peter Marko
 #        xmechl00 Stanislav Mechl
 #        xnanoa00 Andrej Nano
 #        xsvand06 Švanda Jan
-#
-#    Zadanie:
-#        Vytvorte program v jazyce C, který nacte zdrojový kód zapsaný ve zdrojovém
-#        jazyce IFJ17 a preloží jej do cílového jazyka IFJcode17 (mezikód).
 #
 
 ##   GENERAL MAKEFILE
