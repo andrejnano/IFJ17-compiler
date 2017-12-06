@@ -290,7 +290,7 @@ JUMPIFEQ els*a1a bool@false lf@a*cmp\n\
 MOVE lf@%%retval int@0\n\
 RETURN\n\
 LABEL els*a1a\n\
-STRI2INT lf@%retval lf@s lf@i\n\
+STRI2INT lf@%%retval lf@s lf@i\n\
 RETURN\n");
     }
     //if Chr used
