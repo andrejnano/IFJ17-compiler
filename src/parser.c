@@ -1403,5 +1403,3 @@ void next_tmp_name(char *spec)
   sprintf(tmp_name, "%s$%d", spec, tmp_cnt);
   tmp_cnt++;
 }
-
-/*****************************************************************************/
