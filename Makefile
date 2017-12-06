@@ -18,7 +18,7 @@
 ##   GENERAL MAKEFILE
 
 CC=gcc
-CFLAGS=-DDEBUG -O2 -std=c99 -g -Wall -pedantic
+CFLAGS=-O2 -std=c99 -g -Wall -pedantic
 OBJFILES=$(patsubst src/%.c, build/%.o, $(shell ls src/*.c))
 OUTFILE=ifj2017
 ZIPNAME=xnanoa00
@@ -45,7 +45,7 @@ test:
 zip:
 	cp Makefile-zip src/Makefile
 	cp rozdeleni src/rozdeleni
-	cp -R tests/ src/tests/
+	cp rozsireni src/rozsireni
+	cp dokumentace.pdf src/dokumentace.pdf
 	cd src; zip -r ../$(ZIPNAME).zip *
-	rm src/Makefile src/rozdeleni
-	rm -rf src/tests
+	cd src; rm Makefile rozdeleni rozsireni *.pdf
