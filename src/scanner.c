@@ -375,6 +375,13 @@ typedef enum {
     EMPTY,
     ID,
     NUMBER,
+    AMP_SIGN,
+    AMP_BIN,
+    AMP_OCT,
+    AMP_HEX,
+    NUM_BIN,
+    NUM_OCT,
+    NUM_HEX,
     DECIMAL,
     DECIMAL_DOT,
     DOUBLE_EXP,
@@ -429,7 +436,6 @@ bool get_next_token(FILE *file, Token_t *token)
     value.len = 0;
 
     // Reset token
-    // if (token->value.c) free(token->value.c); // [?]
     token->value.c = NULL;
     token->value.d = 0.0;
     token->value.i = 0;
@@ -500,6 +506,7 @@ bool get_next_token(FILE *file, Token_t *token)
                 case '\'': state = COMMENT_SINGLE; break; // Single line comm.
                 case '<': state = OPER_LESS; break; // Might be <= or <> or <
                 case '>': state = OPER_GREAT; break; // Might be >= or >
+                case '&': state = AMP_SIGN; break; // Might be a number
                 case '*': token->type = token_op_mul; return true;
                 case '\\': token->type = token_op_mod; return true;
                 case '+': token->type = token_op_add; return true;
@@ -649,6 +656,123 @@ bool get_next_token(FILE *file, Token_t *token)
                 return true;
             }
             break;
+        case AMP_SIGN:
+            if (c == 'b')
+            {
+                // Binary start
+                state = AMP_BIN;
+            }
+            else if (c == 'o')
+            {
+                // Octal start
+                state = AMP_OCT;
+            }
+            else if (c == 'h')
+            {
+                // Hexadecimal start
+                state = AMP_HEX;
+            }
+            else
+            {
+                // Wrong input
+                ungetc(c, file);
+                raise_error(E_LEX, "Wrong number format, got &0x%02x", c);
+                return_eof_false(token);
+            }
+            break;
+        case AMP_BIN:
+            if (c == '0' || c == '1')
+            {
+                // Becomes binary
+                if (!dStrAddChar(&value, c)) return_eof_false(token);
+                state = NUM_BIN;
+            }
+            else
+            {
+                // Bad binary digit
+                ungetc(c, file);
+                raise_error(E_LEX, "Wrong binary format, got 0x%02x", c);
+                return_eof_false(token);
+            }
+            break;
+        case AMP_OCT:
+            if (c >= '0' && c <= '7')
+            {
+                // Becomes octal
+                if (!dStrAddChar(&value, c)) return_eof_false(token);
+                state = NUM_OCT;
+            }
+            else
+            {
+                // Bad octal digit
+                ungetc(c, file);
+                raise_error(E_LEX, "Wrong octal format, got 0x%02x", c);
+                return_eof_false(token);
+            }
+            break;
+        case AMP_HEX:
+            if ((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f'))
+            {
+                // Becomes hexadecimal
+                if (!dStrAddChar(&value, c)) return_eof_false(token);
+                state = NUM_HEX;
+            }
+            else
+            {
+                // Bad binary digit
+                ungetc(c, file);
+                raise_error(E_LEX, "Wrong hexadecimal format, got 0x%02x", c);
+                return_eof_false(token);
+            }
+            break;
+        case NUM_BIN:
+            if (c == '0' || c == '1')
+            {
+                // Continues as binary
+                if (!dStrAddChar(&value, c)) return_eof_false(token);
+            }
+            else
+            {
+                // Returns integer token
+                ungetc(c, file);
+                int val = (int) strtol(value.str, NULL, 2);
+                token->type = token_val_integer;
+                token->value.i = val;
+                return true;
+            }
+            break;
+        case NUM_OCT:
+            if (c >= '0' && c <= '7')
+            {
+                // Continues as octal
+                if (!dStrAddChar(&value, c)) return_eof_false(token);
+            }
+            else
+            {
+                // Returns integer token
+                ungetc(c, file);
+                int val = (int) strtol(value.str, NULL, 8);
+                token->type = token_val_integer;
+                token->value.i = val;
+                return true;
+            }
+            break;
+        case NUM_HEX:
+            if ((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f'))
+            {
+                // Continues as hexadecimal
+                if (!dStrAddChar(&value, c)) return_eof_false(token);
+            }
+            else
+            {
+                // Returns integer token
+                ungetc(c, file);
+                int val = (int) strtol(value.str, NULL, 16);
+                token->type = token_val_integer;
+                token->value.i = val;
+                return true;
+            }
+            break;
         case DECIMAL:
             if (c >= '0' && c <= '9')
             {
@@ -685,7 +809,7 @@ bool get_next_token(FILE *file, Token_t *token)
                 raise_error(E_LEX, "Wrong double format, got 0x%02x", c);
                 return_eof_false(token);
             }
-            break;            
+            break;
         case DOUBLE_EXP:
             if (c >= '0' && c <= '9')
             {
