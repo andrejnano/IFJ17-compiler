@@ -450,6 +450,22 @@ void free_inst_list()
   {
     t_inst *tmp = first_inst;
     first_inst = first_inst->next;
+    if(tmp->inst_type != NULL)
+    {
+      free(tmp->inst_type);
+    }
+    if(tmp->first != NULL)
+    {
+      free(tmp->first);
+    }
+    if(tmp->second != NULL)
+    {
+      free(tmp->second);
+    }
+    if(tmp->second != NULL)
+    {
+      free(tmp->second);
+    }
     free(tmp);
   }
   last_inst = NULL;
