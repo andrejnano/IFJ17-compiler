@@ -376,9 +376,6 @@ typedef enum {
     ID,
     NUMBER,
     AMP_SIGN,
-    AMP_BIN,
-    AMP_OCT,
-    AMP_HEX,
     NUM_BIN,
     NUM_OCT,
     NUM_HEX,
@@ -660,68 +657,26 @@ bool get_next_token(FILE *file, Token_t *token)
             if (c == 'b')
             {
                 // Binary start
-                state = AMP_BIN;
+                if (!dStrAddChar(&value, '0')) return_eof_false(token);
+                state = NUM_BIN;
             }
             else if (c == 'o')
             {
                 // Octal start
-                state = AMP_OCT;
+                if (!dStrAddChar(&value, '0')) return_eof_false(token);
+                state = NUM_OCT;
             }
             else if (c == 'h')
             {
                 // Hexadecimal start
-                state = AMP_HEX;
+                if (!dStrAddChar(&value, '0')) return_eof_false(token);
+                state = NUM_HEX;
             }
             else
             {
                 // Wrong input
                 ungetc(c, file);
                 raise_error(E_LEX, "Wrong number format, got &0x%02x", c);
-                return_eof_false(token);
-            }
-            break;
-        case AMP_BIN:
-            if (c == '0' || c == '1')
-            {
-                // Becomes binary
-                if (!dStrAddChar(&value, c)) return_eof_false(token);
-                state = NUM_BIN;
-            }
-            else
-            {
-                // Bad binary digit
-                ungetc(c, file);
-                raise_error(E_LEX, "Wrong binary format, got 0x%02x", c);
-                return_eof_false(token);
-            }
-            break;
-        case AMP_OCT:
-            if (c >= '0' && c <= '7')
-            {
-                // Becomes octal
-                if (!dStrAddChar(&value, c)) return_eof_false(token);
-                state = NUM_OCT;
-            }
-            else
-            {
-                // Bad octal digit
-                ungetc(c, file);
-                raise_error(E_LEX, "Wrong octal format, got 0x%02x", c);
-                return_eof_false(token);
-            }
-            break;
-        case AMP_HEX:
-            if ((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f'))
-            {
-                // Becomes hexadecimal
-                if (!dStrAddChar(&value, c)) return_eof_false(token);
-                state = NUM_HEX;
-            }
-            else
-            {
-                // Bad binary digit
-                ungetc(c, file);
-                raise_error(E_LEX, "Wrong hexadecimal format, got 0x%02x", c);
                 return_eof_false(token);
             }
             break;
