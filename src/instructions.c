@@ -275,7 +275,6 @@ DEFVAR lf@%%retval\n\
 STRLEN lf@%%retval lf@s\n\
 RETURN\n");
     }
-    //TODO generate next built-in functions
     //if Asc used
     if(builtin_asc_used == true)
     {
@@ -428,6 +427,21 @@ void set_builtin_meta()
   builtin_chr_meta.parameters->type = token_integer;
   builtin_chr_meta.parameters->name = "i";
   builtin_chr_meta.parameters->next = NULL;     
+}
+
+void free_builtin_meta()
+{
+  //Length
+  free(builtin_length_meta.parameters);
+  //SubStr
+  free(builtin_substr_meta.parameters->next->next);
+  free(builtin_substr_meta.parameters->next);
+  free(builtin_substr_meta.parameters);
+  //Asc
+  free(builtin_asc_meta.parameters->next);
+  free(builtin_asc_meta.parameters); 
+  //Chr
+  free(builtin_chr_meta.parameters);     
 }
 
 void free_inst_list()

@@ -73,6 +73,9 @@
         generate_base(output_code);
         generate_builtin(output_code);
         generate_code(output_code);
+        
+        free_builtin_meta();
+        free_inst_list();
 
         //cleanup();
         // fclose(source_code);

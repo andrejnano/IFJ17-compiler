@@ -71,6 +71,7 @@ void generate_code(FILE* output_file);
 void generate_base(FILE* output_file);
 void generate_builtin(FILE* output_file);
 void set_builtin_meta();
+void free_builtin_meta();
 void free_inst_list();
 
 #endif
